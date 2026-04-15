@@ -181,16 +181,29 @@
             let timerEl = document.getElementById('rec-timer');
             
             btn.disabled = true;
+            btn.style.background = "#555";
             btn.innerText = "GRAVANDO...";
 
             let count = tempo;
+            timerEl.innerText = count.toString().padStart(2, '0') + "s";
+
             let interval = setInterval(() => {
                 count--;
                 timerEl.innerText = count.toString().padStart(2, '0') + "s";
+                
                 if(count <= 0) {
                     clearInterval(interval);
-                    alert("Gravação concluída! Processando efeitos...");
-                    location.reload(); // Reinicia para o próximo
+                    // Em vez de dar reload imediato, vamos simular o "sucesso"
+                    btn.innerText = "CONCLUÍDO!";
+                    btn.style.background = "#25d366";
+                    
+                    setTimeout(() => {
+                        alert("Movie gerado com sucesso! Iniciando processamento de efeitos...");
+                        nav('screen-home'); // Volta para a home em vez de resetar a página toda
+                        btn.disabled = false;
+                        btn.innerText = "REC";
+                        btn.style.background = "var(--neon-purple)";
+                    }, 1000);
                 }
             }, 1000);
         }
