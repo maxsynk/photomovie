@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CENTRAL - Photo Movie</title>
+    <style>
+        :root { 
+            --neon: #9200ff; 
+            --cyan: #00f2ff; 
+            --dark: #0a0a0a;
+        }
+        
+        body { 
+            margin: 0; 
+            background: var(--dark); 
+            color: white; 
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* 1,5 a 2 cm abaixo da margem superior */
+        .header {
+            margin-top: 1.8cm;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: var(--cyan);
+            font-size: 24px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin: 0;
+            text-shadow: 0 0 10px var(--cyan);
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            width: 80%;
+            max-width: 400px;
+        }
+
+        .btn-central {
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 15px;
+            border: 1px solid #333;
+            background: #111;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: 0.3s;
+            display: none; /* Escondidos até o login */
+        }
+
+        .btn-central:active {
+            transform: scale(0.95);
+            background: var(--neon);
+        }
+
+        #btn-login {
+            display: block; /* Botão inicial */
+            background: var(--neon);
+            border: none;
+            box-shadow: 0 0 20px rgba(146, 0, 255, 0.4);
+        }
+
+        .footer-status {
+            margin-bottom: 20px;
+            font-size: 10px;
+            color: #444;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>PHOTO MOVIE</h1>
+        <p style="font-size: 12px; color: #666;">SISTEMA DE GESTÃO 360°</p>
+    </div>
+
+    <div class="main-container" id="menu-central">
+        <button id="btn-login" class="btn-central" onclick="autenticar()">🔓 INICIAR SISTEMA</button>
+
+        <a href="https://phottoprint.github.io/photomovie/" class="btn-protected btn-central">📸 NOVO EVENTO</a>
+        <a href="https://phottoprint.github.io/photomovie/galeria.html" class="btn-protected btn-central">🎞️ ACESSAR GALERIA</a>
+        
+        <button id="btn-lock" class="btn-central" onclick="bloquear()" style="background: #222; margin-top: 30px; font-size: 12px; color: red;">BLOQUEAR ACESSO</button>
+    </div>
+
+    <div class="footer-status">v3.0 Cloud Edition - 2026</div>
+
+<script>
+    // Defina sua senha numérica aqui
+    const SENHA_MESTRA = "1234"; 
+
+    async function autenticar() {
+        // 1. Tenta Biometria (se disponível no aparelho)
+        if (window.PublicKeyCredential) {
+            try {
+                // Simulação de chamada de biometria nativa
+                console.log("Iniciando verificação biométrica...");
+            } catch (e) {
+                console.log("Biometria não disponível.");
+            }
+        }
+
+        // 2. Senha Numérica (Prompt)
+        const senha = prompt("Digite a senha numérica de acesso:");
+
+        if (senha === SENHA_MESTRA) {
+            liberarSistema();
+        } else {
+            alert("Senha incorreta!");
+        }
+    }
+
+    function liberarSistema() {
+        // Esconde botão de login
+        document.getElementById('btn-login').style.display = 'none';
+        
+        // Mostra os links do sistema
+        const botoes = document.querySelectorAll('.btn-protected');
+        botoes.forEach(b => b.style.display = 'block');
+        
+        // Mostra botão de bloquear
+        document.getElementById('btn-lock').style.display = 'block';
+        
+        // Efeito vibrar ao entrar (opcional)
+        if (navigator.vibrate) navigator.vibrate(100);
+    }
+
+    function bloquear() {
+        location.reload(); // Recarrega a página e volta ao estado bloqueado
+    }
+</script>
+</body>
+</html>
