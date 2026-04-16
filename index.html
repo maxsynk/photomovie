@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CENTRAL - Photo Print</title>
+    <title>CENTRAL - Photo Movie</title>
     <style>
         :root { 
-            --turquesa-dark: #004d4d; /* Turquesa bem escuro */
-            --dourado: #c5a059;      /* Dourado mais sóbrio/elegante */
-            --dourado-brilho: #e8d0a9;
-            --bg-modal: rgba(0, 30, 30, 0.95);
+            --turquesa-dark: #003333; /* Turquesa ainda mais profundo */
+            --dourado: #c5a059;      
+            --dourado-claro: #f1dca7;
+            --bg-modal: rgba(0, 20, 20, 0.98);
         }
         
         body { 
             margin: 0; 
             background: var(--turquesa-dark); 
             color: white; 
-            font-family: 'Segoe UI', Roboto, Helvetica, sans-serif;
+            font-family: 'Segoe UI', Roboto, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -24,31 +24,41 @@
             overflow: hidden;
         }
 
-        /* 1- Cabeçalho */
+        /* 1- Cabeçalho com nomes maiores */
         .header {
             margin-top: 1.8cm;
             text-align: center;
+            z-index: 10;
         }
 
         .header h1 {
             color: var(--dourado);
-            font-size: 45px;
+            font-size: 52px; /* Aumentado */
             font-weight: 900;
-            letter-spacing: 2px;
+            letter-spacing: 3px;
             margin: 0;
             text-transform: uppercase;
+            /* Efeito Pulsante */
+            animation: pulse-gold 3s infinite ease-in-out;
         }
 
         .header p {
-            color: #ffffff;
-            font-size: 16px;
-            margin: 0;
-            letter-spacing: 3px;
+            color: var(--dourado); /* Agora dourado também */
+            font-size: 20px; /* Aumentado */
+            margin: -5px 0 0 0;
+            letter-spacing: 4px;
             font-weight: 300;
             text-transform: lowercase;
+            opacity: 0.9;
         }
 
-        /* Container de Botões */
+        /* Animação do Pulsar Dourado */
+        @keyframes pulse-gold {
+            0% { text-shadow: 0 0 5px rgba(197, 160, 89, 0.2); transform: scale(1); }
+            50% { text-shadow: 0 0 25px rgba(197, 160, 89, 0.7); transform: scale(1.02); }
+            100% { text-shadow: 0 0 5px rgba(197, 160, 89, 0.2); transform: scale(1); }
+        }
+
         .main-container {
             flex: 1;
             display: flex;
@@ -59,40 +69,42 @@
         }
 
         .btn-central {
-            padding: 18px;
-            margin: 10px 0;
+            padding: 20px;
+            margin: 12px 0;
             border-radius: 12px;
             border: 1px solid var(--dourado);
             background: linear-gradient(135deg, var(--dourado), #8e6d2d);
             color: #1a1a1a;
-            font-weight: 700;
-            font-size: 14px;
+            font-weight: 800;
+            font-size: 15px;
             text-transform: uppercase;
             cursor: pointer;
             text-decoration: none;
             text-align: center;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
             display: none; 
             transition: all 0.3s ease;
         }
 
         #btn-login {
-            display: block; /* Visível inicialmente */
+            display: block;
             background: transparent;
             color: var(--dourado);
             border: 2px solid var(--dourado);
+            box-shadow: none;
         }
 
-        /* 3- Rodapé fixo */
+        /* 3- Rodapé Ajustado (mais para cima para não sumir) */
         .footer-status {
-            padding-bottom: 20px;
-            font-size: 11px;
-            color: rgba(255,255,255,0.4);
+            padding-bottom: 40px; /* Mais margem inferior */
+            font-size: 13px;
+            color: rgba(197, 160, 89, 0.6); /* Dourado suave */
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 3px;
+            font-weight: bold;
         }
 
-        /* 5- Modal de Senha Bonito */
+        /* Modal de Senha */
         #modal-senha {
             position: fixed;
             inset: 0;
@@ -102,77 +114,80 @@
             align-items: center;
             justify-content: center;
             z-index: 9999;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(15px);
         }
 
         .modal-content {
-            background: #002b2b;
-            padding: 30px;
-            border-radius: 20px;
+            background: #002222;
+            padding: 35px;
+            border-radius: 25px;
             border: 1px solid var(--dourado);
             text-align: center;
-            width: 80%;
-            max-width: 300px;
+            width: 85%;
+            max-width: 320px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
         }
 
-        .modal-content h3 { color: var(--dourado); margin-bottom: 20px; }
+        .modal-content h3 { color: var(--dourado); margin-bottom: 25px; font-size: 18px; letter-spacing: 2px; }
 
         .modal-content input {
             width: 100%;
-            padding: 15px;
+            padding: 18px;
             background: #000;
-            border: 1px solid #333;
+            border: 1px solid var(--dourado);
             color: var(--dourado);
-            border-radius: 10px;
+            border-radius: 12px;
             text-align: center;
-            font-size: 24px;
-            letter-spacing: 10px;
-            margin-bottom: 20px;
+            font-size: 28px;
+            letter-spacing: 12px;
+            margin-bottom: 25px;
             box-sizing: border-box;
+            outline: none;
         }
 
         .btn-confirm {
             background: var(--dourado);
             color: #000;
             border: none;
-            padding: 12px 25px;
-            border-radius: 8px;
-            font-weight: bold;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: 900;
             width: 100%;
+            cursor: pointer;
+            font-size: 16px;
         }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>PHOTO PRINT</h1>
+        <h1>PHOTO MOVIE</h1>
         <p>colecionando momentos</p>
     </div>
 
-    <div class="main-container" id="menu-central">
-        <button id="btn-login" class="btn-central" onclick="abrirModal()">🔓 ENTRAR NO SISTEMA</button>
+    <div class="main-container">
+        <button id="btn-login" class="btn-central" onclick="abrirModal()">🔓 ACESSAR SISTEMA</button>
 
         <a href="https://phottoprint.github.io/photomovie/" class="btn-protected btn-central">📸 NOVO EVENTO</a>
         <a href="https://phottoprint.github.io/photomovie/galeria.html" class="btn-protected btn-central">🎞️ ACESSAR GALERIA</a>
         
-        <button id="btn-lock" class="btn-protected btn-central" onclick="bloquear()" style="background: transparent; color: #ff4444; border-color: #444; margin-top: 20px;">SAIR</button>
+        <button id="btn-lock" class="btn-protected btn-central" onclick="bloquear()" style="background: transparent; color: #ff5555; border-color: #444; margin-top: 20px; font-size: 12px;">ENCERRAR SESSÃO</button>
     </div>
 
     <div class="footer-status">sistema de gestao 360</div>
 
     <div id="modal-senha">
         <div class="modal-content">
-            <h3>AUTENTICAÇÃO</h3>
+            <h3>DIGITE A SENHA</h3>
             <input type="password" id="input-senha" inputmode="numeric" pattern="[0-9]*" placeholder="••••">
             <button class="btn-confirm" onclick="validarSenha()">CONFIRMAR</button>
-            <p onclick="fecharModal()" style="margin-top:15px; font-size:12px; cursor:pointer">Cancelar</p>
+            <p onclick="fecharModal()" style="margin-top:20px; font-size:13px; color:#999; cursor:pointer">Voltar</p>
         </div>
     </div>
 
 <script>
     const SENHA_MESTRA = "1234"; 
 
-    // 6- Verifica se já estava logado antes
     window.onload = () => {
         if(sessionStorage.getItem('logado') === 'true') {
             liberarSistema();
@@ -182,9 +197,6 @@
     function abrirModal() {
         document.getElementById('modal-senha').style.display = 'flex';
         document.getElementById('input-senha').focus();
-        
-        // 4- Chama a biometria direto se o aparelho suportar
-        tentarBiometria();
     }
 
     function fecharModal() {
@@ -192,18 +204,10 @@
         document.getElementById('input-senha').value = '';
     }
 
-    async function tentarBiometria() {
-        if (window.PublicKeyCredential) {
-            // Isso aciona o sensor de digital/rosto padrão do celular
-            // Nota: O comportamento depende do navegador, alguns exigem configuração de servidor.
-            console.log("Solicitando biometria...");
-        }
-    }
-
     function validarSenha() {
         const input = document.getElementById('input-senha');
         if (input.value === SENHA_MESTRA) {
-            sessionStorage.setItem('logado', 'true'); // Salva que está logado
+            sessionStorage.setItem('logado', 'true');
             fecharModal();
             liberarSistema();
         } else {
