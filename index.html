@@ -9,7 +9,7 @@
             --turquesa-dark: #003333; 
             --dourado: #c5a059;      
             --bg-modal: rgba(0, 20, 20, 0.98);
-            --cinza-minimal: #7a7a7a; /* Cinza que orna com o turquesa e dourado */
+            --cinza-minimal: #666666; 
         }
         
         body { 
@@ -94,19 +94,17 @@
             box-shadow: none;
         }
 
-        /* 3,5 cm abaixo do botão encerrar sessão */
+        /* Posicionamento final: 7,5cm abaixo do bloco de botões */
         .footer-minimal {
-            margin-top: 3.5cm;
-            font-size: 12px;
+            margin-top: 7.5cm;
+            font-size: 11px;
             color: var(--cinza-minimal);
-            text-transform: none;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
             font-weight: 400;
-            opacity: 0.8;
             text-align: center;
+            text-transform: uppercase;
         }
 
-        /* Modal de Senha */
         #modal-senha {
             position: fixed;
             inset: 0;
@@ -176,7 +174,7 @@
 
     <div id="modal-senha">
         <div class="modal-content">
-            <h3 style="color:var(--dourado)">AUTENTICAÇÃO</h3>
+            <h3 style="color:var(--dourado); letter-spacing: 2px;">AUTENTICAÇÃO</h3>
             <input type="password" id="input-senha" inputmode="numeric" pattern="[0-9]*" placeholder="••••">
             <button class="btn-confirm" onclick="validarSenha()">CONFIRMAR</button>
             <p onclick="fecharModal()" style="margin-top:20px; font-size:13px; color:#999; cursor:pointer">Voltar</p>
