@@ -3,222 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PHOTO MOVIE FX - High Performance</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+    <title>PHOTO MOVIE - Cloud Edition</title>
     <style>
         :root { --neon: #9200ff; --cyan: #00f2ff; }
         body { margin: 0; background: #000; color: white; font-family: sans-serif; overflow: hidden; }
 
-        /* LOADER DE ALTA PRIORIDADE */
-        #loader { 
-            position: fixed; inset: 0; background: rgba(0,0,0,0.95); 
+        /* TELA DE STATUS DE UPLOAD */
+        #upload-overlay { 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9); 
             z-index: 5000; display: none; flex-direction: column; align-items: center; justify-content: center; 
         }
-        .progress-container { width: 80%; height: 8px; background: #222; border-radius: 4px; margin-top: 15px; overflow: hidden; }
-        #progress-bar { width: 0%; height: 100%; background: var(--neon); transition: width 0.2s; }
+        .progress-bar { width: 70%; height: 6px; background: #222; border-radius: 3px; margin-top: 15px; overflow: hidden; }
+        #progress-fill { width: 0%; height: 100%; background: var(--cyan); transition: width 0.3s; }
 
-        .screen { display: none; min-height: 100vh; width: 100vw; flex-direction: column; align-items: center; position: absolute; }
+        .screen { display: none; height: 100vh; width: 100vw; flex-direction: column; align-items: center; position: absolute; }
         .active { display: flex; }
 
-        /* BOTOES DE EFEITO RAPIDOS */
-        .fx-selector { position: absolute; top: 70px; display: flex; gap: 5px; z-index: 100; padding: 0 10px; }
-        .fx-card { 
-            background: rgba(0,0,0,0.8); border: 1px solid #333; padding: 10px; border-radius: 10px; 
-            font-size: 10px; text-align: center; min-width: 60px;
-        }
-        .fx-card.selected { border-color: var(--cyan); color: var(--cyan); font-weight: bold; }
+        /* CAMERA STYLE */
+        #vid-preview { width: 100%; height: 100%; object-fit: cover; }
+        .shutter-group { position: absolute; bottom: 40px; width: 100%; display: flex; justify-content: space-evenly; align-items: center; }
+        .shutter { width: 75px; height: 75px; border: 4px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .shutter-in { width: 55px; height: 55px; background: red; border-radius: 50%; }
 
-        #vid-preview { width: 100%; height: 100vh; object-fit: cover; }
-        .shutter-btn { width: 75px; height: 75px; border: 5px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-        .shutter-red { width: 55px; height: 55px; background: red; border-radius: 50%; }
-        
-        /* ESTILO DO FORM */
-        .setup-box { margin-top: 80px; width: 85%; background: #111; padding: 20px; border-radius: 20px; border: 1px solid #333; }
-        input[type="text"] { width: 100%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #444; color: white; border-radius: 8px; box-sizing: border-box; }
+        .fx-selector { position: absolute; top: 20px; display: flex; gap: 8px; z-index: 100; }
+        .fx-btn { background: rgba(0,0,0,0.6); border: 1px solid #444; color: white; padding: 10px 15px; border-radius: 20px; font-size: 12px; }
+        .fx-btn.active { border-color: var(--neon); color: var(--neon); font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="loader">
-        <div id="loader-icon" class="shutter-btn" style="border-color: var(--neon); animation: pulse 1s infinite alternate;">
-            <div class="shutter-red" style="background: var(--neon);"></div>
-        </div>
-        <p id="loader-text" style="margin-top: 20px; letter-spacing: 2px;">CARREGANDO MOTOR...</p>
-        <div class="progress-container"><div id="progress-bar"></div></div>
+    <div id="upload-overlay">
+        <h3 id="status-text">ENVIANDO VÍDEO...</h3>
+        <div class="progress-bar"><div id="progress-fill"></div></div>
     </div>
 
-    <div id="screen-menu" class="screen active">
-        <div class="setup-box">
-            <h2 style="color:var(--neon); margin:0;">CONFIG EVENTO</h2>
-            <input type="text" id="event-name" placeholder="Nome do Evento">
-            
-            <p style="font-size: 12px; color: #888; margin-bottom: 5px;">Moldura (Opcional):</p>
-            <input type="file" id="event-frame" accept="image/png">
-            
-            <div style="margin-top: 20px; padding: 10px; background: #000; border-radius: 10px; display: flex; align-items: center; justify-content: space-between;">
-                <span style="font-size: 13px;">Usar Moldura?</span>
-                <input type="checkbox" id="use-frame" checked>
-            </div>
-
-            <button onclick="iniciarApp()" style="margin-top:20px; width:100%; padding:15px; background:var(--neon); border:none; border-radius:10px; color:white; font-weight:bold;">ABRIR CÂMERA</button>
+    <div id="screen-menu" class="screen active" style="justify-content: center;">
+        <div style="width: 80%; background: #111; padding: 25px; border-radius: 20px; border: 1px solid #333;">
+            <h2 style="color: var(--neon); margin: 0 0 20px 0;">NOVO EVENTO</h2>
+            <input type="text" id="event-name" placeholder="Nome do Evento" style="width:100%; padding:12px; margin-bottom:15px; background:#000; border:1px solid #444; color:white; border-radius:10px; box-sizing:border-box;">
+            <label style="font-size:12px; color:#888;">Moldura PNG (Opcional):</label>
+            <input type="file" id="event-frame" accept="image/png" style="width:100%; margin: 10px 0 20px 0;">
+            <button onclick="iniciar()" style="width:100%; padding:15px; background:var(--neon); border:none; border-radius:10px; color:white; font-weight:bold;">ABRIR CÂMERA</button>
         </div>
     </div>
 
     <div id="screen-camera" class="screen">
         <div class="fx-selector">
-            <div class="fx-card selected" onclick="selectFX('boom', this)">BOOMERANG</div>
-            <div class="fx-card" onclick="selectFX('slow', this)">SLOW</div>
-            <div class="fx-card" onclick="selectFX('fast', this)">FAST</div>
-            <div class="fx-card" onclick="selectFX('rev', this)">REVERSO</div>
+            <button class="fx-btn active" onclick="setFX('boom', this)">BOOMERANG</button>
+            <button class="fx-btn" onclick="setFX('slow', this)">SLOW</button>
+            <button class="fx-btn" onclick="setFX('fsf', this)">FAST-SLOW</button>
         </div>
 
         <video id="vid-preview" autoplay playsinline muted></video>
         <canvas id="rec-canvas" width="720" height="1280" style="display:none"></canvas>
         <img id="frame-img" style="display:none">
 
-        <div style="position:absolute; bottom:40px; width:100%; display:flex; justify-content:space-evenly; align-items:center;">
+        <div class="shutter-group">
             <button onclick="nav('screen-gallery')" style="background:none; border:none; font-size:25px;">🎞️</button>
-            <div class="shutter-btn" onclick="startCountdown()"><div class="shutter-red"></div></div>
-            <button onclick="toggleCam()" style="background:none; border:none; font-size:25px;">🔄</button>
+            <div class="shutter" onclick="record()"><div class="shutter-in"></div></div>
+            <button onclick="invert()" style="background:none; border:none; font-size:25px;">🔄</button>
         </div>
     </div>
 
 <script>
-    const { createFFmpeg, fetchFile } = FFmpeg;
-    const ffmpeg = createFFmpeg({ log: false }); // Log desativado para ganhar performance
-    let selectedFX = 'boom';
-    let stream, recorder, chunks = [], currentCam = "environment";
-
-    // 1. PRÉ-CARREGAMENTO DO MOTOR
-    async function initEngine() {
-        document.getElementById('loader').style.display = 'flex';
-        if (!ffmpeg.isLoaded()) {
-            await ffmpeg.load();
-        }
-        document.getElementById('loader').style.display = 'none';
-    }
-    initEngine();
-
-    function selectFX(type, el) {
-        selectedFX = type;
-        document.querySelectorAll('.fx-card').forEach(c => c.classList.remove('selected'));
-        el.classList.add('selected');
-    }
+    let stream, recorder, chunks = [], currentFX = 'boom', camMode = 'environment';
+    const canvas = document.getElementById('rec-canvas');
+    const ctx = canvas.getContext('2d');
+    const video = document.getElementById('vid-preview');
+    const frame = document.getElementById('frame-img');
 
     function nav(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
     }
 
-    async function iniciarApp() {
-        const frameFile = document.getElementById('event-frame').files[0];
-        const useFrame = document.getElementById('use-frame').checked;
+    function setFX(fx, btn) {
+        currentFX = fx;
+        document.querySelectorAll('.fx-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
 
-        if (useFrame && frameFile) {
+    async function iniciar() {
+        const file = document.getElementById('event-frame').files[0];
+        if(file) {
             const reader = new FileReader();
-            reader.onload = e => { 
-                document.getElementById('frame-img').src = e.target.result;
-                nav('screen-camera');
-                startVideo();
-            };
-            reader.readAsDataURL(frameFile);
+            reader.onload = e => { frame.src = e.target.result; nav('screen-camera'); ligar(); };
+            reader.readAsDataURL(file);
         } else {
-            document.getElementById('frame-img').src = ""; // Sem moldura
             nav('screen-camera');
-            startVideo();
+            ligar();
         }
     }
 
-    async function startVideo() {
-        if (stream) stream.getTracks().forEach(t => t.stop());
+    async function ligar() {
+        if(stream) stream.getTracks().forEach(t => t.stop());
         stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: currentCam, width: 1280, height: 720 },
-            audio: false
+            video: { facingMode: camMode, width: 1280, height: 720 }, audio: false
         });
-        document.getElementById('vid-preview').srcObject = stream;
-    }
-
-    function startCountdown() {
-        let c = 3;
-        const l = document.getElementById('loader');
-        const lt = document.getElementById('loader-text');
-        l.style.display = 'flex';
-        lt.innerText = c;
-        
-        let timer = setInterval(() => {
-            c--;
-            lt.innerText = c;
-            if(c <= 0) {
-                clearInterval(timer);
-                l.style.display = 'none';
-                record();
-            }
-        }, 1000);
+        video.srcObject = stream;
     }
 
     function record() {
         chunks = [];
-        const canvas = document.getElementById('rec-canvas');
-        const ctx = canvas.getContext('2d');
-        const video = document.getElementById('vid-preview');
-        const frame = document.getElementById('frame-img');
-
         const loop = () => {
             ctx.drawImage(video, 0, 0, 720, 1280);
             if(frame.src) ctx.drawImage(frame, 0, 0, 720, 1280);
             if(recorder && recorder.state === 'recording') requestAnimationFrame(loop);
         };
-
         const recStream = canvas.captureStream(30);
         recorder = new MediaRecorder(recStream, { mimeType: 'video/webm;codecs=vp8', videoBitsPerSecond: 4000000 });
         recorder.ondataavailable = e => chunks.push(e.data);
-        recorder.onstop = () => process();
-        
+        recorder.onstop = () => upload();
         recorder.start();
         loop();
-        setTimeout(() => recorder.stop(), 8000); // 8 segundos
+        setTimeout(() => recorder.stop(), 8000);
     }
 
-    async function process() {
-        const loader = document.getElementById('loader');
-        const lt = document.getElementById('loader-text');
-        const pb = document.getElementById('progress-bar');
-        
-        loader.style.display = 'flex';
-        lt.innerText = "RENDERIZANDO...";
-        
+    async function upload() {
+        const overlay = document.getElementById('upload-overlay');
+        const fill = document.getElementById('progress-fill');
+        overlay.style.display = 'flex';
+
         const blob = new Blob(chunks, { type: 'video/webm' });
-        await ffmpeg.writeFile('in.webm', await fetchFile(blob));
+        const uuid = Math.random().toString(36).substring(2, 8);
+        const evento = document.getElementById('event-name').value;
 
-        // COMANDOS OTIMIZADOS (Preset Ultrafast para não travar)
-        let cmd = "";
-        if(selectedFX === 'boom') {
-            cmd = "-i in.webm -filter_complex [0:v]setpts=0.8*PTS[v];[v]reverse[r];[v][r]concat=n=2:v=1 -preset ultrafast output.mp4";
-        } else if(selectedFX === 'slow') {
-            cmd = "-i in.webm -vf setpts=2.0*PTS -preset ultrafast output.mp4";
-        } else if(selectedFX === 'rev') {
-            cmd = "-i in.webm -vf reverse,setpts=1.5*PTS -preset ultrafast output.mp4";
-        } else {
-            cmd = "-i in.webm -vf setpts=0.5*PTS -preset ultrafast output.mp4";
-        }
+        const fd = new FormData();
+        fd.append('video', blob);
+        fd.append('uuid', uuid);
+        fd.append('evento', evento);
+        fd.append('preset', currentFX);
 
-        ffmpeg.setProgress(({ ratio }) => { pb.style.width = (ratio * 100) + "%"; });
+        // AJAX para monitorar progresso do upload no 4G
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', 'https://SEU_WORKER.workers.dev/upload', true);
         
-        await ffmpeg.run(...cmd.split(" "));
-        
-        const data = ffmpeg.readFile('output.mp4');
-        const finalBlob = new Blob([data.buffer], { type: 'video/mp4' });
-        
-        // Aqui chamaria a função de Upload para Cloudflare
-        alert("Vídeo Processado com Sucesso!");
-        loader.style.display = 'none';
+        xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+                const percent = (e.loaded / e.total) * 100;
+                fill.style.width = percent + '%';
+            }
+        };
+
+        xhr.onload = () => {
+            if(xhr.status === 200) {
+                alert("Enviado! QR Code disponível na Galeria.");
+                overlay.style.display = 'none';
+                fill.style.width = '0%';
+            }
+        };
+        xhr.send(fd);
     }
 
-    function toggleCam() {
-        currentCam = (currentCam === "environment") ? "user" : "environment";
-        startVideo();
-    }
+    function invert() { camMode = (camMode === 'environment') ? 'user' : 'environment'; ligar(); }
 </script>
 </body>
 </html>
