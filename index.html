@@ -6,9 +6,10 @@
     <title>CENTRAL - Photo Movie</title>
     <style>
         :root { 
-            --turquesa-dark: #003333; /* Fundo turquesa escuro */
-            --dourado: #c5a059;      /* Dourado sóbrio */
+            --turquesa-dark: #003333; 
+            --dourado: #c5a059;      
             --bg-modal: rgba(0, 20, 20, 0.98);
+            --cinza-minimal: #666666; 
         }
         
         body { 
@@ -23,9 +24,8 @@
             overflow: hidden;
         }
 
-        /* 1- Cabeçalho (Título e Subtítulo) */
         .header {
-            margin-top: 1.8cm; /* Distância exata do topo */
+            margin-top: 1.8cm;
             text-align: center;
             z-index: 10;
         }
@@ -50,28 +50,28 @@
             opacity: 0.9;
         }
 
-        /* Animação do Dourado */
         @keyframes pulse-gold {
             0% { text-shadow: 0 0 5px rgba(197, 160, 89, 0.2); transform: scale(1); }
             50% { text-shadow: 0 0 25px rgba(197, 160, 89, 0.7); transform: scale(1.02); }
             100% { text-shadow: 0 0 5px rgba(197, 160, 89, 0.2); transform: scale(1); }
         }
 
-        /* Container principal para centralização horizontal */
         .main-container {
             flex: 1;
             display: flex;
             flex-direction: column;
+            justify-content: center; 
             align-items: center;
             width: 85%;
             max-width: 350px;
-            position: relative; /* Necessário para posicionamento absoluto */
+            position: relative; /* Base para o botão central */
         }
 
-        /* 2- Estilo do Botão Dourado (Cápsula) */
         .btn-central {
+            width: 100%;
             padding: 20px;
-            border-radius: 50px; /* Estilo Cápsula */
+            margin: 12px 0;
+            border-radius: 12px;
             border: 1px solid var(--dourado);
             background: linear-gradient(135deg, var(--dourado), #8e6d2d);
             color: #1a1a1a;
@@ -85,35 +85,31 @@
             display: none; 
             transition: all 0.3s ease;
             box-sizing: border-box;
-            width: 100%;
         }
 
-        /* AJUSTE DE POSICIONAMENTO DO BOTÃO LOGIN */
+        /* AJUSTE PARA O BOTÃO FICAR NO MEIO DA TELA */
         #btn-login {
-            display: block; /* Visível inicialmente */
+            display: block;
             background: transparent;
             color: var(--dourado);
             border: 2px solid var(--dourado);
             box-shadow: none;
-            
-            /* Posicionamento Absoluto na área circulada */
+            /* Força a centralização vertical exata */
             position: absolute;
-            top: 55vh; /* 55% da altura da tela (posiciona onde circulou) */
-            left: 50%;
-            transform: translateX(-50%); /* Garante centralização horizontal */
-            z-index: 100;
+            top: 50%;
+            transform: translateY(-50%);
         }
 
-        #btn-login:active { transform: scale(0.95) translateX(-50%); }
-
-        /* Botões internos (Novo Evento, Galeria, Sair) */
-        .btn-protected {
-            margin: 12px 0;
-            width: 100%;
-            /* Estes botões ainda estão posicionados pelo fluxo normal */
+        .footer-minimal {
+            margin-top: 15cm; /* Mantido conforme seu pedido */
+            font-size: 11px;
+            color: var(--cinza-minimal);
+            letter-spacing: 2px;
+            font-weight: 400;
+            text-align: center;
+            text-transform: uppercase;
         }
 
-        /* Modal de Senha */
         #modal-senha {
             position: fixed;
             inset: 0;
@@ -177,6 +173,8 @@
         <a href="https://phottoprint.github.io/photomovie/galeria.html" class="btn-protected btn-central">🎞️ ACESSAR GALERIA</a>
         
         <button id="btn-lock" class="btn-protected btn-central" onclick="bloquear()" style="background: transparent; color: #ff5555; border-color: #444; margin-top: 20px; font-size: 12px;">ENCERRAR SESSÃO</button>
+        
+        <div class="footer-minimal">Sistema de gestão 360º</div>
     </div>
 
     <div id="modal-senha">
