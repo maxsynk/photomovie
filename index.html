@@ -8,6 +8,7 @@
         :root { 
             --turquesa-dark: #003333; 
             --dourado: #c5a059;      
+            --dourado-dark: #8e6d2d;
             --bg-modal: rgba(0, 20, 20, 0.98);
             --cinza-minimal: #666666; 
         }
@@ -20,14 +21,15 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            height: 100vh;
-            overflow: hidden;
+            min-height: 100vh;
+            overflow-x: hidden;
         }
 
         .header {
             margin-top: 1.8cm;
             text-align: center;
             z-index: 10;
+            margin-bottom: 40px;
         }
 
         .header h1 {
@@ -60,59 +62,94 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            justify-content: center; 
             align-items: center;
-            width: 85%;
-            max-width: 350px;
-            position: relative; /* Base para o botão central */
+            width: 90%;
+            max-width: 400px;
         }
 
+        /* ESTILO BASE DOS BOTÕES */
         .btn-central {
             width: 100%;
             padding: 20px;
-            margin: 12px 0;
+            margin: 10px 0;
             border-radius: 12px;
-            border: 1px solid var(--dourado);
-            background: linear-gradient(135deg, var(--dourado), #8e6d2d);
-            color: #1a1a1a;
+            text-transform: uppercase;
             font-weight: 800;
             font-size: 15px;
-            text-transform: uppercase;
             cursor: pointer;
             text-decoration: none;
             text-align: center;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
             display: none; 
-            transition: all 0.3s ease;
             box-sizing: border-box;
+            transition: all 0.3s ease;
         }
 
-        /* AJUSTE PARA O BOTÃO FICAR NO MEIO DA TELA */
+        /* BOTÃO PRINCIPAL: CRIAR EVENTO */
+        .btn-create {
+            background: linear-gradient(135deg, var(--dourado), var(--dourado-dark));
+            color: #1a1a1a;
+            border: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        /* BOTÃO SECUNDÁRIO: GALERIA (Estilo Glass Dourado) */
+        #btn-galeria {
+            background: rgba(197, 160, 89, 0.1);
+            color: var(--dourado);
+            border: 1px solid var(--dourado);
+            margin-bottom: 25px;
+        }
+
+        #btn-galeria:hover {
+            background: rgba(197, 160, 89, 0.2);
+            box-shadow: 0 0 15px rgba(197, 160, 89, 0.3);
+        }
+
+        /* BOTÃO LOGIN */
         #btn-login {
             display: block;
             background: transparent;
             color: var(--dourado);
             border: 2px solid var(--dourado);
-            box-shadow: none;
-            /* Força a centralização vertical exata */
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
+            margin-top: 50px;
         }
 
-        .footer-minimal {
-            margin-top: 15cm; /* Mantido conforme seu pedido */
-            font-size: 11px;
-            color: var(--cinza-minimal);
-            letter-spacing: 2px;
-            font-weight: 400;
-            text-align: center;
-            text-transform: uppercase;
+        /* LISTA DE EVENTOS */
+        .event-list-container {
+            width: 100%;
+            margin-top: 30px;
+            display: none;
         }
 
+        .event-card {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            padding: 18px;
+            border-radius: 15px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s;
+        }
+        
+        .event-card:active { transform: scale(0.98); }
+
+        .event-info h4 { margin: 0; color: var(--dourado); text-transform: uppercase; font-size: 16px; }
+        .event-info span { font-size: 11px; color: #888; }
+
+        .btn-action {
+            background: rgba(255,59,48,0.1);
+            border: 1px solid rgba(255,59,48,0.3);
+            color: #ff3b30;
+            width: 38px; height: 38px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        /* MODAL SENHA */
         #modal-senha {
-            position: fixed;
-            inset: 0;
+            position: fixed; inset: 0;
             background: var(--bg-modal);
             display: none;
             flex-direction: column;
@@ -133,29 +170,26 @@
         }
 
         .modal-content input {
-            width: 100%;
-            padding: 18px;
-            background: #000;
-            border: 1px solid var(--dourado);
-            color: var(--dourado);
-            border-radius: 12px;
-            text-align: center;
-            font-size: 28px;
-            letter-spacing: 12px;
-            margin-bottom: 25px;
-            box-sizing: border-box;
-            outline: none;
+            width: 100%; padding: 18px;
+            background: #000; border: 1px solid var(--dourado);
+            color: var(--dourado); border-radius: 12px;
+            text-align: center; font-size: 28px; letter-spacing: 12px;
+            margin-bottom: 25px; box-sizing: border-box; outline: none;
         }
 
         .btn-confirm {
-            background: var(--dourado);
-            color: #000;
-            border: none;
-            padding: 15px;
-            border-radius: 10px;
-            font-weight: 900;
-            width: 100%;
-            cursor: pointer;
+            background: var(--dourado); color: #000;
+            border: none; padding: 15px; border-radius: 10px;
+            font-weight: 900; width: 100%; cursor: pointer;
+        }
+
+        .footer-minimal {
+            padding: 40px 0;
+            font-size: 11px;
+            color: var(--cinza-minimal);
+            letter-spacing: 2px;
+            text-align: center;
+            text-transform: uppercase;
         }
     </style>
 </head>
@@ -169,13 +203,19 @@
     <div class="main-container">
         <button id="btn-login" class="btn-central" onclick="abrirModal()">🔓 ACESSAR SISTEMA</button>
 
-        <a href="https://maxsynk.github.io/photomovie/" class="btn-protected btn-central">📸 NOVO EVENTO</a>
-        <a href="https://maxsynk.github.io/photomovie/galeria.html" class="btn-protected btn-central">🎞️ ACESSAR GALERIA</a>
+        <a href="config_evento.html" id="btn-create" class="btn-protected btn-central btn-create">➕ CRIAR NOVO EVENTO</a>
         
-        <button id="btn-lock" class="btn-protected btn-central" onclick="bloquear()" style="background: transparent; color: #ff5555; border-color: #444; margin-top: 20px; font-size: 12px;">ENCERRAR SESSÃO</button>
+        <a href="galeria.html" id="btn-galeria" class="btn-protected btn-central">🎞️ ACESSAR GALERIA</a>
         
-        <div class="footer-minimal">Sistema de gestão 360º</div>
+        <div id="container-eventos" class="event-list-container">
+            <h3 style="font-size: 11px; color: var(--dourado); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; opacity: 0.6;">Eventos Ativos</h3>
+            <div id="lista-eventos"></div>
+        </div>
+
+        <button id="btn-lock" class="btn-protected btn-central" onclick="bloquear()" style="background: transparent; color: #ff5555; border: 1px solid rgba(255,85,85,0.3); margin-top: 30px; font-size: 12px; padding: 10px;">ENCERRAR SESSÃO</button>
     </div>
+
+    <div class="footer-minimal">Sistema de gestão 360º</div>
 
     <div id="modal-senha">
         <div class="modal-content">
@@ -220,6 +260,55 @@
     function liberarSistema() {
         document.getElementById('btn-login').style.display = 'none';
         document.querySelectorAll('.btn-protected').forEach(b => b.style.display = 'block');
+        document.getElementById('container-eventos').style.display = 'block';
+        renderEventos();
+    }
+
+    function renderEventos() {
+        const eventos = JSON.parse(localStorage.getItem('meus_eventos')) || [];
+        const container = document.getElementById('lista-eventos');
+        
+        if(eventos.length === 0) {
+            container.innerHTML = '<p style="font-size:12px; color:#444; text-align:center;">Nenhum evento ativo.</p>';
+            return;
+        }
+
+        container.innerHTML = '';
+        eventos.forEach((ev, index) => {
+            container.innerHTML += `
+                <div class="event-card">
+                    <div class="event-info" onclick="abrirEvento('${ev.nome}')" style="cursor:pointer; flex:1;">
+                        <h4>${ev.nome}</h4>
+                        <span>📅 ${ev.data}</span>
+                    </div>
+                    <div>
+                        <button class="btn-action" onclick="excluirEvento(${index})">🗑️</button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    function abrirEvento(nome) {
+        // Pega todos os eventos salvos
+        const todos = JSON.parse(localStorage.getItem('meus_eventos')) || [];
+        // Encontra os dados exatos do evento clicado
+        const config = todos.find(e => e.nome === nome);
+        
+        if(config) {
+            // Salva como a configuração que a câmera deve usar
+            localStorage.setItem('config_atual', JSON.stringify(config));
+            window.location.href = 'camera.html'; 
+        }
+    }
+
+    function excluirEvento(index) {
+        if(confirm("Deseja realmente excluir este evento?")) {
+            let eventos = JSON.parse(localStorage.getItem('meus_eventos'));
+            eventos.splice(index, 1);
+            localStorage.setItem('meus_eventos', JSON.stringify(eventos));
+            renderEventos();
+        }
     }
 
     function bloquear() {

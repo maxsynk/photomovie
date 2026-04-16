@@ -18,9 +18,11 @@
         }
 
         .header {
-            background: var(--turquesa); padding: 20px; text-align: center;
+            background: var(--turquesa); padding: 25px; text-align: center;
             border-bottom: 2px solid var(--dourado);
         }
+        .header h2 { color: var(--dourado); margin: 0; font-size: 28px; letter-spacing: 3px; }
+        .header p { margin: 5px 0 0 0; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; opacity: 0.8; }
 
         .container { padding: 20px; max-width: 500px; margin: 0 auto; }
 
@@ -30,98 +32,79 @@
         }
 
         .section h3 { 
-            color: var(--dourado); margin-top: 0; font-size: 14px; 
+            color: var(--dourado); margin-top: 0; font-size: 13px; 
             text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #222;
             padding-bottom: 12px; margin-bottom: 20px;
         }
 
-        label { display: block; font-size: 13px; margin: 15px 0 10px 0; color: #aaa; font-weight: bold; }
+        label { display: block; font-size: 12px; margin: 15px 0 10px 0; color: #aaa; font-weight: bold; }
 
-        input[type="text"], select {
+        input[type="text"], input[type="number"], select {
             width: 100%; padding: 15px; background: #000; border: 1px solid #444;
             color: white; border-radius: 12px; box-sizing: border-box; font-size: 16px;
         }
 
-        /* 1. SELETOR DE TEMPO MENOR E CIRCULAR */
         .time-selector { display: flex; justify-content: center; gap: 15px; }
         .time-btn {
             background: #222; border: 1px solid #444; color: #888;
             width: 50px; height: 50px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 14px;
-            transition: 0.3s;
         }
-        .time-btn.active { border-color: var(--dourado); color: var(--dourado); background: rgba(197, 160, 89, 0.1); box-shadow: 0 0 10px rgba(197, 160, 89, 0.2); }
+        .time-btn.active { border-color: var(--dourado); color: var(--dourado); background: rgba(197, 160, 89, 0.1); }
 
-        /* 2. PRESETS E TIMELINE */
-        .preset-group { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .preset-group { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
         .preset-btn {
             background: #1a1a1a; border: 1px solid #444; color: #fff;
-            font-size: 11px; padding: 10px 15px; border-radius: 25px; cursor: pointer; text-transform: uppercase;
+            font-size: 10px; padding: 10px 12px; border-radius: 25px; cursor: pointer; text-transform: uppercase;
         }
         .preset-btn.active { background: var(--dourado); color: #000; border-color: var(--dourado); font-weight: bold; }
         
-        .speed-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+        .speed-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
         .speed-box { text-align: center; background: #000; padding: 10px; border-radius: 12px; border: 1px solid #333; }
-        .speed-box span { font-size: 10px; display: block; margin-bottom: 8px; color: var(--dourado); font-weight: 900; }
-
-        /* 3. MODAL DE ÁUDIO (ESTILO APP) */
-        .music-btn-trigger {
-            width: 100%; padding: 18px; background: #1a1a1a; border: 2px dashed var(--dourado);
-            color: var(--dourado); border-radius: 15px; cursor: pointer; font-weight: bold;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-        }
+        .speed-box span { font-size: 9px; display: block; margin-bottom: 8px; color: var(--dourado); font-weight: 900; }
 
         .modal {
-            position: fixed; inset: 0; background: var(--preto); z-index: 9999;
-            display: none; flex-direction: column; padding: 20px;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 9999;
+            display: none; align-items: center; justify-content: center;
         }
-        .modal.active { display: flex; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; padding-bottom: 15px; }
-
-        .modal-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .music-icon-big { width: 100px; height: 100px; background: var(--turquesa); border-radius: 25px; display: flex; align-items: center; justify-content: center; font-size: 50px; margin-bottom: 20px; border: 2px solid var(--dourado); }
-        
-        audio { width: 100%; height: 55px; filter: invert(1); margin-bottom: 30px; }
-
-        .time-input-large {
-            display: flex; align-items: center; gap: 15px; background: #111; padding: 20px; border-radius: 20px; border: 1px solid #333;
-        }
-        .time-input-large input { width: 80px; font-size: 24px; text-align: center; background: transparent; border: none; color: var(--dourado); font-weight: bold; outline: none; }
-
-        /* 4. PREVIEW MOLDURA AMPLIADO */
-        .frame-upload-wrapper { display: flex; flex-direction: column; align-items: center; gap: 15px; }
-        #frame-preview { 
-            width: 150px; height: 150px; border: 2px solid var(--dourado); 
-            display: none; object-fit: contain; background: #222;
-            padding: 8px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        .modal-content {
+            width: 90%; max-width: 400px; background: #000; 
+            border-radius: 30px; border: 1px solid var(--dourado);
+            padding: 20px; display: flex; flex-direction: column;
         }
 
-        .btn-save {
+        .btn-save-main {
             width: 100%; padding: 22px; background: linear-gradient(135deg, var(--dourado), var(--dourado-fosco));
             border: none; border-radius: 50px; color: #000; font-weight: 900;
-            text-transform: uppercase; cursor: pointer; font-size: 18px; margin-top: 30px;
+            text-transform: uppercase; cursor: pointer; font-size: 16px; margin-top: 10px;
         }
 
-        .file-label {
-            display: block; width: 100%; padding: 18px; background: #1a1a1a;
-            border: 2px dashed var(--dourado); color: var(--dourado);
-            text-align: center; border-radius: 12px; cursor: pointer; font-size: 14px; font-weight: bold;
+        /* Input de Link Estilizado */
+        .link-input {
+            border: 1px solid var(--dourado) !important;
+            background: rgba(197, 160, 89, 0.05) !important;
+        }
+
+        #frame-preview { 
+            width: 100%; max-height: 150px; border: 1px solid #444; margin-top: 15px; 
+            border-radius: 10px; object-fit: contain; display: none; background: #111;
         }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h2 style="color:var(--dourado); margin:0; font-size: 28px;">PHOTO MOVIE</h2>
-        <span style="font-size:11px; letter-spacing:3px; opacity: 0.8;">EVENT CONFIGURATOR</span>
+        <h2>PHOTO MOVIE</h2>
+        <p>colecionando momentos</p>
     </div>
 
     <div class="container">
         <div class="section">
             <h3>1. Identificação e Tempo</h3>
             <label>NOME DO EVENTO</label>
-            <input type="text" id="conf-nome" placeholder="Nome do Evento">
+            <input type="text" id="conf-nome" placeholder="Ex: Casamento Silva">
             
-            <label style="text-align:center">DURAÇÃO DA GRAVAÇÃO</label>
+            <label style="text-align:center">DURAÇÃO DO VÍDEO</label>
             <div class="time-selector">
                 <button class="time-btn" onclick="setTime(8, this)">8s</button>
                 <button class="time-btn active" onclick="setTime(10, this)">10s</button>
@@ -132,66 +115,52 @@
 
         <div class="section">
             <h3>2. Velocidade (Timeline)</h3>
-            <label>PRESETS DE MOVIMENTO</label>
             <div class="preset-group">
-                <button class="preset-btn" onclick="applyPreset('fast-slow-fast', this)">Fast-Slow-Fast</button>
+                <button class="preset-btn" onclick="applyPreset('fast-slow-fast', this)">Fast-Slow</button>
                 <button class="preset-btn" onclick="applyPreset('ultra-slow', this)">Ultra Slow</button>
                 <button class="preset-btn" onclick="applyPreset('boomerang', this)">Boomerang</button>
+                <button class="preset-btn" onclick="applyPreset('reverse', this)">Reverse FX</button>
             </div>
             
             <div class="speed-grid">
                 <div class="speed-box"><span>INÍCIO</span>
-                    <select id="speed-start"><option value="2">2x</option><option value="1.5">1.5x</option><option value="1" selected>1x</option></select>
+                    <select id="speed-start"><option value="2">2x</option><option value="1">1x</option></select>
                 </div>
                 <div class="speed-box"><span>MEIO</span>
-                    <select id="speed-mid"><option value="0.5" selected>0.5x</option><option value="0.25">0.25x</option><option value="1">1x</option></select>
+                    <select id="speed-mid"><option value="0.5">0.5x</option><option value="0.25">0.25x</option></select>
                 </div>
                 <div class="speed-box"><span>FIM</span>
-                    <select id="speed-end"><option value="2">2x</option><option value="1.5">1.5x</option><option value="1">1x</option></select>
+                    <select id="speed-end"><option value="2">2x</option><option value="1">1x</option></select>
                 </div>
             </div>
         </div>
 
         <div class="section">
             <h3>3. Trilha Sonora</h3>
-            <div class="music-btn-trigger" onclick="toggleModal('music-modal', true)">
-                <span id="music-status-text">🎵 SELECIONAR E EDITAR MÚSICA</span>
+            <div style="width:100%; padding:18px; background:#1a1a1a; border:2px dashed var(--dourado); color:var(--dourado); border-radius:15px; text-align:center; cursor:pointer;" onclick="toggleModal('music-modal', true)">
+                <span id="music-status-text">🎵 CONFIGURAR MÚSICA</span>
             </div>
         </div>
 
         <div class="section">
-            <h3>4. Identidade Visual</h3>
-            <div class="frame-upload-wrapper">
-                <label class="file-label" for="overlay-file">🖼️ CARREGAR MOLDURA (PNG)</label>
-                <img id="frame-preview" src="" alt="Preview Moldura">
-            </div>
-            <input type="file" id="overlay-file" accept="image/png" style="display:none" onchange="handleFrame(this)">
+            <h3>4. Identidade Visual (Cloudflare)</h3>
+            <label>URL DA MOLDURA (.PNG)</label>
+            <input type="text" id="conf-moldura-url" class="link-input" placeholder="https://link-do-seu-cloudflare.com/moldura.png" oninput="atualizarPreview(this.value)">
+            <center><img id="frame-preview"></center>
         </div>
 
-        <button class="btn-save" onclick="salvarConfig()">SALVAR E ABRIR CÂMERA</button>
+        <button class="btn-save-main" onclick="salvarConfig()">SALVAR EVENTO</button>
     </div>
 
     <div id="music-modal" class="modal">
-        <div class="modal-header">
-            <button onclick="toggleModal('music-modal', false)" style="background:none; border:none; color:#ff4444; font-weight:bold; font-size:16px;">CANCELAR</button>
-            <span style="font-weight:bold; color:var(--dourado)">EDITOR DE ÁUDIO</span>
-            <button onclick="toggleModal('music-modal', false)" style="background:none; border:none; color:#44ff44; font-weight:bold; font-size:16px;">PRONTO</button>
-        </div>
-        
-        <div class="modal-body">
-            <div class="music-icon-big">🎵</div>
-            <h4 id="music-filename-display" style="margin-bottom:30px; text-align:center; color:#888;">Nenhum arquivo selecionado</h4>
-
-            <audio id="audio-player" controls></audio>
-
-            <div class="time-input-large">
-                <span style="font-size:12px; color:#aaa; font-weight:bold;">INICIAR EM:</span>
+        <div class="modal-content">
+            <h4 style="color:var(--dourado); text-align:center;">STUDIO MUSICAL</h4>
+            <input type="text" id="conf-musica-url" placeholder="URL da Música (MP3)" style="margin-bottom:10px;">
+            <div style="background:#111; padding:15px; border-radius:15px; text-align:center;">
+                <span style="font-size:9px; color:var(--dourado); display:block; margin-bottom:5px;">INÍCIO (SEG)</span>
                 <input type="number" id="musica-offset" value="0">
-                <span style="font-size:14px; color:var(--dourado);">seg</span>
             </div>
-
-            <label class="file-label" for="musica-file" style="margin-top:40px; border-style:solid; background:var(--turquesa)">BUSCAR MP3 NO DISPOSITIVO</label>
-            <input type="file" id="musica-file" accept="audio/*" style="display:none" onchange="handleAudio(this)">
+            <button class="btn-save-main" style="padding:15px; margin-top:20px;" onclick="toggleModal('music-modal', false)">OK</button>
         </div>
     </div>
 
@@ -212,46 +181,61 @@
         const s = document.getElementById('speed-start');
         const m = document.getElementById('speed-mid');
         const e = document.getElementById('speed-end');
+
         if(type === 'fast-slow-fast') { s.value="2"; m.value="0.5"; e.value="2"; }
         if(type === 'ultra-slow') { s.value="1"; m.value="0.25"; e.value="1"; }
-        if(type === 'boomerang') { s.value="1.5"; m.value="1"; e.value="1.5"; }
+        if(type === 'boomerang') { s.value="1"; m.value="1"; e.value="1"; }
+        if(type === 'reverse') { s.value="2"; m.value="0.5"; e.value="1"; }
     }
 
-    function handleAudio(input) {
-        const file = input.files[0];
-        if (file) {
-            const url = URL.createObjectURL(file);
-            const player = document.getElementById('audio-player');
-            player.src = url;
-            document.getElementById('music-filename-display').innerText = file.name;
-            document.getElementById('music-status-text').innerText = "✅ " + file.name.substring(0, 15) + "...";
-        }
-    }
-
-    function handleFrame(input) {
-        const file = input.files[0];
-        if (file) {
-            const url = URL.createObjectURL(file);
-            const img = document.getElementById('frame-preview');
-            img.src = url; img.style.display = 'block';
-            document.querySelector('label[for="overlay-file"]').innerText = "✅ MOLDURA CARREGADA";
+    // Função para ver se o link da moldura está carregando
+    function atualizarPreview(url) {
+        const img = document.getElementById('frame-preview');
+        if(url.length > 10) {
+            img.src = url;
+            img.style.display = "block";
+        } else {
+            img.style.display = "none";
         }
     }
 
     function salvarConfig() {
-        const config = {
-            nome: document.getElementById('conf-nome').value || "Evento 360",
+        const nomeEv = document.getElementById('conf-nome').value || "Evento 360";
+        const urlMoldura = document.getElementById('conf-moldura-url').value;
+
+        if(!urlMoldura) { 
+            alert("Por favor, cole o link da moldura PNG do Cloudflare!"); 
+            return; 
+        }
+
+        const dataAtual = new Date().toLocaleDateString('pt-BR');
+        
+        const novaConfig = {
+            id: Date.now(),
+            nome: nomeEv,
+            data: dataAtual,
             tempo: document.getElementById('conf-tempo').value,
+            moldura: urlMoldura, // Agora salva a URL direta
             velocidades: {
                 inicio: document.getElementById('speed-start').value,
                 meio: document.getElementById('speed-mid').value,
                 fim: document.getElementById('speed-end').value
             },
+            musicaUrl: document.getElementById('conf-musica-url').value,
             musicaOffset: document.getElementById('musica-offset').value
         };
-        localStorage.setItem('config_evento', JSON.stringify(config));
-        alert("Configuração Salva com Sucesso!");
-        window.location.href = 'novo_evento.html';
+
+        // Salva para persistência
+        localStorage.setItem('evento_ativo', nomeEv);
+        localStorage.setItem('config_atual', JSON.stringify(novaConfig));
+        
+        // Adiciona na lista histórica
+        let eventos = JSON.parse(localStorage.getItem('meus_eventos')) || [];
+        eventos.push(novaConfig);
+        localStorage.setItem('meus_eventos', JSON.stringify(eventos));
+
+        alert("Evento configurado com link externo!");
+        window.location.href = 'index.html';
     }
 </script>
 </body>
