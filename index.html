@@ -24,6 +24,7 @@
             overflow: hidden;
         }
 
+        /* Título mantido no topo (1.8cm) */
         .header {
             margin-top: 1.8cm;
             text-align: center;
@@ -56,11 +57,12 @@
             100% { text-shadow: 0 0 5px rgba(197, 160, 89, 0.2); transform: scale(1); }
         }
 
+        /* Container que ocupa o centro da tela */
         .main-container {
             flex: 1;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: center; /* Move o conteúdo para o meio exato da área disponível */
             align-items: center;
             width: 85%;
             max-width: 350px;
@@ -86,6 +88,7 @@
             box-sizing: border-box;
         }
 
+        /* Botão Acessar Sistema centralizado */
         #btn-login {
             display: block;
             background: transparent;
@@ -94,7 +97,7 @@
             box-shadow: none;
         }
 
-        /* Posicionamento final: 15cm abaixo (o dobro da anterior) */
+        /* Mantido a 15cm abaixo dos botões (ou do fim da lista) */
         .footer-minimal {
             margin-top: 15cm;
             font-size: 11px;
