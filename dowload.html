@@ -25,8 +25,8 @@
     const videoId = urlParams.get('id');
     const fx = urlParams.get('fx') || 'boom';
     // Coloque a URL do seu worker aqui:
-    const WORKER_URL = 'https://photomovie.maxprimefotovideo.workers.dev';
-
+    const id = p.get('id');
+const WORKER = 'https://photomovie.maxprimefotovideo.workers.dev/stream?id=' + id;
     async function carregarVideo() {
         if (!videoId) {
             document.getElementById('status').innerText = "VÍDEO NÃO ENCONTRADO";
