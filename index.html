@@ -3,146 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PHOTO MOVIE - Módulo Câmera</title>
+    <title>PHOTO MOVIE - Câmera Ultra Fluida</title>
     <style>
-        body { margin: 0; background: #000; color: white; font-family: sans-serif; overflow: hidden; }
+        body { margin: 0; background: #000; overflow: hidden; font-family: sans-serif; }
         
-        /* Títulos Fixos */
-        .brand-layer {
-            position: fixed; top: 20px; width: 100%; text-align: center; z-index: 100;
-            pointer-events: none; text-shadow: 0 0 10px #9200ff;
+        /* Títulos Fixos e Pulsantes - Não saem daqui por nada */
+        .brand-fixed {
+            position: fixed; top: 0; left: 0; width: 100%; text-align: center;
+            padding-top: 25px; z-index: 999; pointer-events: none;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
         }
-        .neon { color: #9200ff; font-size: 2.5rem; margin: 0; font-weight: 900; }
+        .neon-title { 
+            font-size: 2.8rem; font-weight: 900; color: #9200ff;
+            text-shadow: 0 0 15px #9200ff; margin: 0;
+            animation: pulse 1s infinite alternate;
+        }
+        .subtitle { color: white; letter-spacing: 4px; font-size: 0.7rem; animation: pulse 1.2s infinite alternate; }
+        @keyframes pulse { from { opacity: 0.7; transform: scale(1); } to { opacity: 1; transform: scale(1.03); } }
 
-        /* Preview da Câmera */
-        #main-canvas { width: 100vw; height: 100vh; object-fit: cover; background: #222; }
-        #raw-video { display: none; }
+        /* Preview - Usamos o VIDEO direto para ser fluido, o Canvas fica oculto só para gravar */
+        #preview-video { width: 100vw; height: 100vh; object-fit: cover; }
+        #moldura-overlay { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; object-fit: cover; }
+        #hidden-canvas { display: none; }
 
         /* Controles */
-        .controls {
-            position: fixed; bottom: 50px; width: 100%;
-            display: flex; justify-content: space-around; align-items: center; z-index: 200;
-        }
-        .shutter {
-            width: 80px; height: 80px; border: 5px solid white; border-radius: 50%;
-            background: transparent; cursor: pointer; box-shadow: 0 0 20px #9200ff;
-        }
+        .controls { position: fixed; bottom: 80px; width: 100%; display: flex; justify-content: center; z-index: 100; }
+        .shutter { width: 80px; height: 80px; border: 5px solid white; border-radius: 50%; box-shadow: 0 0 20px #9200ff; cursor: pointer; }
         
-        /* Avisos */
-        #status-overlay {
-            position: fixed; inset: 0; display: none;
-            align-items: center; justify-content: center; background: rgba(0,0,0,0.5);
-            font-size: 3rem; font-weight: 900; z-index: 300;
+        /* Contador */
+        #status-msg { 
+            position: fixed; inset: 0; display: none; align-items: center; justify-content: center; 
+            z-index: 500; font-size: 8rem; font-weight: 900; color: white; background: rgba(0,0,0,0.3);
         }
     </style>
 </head>
 <body>
 
-    <div class="brand-layer">
-        <h1 class="neon">PHOTO MOVIE</h1>
-        <div style="letter-spacing: 3px;">COLECIONANDO MOMENTOS</div>
+    <div class="brand-fixed">
+        <h1 class="neon-title">PHOTO MOVIE</h1>
+        <div class="subtitle">COLECIONANDO MOMENTOS</div>
     </div>
 
-    <canvas id="main-canvas"></canvas>
-    <video id="raw-video" autoplay playsinline muted></video>
+    <img id="moldura-overlay" src="" alt="">
+    
+    <video id="preview-video" autoplay playsinline muted></video>
+    
+    <canvas id="hidden-canvas" width="720" height="1280"></canvas>
 
-    <div id="status-overlay"></div>
+    <div id="status-msg">3</div>
 
     <div class="controls">
-        <button onclick="location.reload()" style="background:none; border:none; color:#9200ff; font-size:2rem;">❮</button>
-        <div class="shutter" id="btn-rec" onclick="iniciarFluxo()"></div>
-        <div style="width:40px"></div>
+        <div class="shutter" onclick="iniciarContagem()"></div>
     </div>
 
 <script>
-    const canvas = document.getElementById('main-canvas');
+    const video = document.getElementById('preview-video');
+    const canvas = document.getElementById('hidden-canvas');
     const ctx = canvas.getContext('2d');
-    const video = document.getElementById('raw-video');
-    const overlay = document.getElementById('status-overlay');
-    let frameImg = new Image();
+    const molduraImg = document.getElementById('moldura-overlay');
+    const status = document.getElementById('status-msg');
     let recorder;
     let chunks = [];
 
-    // 1. Iniciar Câmera e Carregar Moldura (Substitua o link pela sua moldura de teste)
-    async function setup() {
+    // 1. CARREGAR TUDO ANTES DE LIBERAR A CAMERA
+    async function init() {
+        // Recupera a moldura que você salvou no IndexedDB ou LocalStorage no passo anterior
+        // Para teste, estou pegando uma do sistema ou a última usada
+        const savedFrame = localStorage.getItem('activeFrame');
+        if(savedFrame) molduraImg.src = savedFrame;
+
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: "environment", width: 720, height: 1280 },
+                video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
                 audio: false 
             });
             video.srcObject = stream;
-            
-            // Tenta carregar a moldura salva ou uma padrão
-            frameImg.src = localStorage.getItem('lastFrame') || ''; 
-            
-            canvas.width = 720;
-            canvas.height = 1280;
-            
-            draw();
         } catch (err) {
-            alert("Erro ao abrir câmera: " + err);
+            alert("Erro na câmera: " + err);
         }
     }
 
-    // 2. Loop de Renderização (Aqui garante que não fique preto)
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        if (frameImg.complete && frameImg.src) {
-            ctx.drawImage(frameImg, 0, 0, canvas.width, canvas.height);
-        }
-        requestAnimationFrame(draw);
-    }
-
-    // 3. Lógica de Gravação
-    function iniciarFluxo() {
-        let count = 3;
-        overlay.style.display = 'flex';
-        overlay.style.color = 'white';
+    // 2. CONTAGEM REGRESSIVA
+    function iniciarContagem() {
+        let c = 3;
+        status.style.display = 'flex';
+        status.innerText = c;
         
         const timer = setInterval(() => {
-            overlay.innerText = count;
-            if (count <= 0) {
+            c--;
+            if(c > 0) {
+                status.innerText = c;
+            } else {
                 clearInterval(timer);
+                status.innerText = "";
                 gravar();
             }
-            count--;
         }, 1000);
     }
 
+    // 3. GRAVAÇÃO SEM TRAVAR O PREVIEW
     function gravar() {
         chunks = [];
-        const stream = canvas.captureStream(30);
+        // O segredo da fluidez: O Canvas só começa a desenhar no momento do REC
+        const recordLoop = () => {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            if(molduraImg.src) ctx.drawImage(molduraImg, 0, 0, canvas.width, canvas.height);
+            if(recorder && recorder.state === "recording") requestAnimationFrame(recordLoop);
+        };
+
+        const stream = canvas.captureStream(30); // 30 FPS estável
         recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8' });
 
         recorder.ondataavailable = e => chunks.push(e.data);
         recorder.onstop = () => {
             const blob = new Blob(chunks, { type: 'video/webm' });
-            // Aqui simulamos o salvamento. Na parte 2 faremos o IndexedDB.
-            const url = URL.createObjectURL(blob);
-            console.log("Vídeo gerado: ", url);
-            overlay.innerText = "SALVO!";
-            setTimeout(() => overlay.style.display = 'none', 1000);
+            console.log("Vídeo Processado com Moldura!");
+            // PRÓXIMO PASSO: Enviar para o IndexedDB da Galeria
         };
 
         recorder.start();
-        
+        recordLoop();
+
         let tempo = 10;
-        let progresso = setInterval(() => {
+        const countdown = setInterval(() => {
             tempo--;
-            overlay.innerText = tempo + "s";
-            if (tempo <= 3) overlay.style.color = '#ff8c00'; // Laranja
-            if (tempo <= 0) {
-                clearInterval(progresso);
+            status.innerText = tempo + "s";
+            if(tempo <= 3) status.style.color = "#ff8c00";
+            if(tempo <= 0) {
+                clearInterval(countdown);
                 recorder.stop();
-                overlay.innerText = "FINALIZOU!";
-                overlay.style.color = '#ff0000'; // Vermelho
+                status.innerText = "FINALIZOU!";
+                status.style.color = "#ff0000";
+                setTimeout(() => { status.style.display = 'none'; status.style.color = "white"; }, 1500);
             }
         }, 1000);
     }
 
-    setup();
+    init();
 </script>
 </body>
 </html>
