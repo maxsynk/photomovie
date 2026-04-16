@@ -26,8 +26,8 @@
 
         .header {
             text-align: center;
-            margin-bottom: 25px;
-            margin-top: 10px;
+            margin-bottom: 30px;
+            margin-top: 20px;
         }
 
         .header h1 {
@@ -39,14 +39,6 @@
             font-weight: 900;
         }
 
-        .video-number-label {
-            color: var(--dourado);
-            letter-spacing: 2px;
-            font-weight: 600;
-            margin-top: 5px;
-            display: block;
-        }
-
         .video-preview {
             width: 100%;
             max-width: 400px;
@@ -55,7 +47,6 @@
             border: 2px solid var(--dourado);
             box-shadow: 0 15px 35px rgba(0,0,0,0.5);
             background: #000;
-            line-height: 0;
         }
 
         video {
@@ -64,10 +55,10 @@
         }
 
         .btn-download {
-            margin-top: 35px;
+            margin-top: 40px;
             width: 100%;
             max-width: 320px;
-            padding: 18px;
+            padding: 20px;
             border-radius: 50px;
             background: linear-gradient(135deg, var(--dourado), var(--dourado-fosco));
             color: #000;
@@ -76,9 +67,9 @@
             font-weight: 800;
             text-transform: uppercase;
             font-size: 16px;
+            letter-spacing: 1px;
             box-shadow: 0 10px 20px rgba(0,0,0,0.3);
             transition: transform 0.2s;
-            border: none;
             cursor: pointer;
         }
 
@@ -86,20 +77,9 @@
 
         .info-text {
             margin-top: 20px;
-            font-size: 11px;
-            color: rgba(255,255,255,0.4);
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
             text-align: center;
-            max-width: 250px;
-        }
-
-        .btn-back {
-            color: white;
-            margin-top: 40px;
-            font-size: 13px;
-            opacity: 0.6;
-            text-decoration: none;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-            padding-bottom: 2px;
         }
     </style>
 </head>
@@ -107,59 +87,56 @@
 
     <div class="header">
         <h1>PHOTO MOVIE</h1>
-        <span id="video-number" class="video-number-label">CARREGANDO...</span>
+        <p id="video-number" style="color: var(--dourado); letter-spacing: 2px; font-weight: bold;"></p>
     </div>
 
     <div class="video-preview">
         <video id="player" controls playsinline autoplay loop muted></video>
     </div>
 
-    <a href="#" id="link-download" class="btn-download">BAIXAR VÍDEO</a>
+    <a href="#" id="link-download" download class="btn-download">BAIXAR VÍDEO</a>
 
-    <p class="info-text">DICA: Se o download não iniciar ao clicar, pressione o vídeo e escolha "Fazer download do vídeo".</p>
+    <p class="info-text">Se o download não iniciar, clique e segure no vídeo.</p>
     
-    <a href="galeria.html" class="btn-back">← Voltar para galeria</a>
+    <a href="galeria.html" style="color: white; margin-top: 30px; font-size: 14px; opacity: 0.7; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.2);">← Voltar para galeria</a>
 
 <script>
-    // Configurações
-    const WORKER_URL = 'https://photomovie.maxprimefotovideo.workers.dev';
-    
-    function inicializarVisualizador() {
-        const params = new URLSearchParams(window.location.search);
+    document.addEventListener('DOMContentLoaded', () => {
+        const WORKER_URL = 'https://photomovie.maxprimefotovideo.workers.dev';
         
-        // Tenta pegar 'id' ou 'uuid' (para evitar erros de nome de parâmetro)
-        const videoId = params.get('id') || params.get('uuid');
-        const numero = params.get('n') || params.get('numero');
+        // Captura os parâmetros da URL
+        const params = new URLSearchParams(window.location.search);
+        const videoId = params.get('id');
+        const numero = params.get('n');
 
-        if (!videoId) {
-            document.getElementById('video-number').innerText = "ERRO: ID NÃO ENCONTRADO";
-            document.getElementById('video-number').style.color = "red";
-            return;
-        }
-
-        const videoSrc = `${WORKER_URL}/stream?id=${videoId}`;
         const player = document.getElementById('player');
         const downloadBtn = document.getElementById('link-download');
-        
-        // Atualiza o número do vídeo no topo
-        if (numero) {
-            document.getElementById('video-number').innerText = `VÍDEO #${numero}`;
+        const numLabel = document.getElementById('video-number');
+
+        if (videoId) {
+            const videoSrc = `${WORKER_URL}/stream?id=${videoId}`;
+            
+            // Exibir número do vídeo no título
+            if (numero) {
+                numLabel.innerText = `VÍDEO #${numero}`;
+            }
+
+            // Atribui o vídeo ao player e ao botão de download
+            player.src = videoSrc;
+            downloadBtn.href = videoSrc;
+            
+            // Sugestão de nome de arquivo para o download
+            downloadBtn.setAttribute('download', `video-360-n${numero || '0'}.mp4`);
+            
         } else {
-            document.getElementById('video-number').innerText = `VÍDEO 360°`;
+            // Caso não encontre o ID, redireciona para a galeria após 2 segundos
+            numLabel.innerText = "VÍDEO NÃO ENCONTRADO";
+            numLabel.style.color = "red";
+            setTimeout(() => {
+                window.location.href = 'galeria.html';
+            }, 2000);
         }
-
-        // Carrega o vídeo no player
-        player.src = videoSrc;
-
-        // Configura o link de download
-        downloadBtn.href = videoSrc;
-        
-        // Tenta forçar o nome do arquivo no download (alguns navegadores aceitam)
-        downloadBtn.setAttribute('download', `video-360-movie-${numero || '0'}.mp4`);
-    }
-
-    // Executa ao carregar a página
-    window.addEventListener('DOMContentLoaded', inicializarVisualizador);
+    });
 </script>
 </body>
 </html>
