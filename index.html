@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PHOTO MOVIE - Pro Performance</title>
+    <title>PHOTO MOVIE - Purple Edition</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { 
-            --neon-purple: #bc13fe; 
-            --neon-purple-glow: #8a2be2;
-            --neon-orange: #ff6600;
+            --neon-purple: #9200ff; 
+            --neon-glow: #4b0082;
+            --neon-orange: #ff8c00;
             --neon-red: #ff0000;
             --dark-bg: #000; 
         }
@@ -17,18 +18,16 @@
         .screen { display: none; min-height: 100vh; width: 100vw; flex-direction: column; align-items: center; position: absolute; padding: 20px; box-sizing: border-box; }
         .active { display: flex; }
 
-        /* 1. TÍTULO E SUBTÍTULO */
-        .brand-container { text-align: center; margin-top: 80px; margin-bottom: 50px; }
+        /* 1. NOME TODO ROXO NEON */
         .neon-title { 
-            font-size: 3.5rem; font-weight: 900; color: #fff;
-            text-shadow: 0 0 10px #fff, 0 0 20px var(--neon-purple), 0 0 40px var(--neon-purple-glow); 
-            animation: pulse-border 1.5s infinite alternate; margin: 0; 
+            font-size: 3.5rem; font-weight: 900; color: var(--neon-purple);
+            text-shadow: 0 0 10px var(--neon-purple), 0 0 20px var(--neon-purple), 0 0 30px var(--neon-glow); 
+            animation: pulse-border 1.5s infinite alternate; margin: 0; text-align: center;
         }
         @keyframes pulse-border { 
-            from { transform: scale(1); text-shadow: 0 0 10px #fff, 0 0 20px var(--neon-purple); } 
-            to { transform: scale(1.03); text-shadow: 0 0 20px #fff, 0 0 40px var(--neon-purple); } 
+            from { text-shadow: 0 0 10px var(--neon-purple); transform: scale(1); } 
+            to { text-shadow: 0 0 20px var(--neon-purple), 0 0 40px var(--neon-purple); transform: scale(1.03); } 
         }
-        .subtitle { font-size: 1.2rem; letter-spacing: 4px; color: #fff; margin-top: 15px; text-transform: uppercase; }
 
         /* BOTÕES */
         .btn-main { 
@@ -36,43 +35,43 @@
             border-radius: 40px; font-weight: bold; cursor: pointer; text-transform: uppercase; 
             box-shadow: 0 0 20px var(--neon-purple); margin: 10px 0; width: 280px;
         }
+        .footer-btn { position: absolute; bottom: 30px; width: 100%; display: flex; justify-content: center; padding: 0 20px; box-sizing: border-box; }
 
-        /* 4. LAYOUT NOVO EVENTO */
-        .form-card { background: #111; width: 90%; max-width: 450px; padding: 20px; border-radius: 20px; border: 1px solid #333; overflow-y: auto; max-height: 75vh; }
-        label { display: block; margin: 12px 0 5px; color: var(--neon-purple); font-weight: bold; font-size: 12px; }
-        input, select { width: 100%; padding: 10px; background: #000; border: 1px solid #333; color: white; border-radius: 8px; box-sizing: border-box; }
-        .grid-effects { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
-        .opt-effect { background: #222; padding: 8px; border-radius: 5px; font-size: 11px; text-align: center; border: 1px solid #444; cursor: pointer; }
-        .opt-effect.selected { border-color: var(--neon-purple); background: #330044; }
-        .frame-preview { width: 100px; height: 177px; border: 1px dashed var(--neon-purple); margin: 10px auto; background-size: contain; background-repeat: no-repeat; background-position: center; display: none; }
-
-        /* 5. BOTÃO REC CÍRCULO PULSANTE */
-        .rec-container { position: absolute; bottom: 40px; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; }
-        .btn-rec-circle {
-            width: 60px; height: 60px; background: transparent; border: 4px solid var(--neon-purple); 
-            border-radius: 50%; cursor: pointer; box-shadow: 0 0 15px var(--neon-purple);
-            animation: pulse-rec 1s infinite;
+        /* LISTA DE EVENTOS */
+        .event-card { 
+            background: #0a0a0a; border: 1px solid var(--neon-purple); padding: 15px; 
+            border-radius: 12px; margin-bottom: 10px; width: 100%; display: flex; 
+            justify-content: space-between; align-items: center; box-sizing: border-box;
         }
-        @keyframes pulse-rec { 0% { box-shadow: 0 0 5px var(--neon-purple); transform: scale(1); } 50% { box-shadow: 0 0 25px var(--neon-purple); transform: scale(1.1); } 100% { box-shadow: 0 0 5px var(--neon-purple); transform: scale(1); } }
 
-        /* 6. AVISO COLORIDO */
-        #finish-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; }
-        .warning-msg { font-size: 3rem; font-weight: 900; animation: blink 0.4s infinite; }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } }
-
-        /* CÂMERA FULL CLEAN */
-        #screen-camera { padding: 0; }
+        /* CÂMERA */
         #video-preview { width: 100vw; height: 100vh; object-fit: cover; }
+        .btn-rec-circle {
+            width: 70px; height: 70px; border: 4px solid var(--neon-purple); border-radius: 50%;
+            box-shadow: 0 0 15px var(--neon-purple); animation: pulse-rec 1s infinite;
+        }
+        @keyframes pulse-rec { 0% { opacity: 0.6; } 50% { opacity: 1; transform: scale(1.1); } 100% { opacity: 0.6; } }
+
+        /* GALERIA */
+        .gallery-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; overflow-y: auto; padding-bottom: 100px; }
+        .thumb-box { position: relative; aspect-ratio: 9/16; background: #111; border: 1px solid #333; border-radius: 8px; overflow: hidden; cursor: pointer; }
+        
+        /* MODAL QR CODE */
+        #modal-movie { 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 200; 
+            display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px;
+        }
+        #qrcode { background: white; padding: 10px; border-radius: 10px; margin-top: 20px; }
     </style>
 </head>
 <body>
 
     <div id="screen-home" class="screen active">
-        <div class="brand-container">
+        <div style="margin-top: 100px;">
             <h1 class="neon-title">PHOTO MOVIE</h1>
-            <div class="subtitle">colecionando momentos</div>
+            <div style="color:white; letter-spacing:4px; text-align:center; margin-top:20px">COLECIONANDO MOMENTOS</div>
         </div>
-        <button class="btn-main" onclick="nav('screen-menu')">INICIAR</button>
+        <button class="btn-main" style="margin-top: 60px;" onclick="nav('screen-menu')">INICIAR</button>
     </div>
 
     <div id="screen-menu" class="screen">
@@ -80,144 +79,175 @@
         <button class="btn-main" style="background:#fff; color:#000" onclick="nav('screen-config')">NOVO EVENTO</button>
         <button class="btn-main" style="background:transparent; border:1px solid var(--neon-purple)" onclick="nav('screen-gallery')">GALERIA</button>
         
-        <div style="width:100%; max-width:350px; margin-top:20px;">
-            <p style="font-size:12px; color:#555">EVENTOS ATIVOS:</p>
-            <div id="lista-eventos-menu"></div>
+        <div id="lista-eventos" style="width:100%; max-width:400px; margin-top:20px"></div>
+
+        <div class="footer-btn">
+            <button class="btn-main" style="background:#222" onclick="nav('screen-home')">VOLTAR</button>
         </div>
-        <button class="btn-main" style="background:#222; margin-top:30px" onclick="nav('screen-home')">VOLTAR</button>
     </div>
 
     <div id="screen-config" class="screen">
-        <div class="form-card">
-            <label>NOME DO EVENTO</label>
-            <input type="text" id="cfg-nome">
-            <label>DATA</label>
-            <input type="date" id="cfg-data">
-            <label>VELOCIDADE DO VÍDEO</label>
-            <div class="grid-effects">
-                <div class="opt-effect" onclick="selEff(this, '0.5')">SLOW (0.5x)</div>
-                <div class="opt-effect selected" onclick="selEff(this, '1.0')">NORMAL (1x)</div>
-                <div class="opt-effect" onclick="selEff(this, '2.0')">FAST (2x)</div>
-            </div>
+        <h2 style="color:var(--neon-purple)">NOVO EVENTO</h2>
+        <div style="width:90%; max-width:400px">
+            <label>NOME</label>
+            <input type="text" id="cfg-nome" style="width:100%; padding:12px; background:#111; border:1px solid #333; color:white; margin:10px 0">
             <label>MOLDURA (.PNG)</label>
-            <input type="file" id="cfg-frame" accept="image/png" onchange="previewFrame(this)">
-            <div id="box-preview" class="frame-preview"></div>
-            
-            <button class="btn-main" style="width:100%; margin-top:20px" onclick="salvarEvento()">SALVAR EVENTO</button>
+            <input type="file" id="cfg-frame" accept="image/png" style="margin-bottom:20px">
+            <button class="btn-main" style="width:100%" onclick="salvarEvento()">SALVAR EVENTO</button>
+        </div>
+        <div class="footer-btn">
+            <button class="btn-main" style="background:#222" onclick="nav('screen-menu')">VOLTAR</button>
         </div>
     </div>
 
-    <div id="screen-camera" class="screen">
+    <div id="screen-camera" class="screen" style="padding:0">
         <video id="video-preview" autoplay playsinline muted></video>
-        <div id="timer" style="position:absolute; top:40px; font-size:2.5rem; font-weight:bold; z-index:15">00s</div>
-        <div class="rec-container">
+        <div style="position:absolute; bottom:40px; width:100%; display:flex; justify-content:center">
             <div class="btn-rec-circle" onclick="startRec()"></div>
         </div>
-        <div id="finish-overlay">
-            <div id="warning-msg" class="warning-msg">FINALIZANDO...</div>
-            <button class="btn-main" style="margin-top:30px" onclick="irParaGaleria()">OK / SALVAR</button>
+        <div id="finish-overlay" style="position:fixed; inset:0; background:rgba(0,0,0,0.8); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:100">
+            <div id="warning-msg" style="font-size:3rem; font-weight:900">FINALIZANDO...</div>
+            <button id="btn-ok-cam" class="btn-main" style="display:none; margin-top:30px" onclick="irParaGaleria()">OK / SALVAR</button>
         </div>
     </div>
 
     <div id="screen-gallery" class="screen">
         <h2 style="color:var(--neon-purple)">GALERIA</h2>
-        <div id="gallery-container" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%"></div>
-        <button class="btn-main" onclick="nav('screen-menu')" style="margin-top:20px">VOLTAR</button>
+        <div id="gallery-container" class="gallery-grid"></div>
+        <div class="footer-btn">
+            <button class="btn-main" style="background:#222" onclick="nav('screen-menu')">VOLTAR</button>
+        </div>
+    </div>
+
+    <div id="modal-movie">
+        <video id="modal-video-player" style="width:100%; max-width:300px; aspect-ratio:9/16; border:1px solid var(--neon-purple)" controls></video>
+        <div id="qrcode"></div>
+        <p style="font-size:12px; margin-top:10px">Escaneie para acessar o vídeo</p>
+        <button class="btn-main" onclick="document.getElementById('modal-movie').style.display='none'">FECHAR</button>
     </div>
 
 <script>
-    let app = { eventos: [], movies: [], activeEv: null, effect: '1.0' };
+    let app = { eventos: [], movies: [], activeEv: null };
+
+    // CARREGAR DADOS DO DISCO
+    if(localStorage.getItem('photo_movie_db')) {
+        app = JSON.parse(localStorage.getItem('photo_movie_db'));
+        renderEventos();
+        renderGallery();
+    }
 
     function nav(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        if(id !== 'screen-camera' && window.stream) {
-            window.stream.getTracks().forEach(t => t.stop());
-        }
-    }
-
-    function selEff(el, val) {
-        document.querySelectorAll('.opt-effect').forEach(o => o.classList.remove('selected'));
-        el.classList.add('selected'); app.effect = val;
-    }
-
-    function previewFrame(input) {
-        if(input.files[0]) {
-            const url = URL.createObjectURL(input.files[0]);
-            const box = document.getElementById('box-preview');
-            box.style.backgroundImage = `url(${url})`;
-            box.style.display = 'block';
-            app.tempFrame = url;
-        }
+        if(id === 'screen-camera') startCamera();
     }
 
     function salvarEvento() {
         const nome = document.getElementById('cfg-nome').value;
-        if(!nome || !app.tempFrame) return alert("Preencha Nome e Moldura!");
-        app.eventos.push({ id: Date.now(), nome, frame: app.tempFrame, speed: app.effect });
+        const file = document.getElementById('cfg-frame').files[0];
+        if(!nome || !file) return alert("Preencha tudo!");
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            app.eventos.push({ id: Date.now(), nome, frame: e.target.result });
+            sync();
+            nav('screen-menu');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function sync() {
+        localStorage.setItem('photo_movie_db', JSON.stringify(app));
         renderEventos();
-        nav('screen-menu');
+        renderGallery();
     }
 
     function renderEventos() {
-        document.getElementById('lista-eventos-menu').innerHTML = app.eventos.map(ev => `
-            <div style="background:#111; padding:12px; border-radius:10px; margin-bottom:8px; display:flex; justify-content:space-between; border:1px solid #333">
+        const div = document.getElementById('lista-eventos');
+        div.innerHTML = app.eventos.map(ev => `
+            <div class="event-card">
                 <span>${ev.nome}</span>
-                <button onclick="abrirCamera(${ev.id})" style="color:var(--neon-purple); background:none; border:none; font-weight:bold">ABRIR</button>
+                <div>
+                    <button onclick="abrirEvento(${ev.id})" style="color:var(--neon-purple); background:none; border:none; margin-right:15px">ABRIR</button>
+                    <button onclick="deletarEvento(${ev.id})" style="color:red; background:none; border:none">X</button>
+                </div>
             </div>
         `).join('');
     }
 
-    async function abrirCamera(id) {
+    function deletarEvento(id) {
+        if(confirm("Apagar evento e mídias?")) {
+            app.eventos = app.eventos.filter(e => e.id !== id);
+            app.movies = app.movies.filter(m => m.evId !== id);
+            sync();
+        }
+    }
+
+    function abrirEvento(id) {
         app.activeEv = app.eventos.find(e => e.id === id);
         nav('screen-camera');
-        window.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: 1280 } });
-        document.getElementById('video-preview').srcObject = window.stream;
+    }
+
+    async function startCamera() {
+        const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: 1280 } });
+        document.getElementById('video-preview').srcObject = s;
+        window.stream = s;
     }
 
     function startRec() {
         const chunks = [];
-        const recorder = new MediaRecorder(window.stream);
-        recorder.ondataavailable = e => chunks.push(e.data);
-        recorder.onstop = () => {
-            const blob = new Blob(chunks, { type: 'video/mp4' });
-            app.movies.push({ url: URL.createObjectURL(blob), frame: app.activeEv.frame });
-            renderGallery();
+        const rec = new MediaRecorder(window.stream);
+        rec.ondataavailable = e => chunks.push(e.data);
+        rec.onstop = () => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                app.movies.push({ id: Date.now(), evId: app.activeEv.id, video: e.target.result, frame: app.activeEv.frame });
+                sync();
+            };
+            reader.readAsDataURL(new Blob(chunks, { type: 'video/mp4' }));
         };
+        rec.start();
+        
+        let t = 10;
+        const overlay = document.getElementById('finish-overlay');
+        const msg = document.getElementById('warning-msg');
+        overlay.style.display = 'flex';
 
-        recorder.start();
-        let time = 10;
         let intv = setInterval(() => {
-            time--;
-            document.getElementById('timer').innerText = time.toString().padStart(2,'0')+"s";
-            
-            const msg = document.getElementById('warning-msg');
-            const overlay = document.getElementById('finish-overlay');
-
-            if(time <= 3 && time > 0) {
-                overlay.style.display = 'flex';
-                msg.innerText = "FINALIZANDO...";
-                msg.style.color = "var(--neon-orange)";
-            } else if(time <= 0) {
-                clearInterval(intv);
-                recorder.stop();
-                msg.innerText = "CONCLUÍDO!";
-                msg.style.color = "var(--neon-red)";
+            t--;
+            if(t <= 3 && t > 0) { msg.innerText = "FINALIZANDO..."; msg.style.color = "var(--neon-orange)"; }
+            if(t <= 0) {
+                clearInterval(intv); rec.stop();
+                msg.innerText = "CONCLUÍDO!"; msg.style.color = "var(--neon-red)";
+                document.getElementById('btn-ok-cam').style.display = 'block';
             }
         }, 1000);
     }
 
     function renderGallery() {
-        document.getElementById('gallery-container').innerHTML = app.movies.map(m => `
-            <div style="position:relative; aspect-ratio:9/16; background:#222; border-radius:8px; overflow:hidden">
-                <video src="${m.url}" style="width:100%; height:100%; object-fit:cover" muted loop autoplay></video>
-                <img src="${m.frame}" style="position:absolute; inset:0; width:100%; height:100%; pointer-events:none">
+        const div = document.getElementById('gallery-container');
+        div.innerHTML = app.movies.map(m => `
+            <div class="thumb-box" onclick="verVideo('${m.video}')">
+                <video src="${m.video}" style="width:100%"></video>
+                <img src="${m.frame}" style="position:absolute; inset:0; width:100%">
             </div>
         `).join('');
     }
 
+    function verVideo(url) {
+        const modal = document.getElementById('modal-movie');
+        const vid = document.getElementById('modal-video-player');
+        modal.style.display = 'flex';
+        vid.src = url;
+        vid.play();
+
+        document.getElementById('qrcode').innerHTML = "";
+        new QRCode(document.getElementById("qrcode"), { text: url, width: 128, height: 128 });
+    }
+
     function irParaGaleria() {
         document.getElementById('finish-overlay').style.display = 'none';
+        document.getElementById('btn-ok-cam').style.display = 'none';
         nav('screen-gallery');
     }
 </script>
