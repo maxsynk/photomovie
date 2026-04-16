@@ -182,7 +182,7 @@
         }
     }
 
-    function renderizarVideos(lista) {
+   function renderizarVideos(lista) {
         const container = document.getElementById('gallery-container');
         container.innerHTML = "";
         
@@ -190,8 +190,8 @@
             const card = document.createElement('div');
             card.className = 'video-card';
             
-            // Link corrigido para o novo repositório maxsynk
-            const downloadUrl = `https://maxsynk.github.io/photomovie/download.html?id=${vid.uuid}&n=${vid.numero}`;
+            // USE O CAMINHO RELATIVO PARA EVITAR ERROS DE REDIRECIONAMENTO
+            const downloadUrl = `download.html?id=${vid.uuid}&n=${vid.numero}`;
             
             card.innerHTML = `
                 <a href="${downloadUrl}" class="video-link">
@@ -204,7 +204,7 @@
             `;
             container.appendChild(card);
         });
-    }
+    } 
 
     // Filtra apenas pelo número do vídeo
     function filtrarGaleria() {
