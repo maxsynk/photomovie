@@ -22,7 +22,7 @@
         .header { margin-top: 1.5cm; text-align: center; margin-bottom: 30px; }
         .header h1 { color: var(--dourado); font-size: 48px; font-weight: 900; margin: 0; text-transform: uppercase; }
 
-        .main-container { width: 95%; max-width: 500px; } /* 1. Aumentado conforme pedido */
+        .main-container { width: 95%; max-width: 500px; }
 
         .btn-central {
             width: 100%; padding: 18px; margin: 8px 0; border-radius: 12px;
@@ -35,15 +35,13 @@
         #btn-galeria { background: rgba(197, 160, 89, 0.05); color: var(--dourado); border: 1px solid var(--dourado); }
         #btn-login { display: block; background: transparent; color: var(--dourado); border: 2px solid var(--dourado); margin-top: 50px; }
 
-        /* 2. Modal do Evento (Card) com a Cor do Sistema */
         .event-card {
             background: var(--bg-card); 
-            border: 1px solid rgba(0, 209, 209, 0.3); /* Turquesa do sistema */
+            border: 1px solid rgba(0, 209, 209, 0.3);
             padding: 22px; border-radius: 18px; margin-bottom: 15px; position: relative;
             transition: 0.3s;
         }
         
-        /* 3. Estilo do Card quando Ativo */
         .event-card.active { border: 2px solid var(--turquesa); box-shadow: 0 0 15px rgba(0, 209, 209, 0.2); }
         .status-badge { 
             position: absolute; top: 12px; right: 12px; font-size: 10px; 
@@ -59,15 +57,18 @@
         .event-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
         .btn-mini { padding: 10px 2px; border-radius: 8px; font-size: 11px; font-weight: bold; border: none; cursor: pointer; text-transform: uppercase; }
         
-        /* Botão Ativar Dinâmico */
         .btn-activate { background: transparent; color: var(--turquesa); border: 1px solid var(--turquesa); }
         .event-card.active .btn-activate { background: var(--turquesa); color: #000; }
 
         .btn-edit { background: #444; color: #fff; }
         .btn-delete { background: rgba(255, 85, 85, 0.1); color: var(--danger); border: 1px solid var(--danger); }
 
+        /* Modal Senha Estilizado */
         #modal-senha { position: fixed; inset: 0; background: rgba(0,20,20,0.98); display: none; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(15px); }
         .modal-content { background: #002222; padding: 35px; border-radius: 25px; border: 1px solid var(--dourado); text-align: center; width: 85%; max-width: 320px; }
+        .modal-content input { width: 100%; padding: 18px; background: #000; border: 1px solid var(--dourado); color: var(--dourado); border-radius: 12px; text-align: center; font-size: 28px; margin-bottom: 25px; box-sizing: border-box; outline: none; letter-spacing: 5px; }
+        .btn-confirm { background: var(--dourado); color: #000; border: none; padding: 15px; border-radius: 10px; font-weight: 900; width: 100%; cursor: pointer; text-transform: uppercase; }
+        .footer-minimal { padding: 40px 0; font-size: 11px; color: #666; text-align: center; }
     </style>
 </head>
 <body>
@@ -89,16 +90,52 @@
         <button id="btn-lock" class="btn-protected btn-central" onclick="bloquear()" style="background: transparent; color: var(--danger); border: 1px solid rgba(255,85,85,0.2); margin-top: 30px; font-size: 11px;">SAIR</button>
     </div>
 
+    <div id="modal-senha">
+        <div class="modal-content">
+            <h3 style="color:var(--dourado); margin-top: 0;">AUTENTICAÇÃO</h3>
+            <input type="password" id="input-senha" inputmode="numeric" placeholder="••••">
+            <button class="btn-confirm" onclick="validarSenha()">CONFIRMAR</button>
+            <p onclick="fecharModal()" style="margin-top:20px; font-size:13px; color:#999; cursor:pointer">Voltar</p>
+        </div>
+    </div>
+
+    <div class="footer-minimal">Sistema de gestão 360º</div>
+
 <script>
     const WORKER_URL = "https://photomovie.maxprimefotovideo.workers.dev"; 
+    const SENHA_MESTRA = "1234"; // Definindo a senha para validação
 
     window.onload = () => {
         if(sessionStorage.getItem('logado') === 'true') liberarSistema();
     }
 
+    function abrirModal() {
+        document.getElementById('modal-senha').style.display = 'flex';
+        setTimeout(() => document.getElementById('input-senha').focus(), 100);
+    }
+
+    function fecharModal() { document.getElementById('modal-senha').style.display = 'none'; }
+
+    // CORREÇÃO 2: Função de Validação Corrigida
+    function validarSenha() {
+        const campo = document.getElementById('input-senha');
+        const senhaDigitada = campo.value;
+
+        if (senhaDigitada === SENHA_MESTRA) {
+            sessionStorage.setItem('logado', 'true');
+            fecharModal();
+            liberarSistema();
+        } else {
+            alert("Senha Incorreta!");
+            campo.value = '';
+            campo.focus();
+        }
+    }
+
     function liberarSistema() {
         document.getElementById('btn-login').style.display = 'none';
         document.querySelectorAll('.btn-protected').forEach(b => b.style.display = 'block');
+        document.getElementById('container-eventos').style.display = 'block';
         renderEventos();
     }
 
@@ -109,15 +146,12 @@
         try {
             const res = await fetch(`${WORKER_URL}/listar-eventos`);
             const eventos = await res.json();
-            
-            // Pega o ID do evento que foi ativado por último
             const ativoRaw = localStorage.getItem('evento_ativo');
             const eventoAtivoID = ativoRaw ? JSON.parse(ativoRaw).id : null;
 
             container.innerHTML = '';
             eventos.forEach((ev) => {
                 const isActive = String(ev.id) === String(eventoAtivoID);
-                // Serialização segura para o botão editar
                 const evDataStr = btoa(encodeURIComponent(JSON.stringify(ev)));
 
                 container.innerHTML += `
@@ -142,12 +176,11 @@
         } catch (e) { container.innerHTML = '<p>Erro ao carregar.</p>'; }
     }
 
-    // 4. CORREÇÃO DO ATIVAR: Agora força o salvamento e recarrega a lista
     function setAtivo(id, nome) {
         const obj = { id: String(id), nome: nome };
         localStorage.setItem('evento_ativo', JSON.stringify(obj));
-        localStorage.setItem('evento_selecionado', JSON.stringify(obj)); // Para compatibilidade com a galeria
-        renderEventos(); // Atualiza os botões na hora
+        localStorage.setItem('evento_selecionado', JSON.stringify(obj));
+        renderEventos();
     }
 
     function irParaGaleria() {
@@ -155,7 +188,6 @@
         window.location.href = 'galeria.html';
     }
 
-    // 5. CORREÇÃO DO EDITAR: Envia o objeto limpo
     function editarEvento(evDataStr) {
         const ev = JSON.parse(decodeURIComponent(atob(evDataStr)));
         localStorage.setItem('evento_para_editar', JSON.stringify(ev));
@@ -178,23 +210,6 @@
         renderEventos();
     }
 
-    // Funções de Modal (Sua lógica de senha original)
-    function abrirModal() { document.getElementById('modal-senha').style.display = 'flex'; }
-    function fecharModal() { document.getElementById('modal-senha').style.display = 'none'; }
-    function validarSenha() {
-    const campo = document.getElementById('input-senha');
-    const senhaDigitada = campo.value;
-
-    if (senhaDigitada === SENHA_MESTRA) {
-        sessionStorage.setItem('logado', 'true');
-        fecharModal();
-        liberarSistema(); // Esta função vai esconder o botão de login e mostrar os eventos
-    } else {
-        alert("Senha Incorreta!");
-        campo.value = '';
-        campo.focus();
-    }
-}
     function bloquear() { sessionStorage.removeItem('logado'); location.reload(); }
 </script>
 </body>
