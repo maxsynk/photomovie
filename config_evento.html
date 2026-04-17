@@ -147,19 +147,6 @@
             margin-top: 10px;
             filter: invert(100%) hue-rotate(180deg) brightness(1.5);
         }
-
-        .sync-btn {
-            background: none;
-            border: 1px solid var(--dourado);
-            color: var(--dourado);
-            padding: 8px;
-            border-radius: 10px;
-            font-size: 10px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-        }
     </style>
 </head>
 <body>
@@ -173,7 +160,7 @@
         <div class="section">
             <h3>1. O Evento</h3>
             <label>NOME DO EVENTO</label>
-            <input type="text" id="conf-nome" placeholder="Ex: Casamento de Maria e João">
+            <input type="text" id="conf-nome" placeholder="Ex: Casamento">
             <label>DATA</label>
             <input type="date" id="conf-data">
         </div>
@@ -192,7 +179,7 @@
             <h3>3. Timeline de Velocidade</h3>
             <div class="vizz-presets">
                 <button class="preset-btn" onclick="applyVizzPreset('vizz-classic', this)">
-                    <span>⚡ Vizz Classic</span>
+                    <span>⚡ Classic</span>
                 </button>
                 <button class="preset-btn" onclick="applyVizzPreset('vizz-ultra', this)">
                     <span>🐢 Ultra Slow</span>
@@ -245,27 +232,22 @@
         </div>
 
         <button class="btn-save-main" onclick="salvarConfig()">SALVAR EVENTO</button>
-        <p onclick="window.location.href='index.html'" style="text-align:center; color:#555; font-size:12px; margin-top:20px; cursor:pointer; font-weight:bold;">CANCELAR</p>
+        <p onclick="window.location.href='index.html'" style="text-align:center; color:#555; font-size:12px; margin-top:20px; cursor:pointer; font-weight:bold;">VOLTAR</p>
     </div>
 
     <div id="music-modal" class="modal">
         <div class="modal-content">
-            <h4 style="color:var(--dourado); text-align:center; letter-spacing: 2px;">STUDIO MUSICAL</h4>
-            
-            <div class="action-box" id="btn-mp3-box" style="font-size: 14px; padding: 30px;" onclick="document.getElementById('file-musica').click()">
-                <span id="music-file-label">📤 CLIQUE PARA UPAR MP3</span>
-                <input type="file" id="file-musica" accept="audio/*" style="display:none" onchange="subirArquivo(this, 'MUSICA')">
+            <h4 style="color:var(--dourado); text-align:center;">STUDIO MUSICAL</h4>
+            <div class="action-box" id="btn-mp3-box" onclick="document.getElementById('file-musica').click()">
+                <span id="music-file-label">📤 UPAR MP3</span>
+                <input type="file" id="file-musica" accept="audio/mpeg, audio/mp3" style="display:none" onchange="subirArquivo(this, 'MUSICA')">
             </div>
-
-            <label>INÍCIO DA MÚSICA (SEG)</label>
+            <label>INÍCIO (SEG)</label>
             <input type="number" id="conf-musica-offset" value="0" oninput="sincronizarTempoPlayer()">
-
             <div class="player-container">
-                <span style="font-size: 10px; color: var(--dourado); font-weight: bold;">PRÉVIA DO ÁUDIO</span>
                 <audio id="main-audio-player" controls></audio>
             </div>
-
-            <button class="btn-save-main" style="padding: 15px; margin-top: 10px;" onclick="fecharModalMusica()">CONCLUIR</button>
+            <button class="btn-save-main" onclick="fecharModalMusica()">CONCLUIR</button>
         </div>
     </div>
 
@@ -273,42 +255,27 @@
     const WORKER_URL = "https://photomovie.maxprimefotovideo.workers.dev";
     let reverseActive = false;
 
-    window.onload = () => {
-        document.getElementById('conf-data').value = new Date().toISOString().split('T')[0];
-    };
-
     function toggleModal(id, show) { 
         document.getElementById(id).style.display = show ? 'flex' : 'none'; 
+        if(show && id === 'music-modal') carregarSomNoPlayer();
     }
 
     function fecharModalMusica() {
-        const player = document.getElementById('main-audio-player');
-        player.pause(); 
+        document.getElementById('main-audio-player').pause(); 
         toggleModal('music-modal', false);
     }
     
     function carregarSomNoPlayer() {
         const url = document.getElementById('conf-musica-url').value;
-        const offset = parseFloat(document.getElementById('conf-musica-offset').value) || 0;
         const player = document.getElementById('main-audio-player');
-
         if(!url) return;
-
         player.src = url;
         player.load();
-        
-        player.oncanplay = () => {
-            player.currentTime = offset;
-            player.play();
-        };
     }
 
     function sincronizarTempoPlayer() {
-        const offset = parseFloat(document.getElementById('conf-musica-offset').value) || 0;
         const player = document.getElementById('main-audio-player');
-        if(player.src && !player.paused) {
-            player.currentTime = offset;
-        }
+        if(player.src) player.currentTime = document.getElementById('conf-musica-offset').value;
     }
 
     function setTime(val, btn) {
@@ -319,91 +286,69 @@
 
     function toggleReverse() {
         reverseActive = !reverseActive;
-        const btn = document.getElementById('btn-reverse');
-        btn.classList.toggle('active', reverseActive);
+        document.getElementById('btn-reverse').classList.toggle('active', reverseActive);
     }
 
     function applyVizzPreset(type, btn) {
         document.querySelectorAll('.preset-btn').forEach(b => { if(b.id !== 'btn-reverse') b.classList.remove('active'); });
         btn.classList.add('active');
-        const s = document.getElementById('speed-start');
-        const m = document.getElementById('speed-mid');
-        const e = document.getElementById('speed-end');
+        const s = document.getElementById('speed-start'), m = document.getElementById('speed-mid'), e = document.getElementById('speed-end');
         if(type === 'vizz-classic') { s.value="2"; m.value="0.5"; e.value="2"; }
         if(type === 'vizz-ultra')   { s.value="4"; m.value="0.25"; e.value="4"; }
         if(type === 'vizz-linear')  { s.value="1"; m.value="1"; e.value="1"; }
     }
 
     async function subirArquivo(input, tipo) {
-        if(!input.files || !input.files[0]) return;
-        
-        const file = input.files[0];
+        if(!input.files[0]) return;
         const label = tipo === 'MOLDURA' ? document.getElementById('upload-label') : document.getElementById('music-file-label');
-        const box = tipo === 'MOLDURA' ? document.getElementById('btn-moldura-box') : document.getElementById('btn-mp3-box');
-        
         label.innerText = "⏳ ENVIANDO...";
         
         const formData = new FormData();
-        formData.append("video", file); // O worker espera a chave "video"
+        formData.append("video", input.files[0]);
         formData.append("uuid", tipo.toLowerCase() + "_" + Date.now());
         formData.append("evento", tipo === 'MOLDURA' ? "MOLDURAS_SISTEMA" : "MUSICAS_SISTEMA");
 
         try {
             const res = await fetch(`${WORKER_URL}/upload`, { method: 'POST', body: formData });
-            if(!res.ok) throw new Error();
             const data = await res.json();
-            const linkFinal = `${WORKER_URL}/stream?id=${data.path}`;
+            const urlFinal = `${WORKER_URL}/stream?id=${data.path}`;
 
             if(tipo === 'MOLDURA') {
-                document.getElementById('conf-moldura-url').value = linkFinal;
+                document.getElementById('conf-moldura-url').value = urlFinal;
                 const preview = document.getElementById('frame-preview');
-                preview.src = linkFinal;
-                preview.style.display = "block";
-                label.innerText = "MOLDURA CARREGADA"; 
-                box.classList.add('active-config'); 
+                preview.src = urlFinal; preview.style.display = "block";
+                label.innerText = "MOLDURA OK";
             } else {
-                document.getElementById('conf-musica-url').value = linkFinal;
-                label.innerText = "MP3 CARREGADO";
-                box.classList.add('active-config');
-                atualizarSinalMusica();
+                document.getElementById('conf-musica-url').value = urlFinal;
+                label.innerText = "MP3 OK";
                 carregarSomNoPlayer();
             }
-        } catch (e) { 
-            label.innerText = "❌ ERRO AO SUBIR";
-        }
+        } catch (e) { alert("Erro upload"); label.innerText = "ERRO"; }
     }
 
-    function atualizarSinalMusica() {
-        const url = document.getElementById('conf-musica-url').value;
-        if(url) {
-            document.getElementById('btn-modal-musica').classList.add('active-config');
-            document.getElementById('music-status-text').innerText = "MÚSICA OK"; 
-        }
-    }
-
-    function salvarConfig() {
-        const nome = document.getElementById('conf-nome').value.trim();
-        if(!nome) return alert("Dê um nome ao evento!");
-
+    async function salvarConfig() {
         const config = {
             id: Date.now(),
-            nome: nome,
+            nome: document.getElementById('conf-nome').value,
             data: document.getElementById('conf-data').value,
             tempo: document.getElementById('conf-tempo').value,
             reverse: reverseActive,
             moldura: document.getElementById('conf-moldura-url').value,
-            velocidades: {
-                inicio: document.getElementById('speed-start').value,
-                meio: document.getElementById('speed-mid').value,
-                fim: document.getElementById('speed-end').value
-            },
             musicaUrl: document.getElementById('conf-musica-url').value,
             musicaOffset: document.getElementById('conf-musica-offset').value
         };
 
-        localStorage.setItem('config_atual', JSON.stringify(config));
-        alert("Configuração Salva!");
-        window.location.href = 'index.html';
+        try {
+            const res = await fetch(`${WORKER_URL}/salvar-evento`, {
+                method: 'POST',
+                body: JSON.stringify(config)
+            });
+            if(res.ok) {
+                localStorage.setItem('config_atual', JSON.stringify(config));
+                alert("Evento Salvo na Nuvem!");
+                window.location.href = 'index.html';
+            }
+        } catch (e) { alert("Erro ao salvar no D1"); }
     }
 </script>
 </body>
