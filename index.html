@@ -11,6 +11,7 @@
             --dourado-dark: #8e6d2d;
             --bg-modal: rgba(0, 20, 20, 0.98);
             --cinza-minimal: #666666; 
+            --danger: #ff5555;
         }
         
         body { 
@@ -25,32 +26,9 @@
             overflow-x: hidden;
         }
 
-        .header {
-            margin-top: 1.8cm;
-            text-align: center;
-            z-index: 10;
-            margin-bottom: 40px;
-        }
-
-        .header h1 {
-            color: var(--dourado);
-            font-size: 52px; 
-            font-weight: 900;
-            letter-spacing: 3px;
-            margin: 0;
-            text-transform: uppercase;
-            animation: pulse-gold 3s infinite ease-in-out;
-        }
-
-        .header p {
-            color: var(--dourado); 
-            font-size: 20px; 
-            margin: -5px 0 0 0;
-            letter-spacing: 4px;
-            font-weight: 300;
-            text-transform: lowercase;
-            opacity: 0.9;
-        }
+        .header { margin-top: 1.8cm; text-align: center; z-index: 10; margin-bottom: 40px; }
+        .header h1 { color: var(--dourado); font-size: 52px; font-weight: 900; letter-spacing: 3px; margin: 0; text-transform: uppercase; animation: pulse-gold 3s infinite ease-in-out; }
+        .header p { color: var(--dourado); font-size: 20px; margin: -5px 0 0 0; letter-spacing: 4px; font-weight: 300; text-transform: lowercase; opacity: 0.9; }
 
         @keyframes pulse-gold {
             0% { text-shadow: 0 0 5px rgba(197, 160, 89, 0.2); transform: scale(1); }
@@ -58,107 +36,44 @@
             100% { text-shadow: 0 0 5px rgba(197, 160, 89, 0.2); transform: scale(1); }
         }
 
-        .main-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 90%;
-            max-width: 400px;
-        }
+        .main-container { flex: 1; display: flex; flex-direction: column; align-items: center; width: 95%; max-width: 450px; }
 
         .btn-central {
-            width: 100%;
-            padding: 20px;
-            margin: 10px 0;
-            border-radius: 12px;
-            text-transform: uppercase;
-            font-weight: 800;
-            font-size: 15px;
-            cursor: pointer;
-            text-decoration: none;
-            text-align: center;
-            display: none; 
-            box-sizing: border-box;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 100%; padding: 18px; margin: 8px 0; border-radius: 12px;
+            text-transform: uppercase; font-weight: 800; font-size: 14px;
+            cursor: pointer; text-decoration: none; text-align: center;
+            display: none; box-sizing: border-box; transition: all 0.3s;
         }
 
-        .btn-create {
-            background: linear-gradient(135deg, var(--dourado), var(--dourado-dark));
-            color: #1a1a1a;
-            border: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
+        .btn-create { background: linear-gradient(135deg, var(--dourado), var(--dourado-dark)); color: #1a1a1a; border: none; }
+        #btn-login { display: block; background: transparent; color: var(--dourado); border: 2px solid var(--dourado); margin-top: 50px; }
 
-        #btn-galeria {
-            background: rgba(197, 160, 89, 0.05);
-            color: var(--dourado);
-            border: 1px solid var(--dourado);
-            margin-bottom: 25px;
-        }
+        .event-list-container { width: 100%; margin-top: 30px; display: none; }
 
-        #btn-login {
-            display: block;
-            background: transparent;
-            color: var(--dourado);
-            border: 2px solid var(--dourado);
-            margin-top: 50px;
-        }
-
-        .event-list-container {
-            width: 100%;
-            margin-top: 30px;
-            display: none;
-        }
-
+        /* Estilo dos Cards de Evento Atualizado */
         .event-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(197, 160, 89, 0.15);
-            padding: 18px;
-            border-radius: 15px;
-            margin-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            padding: 20px; border-radius: 15px; margin-bottom: 15px;
         }
+        .event-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+        .event-info h4 { margin: 0; color: var(--dourado); text-transform: uppercase; font-size: 18px; }
+        .event-info span { font-size: 12px; color: #aaa; }
 
-        .event-info h4 { margin: 0; color: var(--dourado); text-transform: uppercase; font-size: 16px; }
-        .event-info span { font-size: 11px; color: #aaa; margin-top: 4px; display: block; }
-
-        #modal-senha {
-            position: fixed; inset: 0;
-            background: var(--bg-modal);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            backdrop-filter: blur(15px);
+        .event-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .btn-mini { 
+            padding: 10px 5px; border-radius: 8px; font-size: 11px; 
+            font-weight: bold; border: none; cursor: pointer; 
+            text-transform: uppercase; text-align: center; text-decoration: none;
         }
+        .btn-activate { background: var(--dourado); color: #000; }
+        .btn-edit { background: #444; color: #fff; }
+        .btn-delete { background: rgba(255, 85, 85, 0.2); color: var(--danger); border: 1px solid var(--danger); }
 
-        .modal-content {
-            background: #002222;
-            padding: 35px;
-            border-radius: 25px;
-            border: 1px solid var(--dourado);
-            text-align: center;
-            width: 85%;
-            max-width: 320px;
-        }
-
-        .modal-content input {
-            width: 100%; padding: 18px;
-            background: #000; border: 1px solid var(--dourado);
-            color: var(--dourado); border-radius: 12px;
-            text-align: center; font-size: 28px; letter-spacing: 12px;
-            margin-bottom: 25px; box-sizing: border-box; outline: none;
-        }
-
-        .btn-confirm {
-            background: var(--dourado); color: #000;
-            border: none; padding: 15px; border-radius: 10px;
-            font-weight: 900; width: 100%; cursor: pointer;
-        }
+        #modal-senha { position: fixed; inset: 0; background: var(--bg-modal); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(15px); }
+        .modal-content { background: #002222; padding: 35px; border-radius: 25px; border: 1px solid var(--dourado); text-align: center; width: 85%; max-width: 320px; }
+        .modal-content input { width: 100%; padding: 18px; background: #000; border: 1px solid var(--dourado); color: var(--dourado); border-radius: 12px; text-align: center; font-size: 28px; letter-spacing: 12px; margin-bottom: 25px; box-sizing: border-box; outline: none; }
+        .btn-confirm { background: var(--dourado); color: #000; border: none; padding: 15px; border-radius: 10px; font-weight: 900; width: 100%; cursor: pointer; }
 
         .footer-minimal { padding: 40px 0; font-size: 11px; color: var(--cinza-minimal); letter-spacing: 2px; text-align: center; }
     </style>
@@ -174,14 +89,13 @@
         <button id="btn-login" class="btn-central" onclick="abrirModal()">🔓 ACESSAR SISTEMA</button>
 
         <a href="config_evento.html" id="btn-create" class="btn-protected btn-central btn-create">➕ CRIAR NOVO EVENTO</a>
-        <a href="galeria.html" id="btn-galeria" class="btn-protected btn-central">🎞️ ACESSAR GALERIA</a>
         
         <div id="container-eventos" class="event-list-container">
-            <h3 style="font-size: 11px; color: var(--dourado); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; opacity: 0.6; text-align: center;">Eventos Ativos</h3>
+            <h3 style="font-size: 11px; color: var(--dourado); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; opacity: 0.6; text-align: center;">Gerenciar Eventos</h3>
             <div id="lista-eventos"></div>
         </div>
 
-        <button id="btn-lock" class="btn-protected btn-central" onclick="bloquear()" style="background: transparent; color: #ff5555; border: 1px solid rgba(255,85,85,0.3); margin-top: 30px; font-size: 12px;">ENCERRAR SESSÃO</button>
+        <button id="btn-lock" class="btn-protected btn-central" onclick="bloquear()" style="background: transparent; color: var(--danger); border: 1px solid rgba(255,85,85,0.3); margin-top: 30px; font-size: 12px;">ENCERRAR SESSÃO</button>
     </div>
 
     <div class="footer-minimal">Sistema de gestão 360º</div>
@@ -197,7 +111,7 @@
 
 <script>
     const SENHA_MESTRA = "1234"; 
-    const WORKER_URL = "https://photomovie.maxprimefotovideo.workers.dev"; // <--- COLOQUE A URL DO SEU WORKER AQUI
+    const WORKER_URL = "https://photomovie.maxprimefotovideo.workers.dev"; 
 
     window.onload = () => {
         if(sessionStorage.getItem('logado') === 'true') liberarSistema();
@@ -244,30 +158,59 @@
 
             container.innerHTML = '';
             eventos.forEach((ev) => {
+                // Prepara o objeto para edição (transforma em string segura)
+                const evData = btoa(unescape(encodeURIComponent(JSON.stringify(ev))));
+
                 container.innerHTML += `
-                    <div class="event-card" onclick="abrirEvento('${ev.id}')" style="cursor:pointer">
-                        <div class="event-info">
-                            <h4>${ev.nome}</h4>
-                            <span>📅 ${ev.data}</span>
+                    <div class="event-card">
+                        <div class="event-header">
+                            <div class="event-info">
+                                <h4>${ev.nome}</h4>
+                                <span>📅 ${ev.data || 'Sem data'}</span>
+                            </div>
                         </div>
-                        <span style="color:var(--dourado)">➔</span>
+                        <div class="event-actions">
+                            <button class="btn-mini btn-activate" onclick="ativarEvento('${ev.id}', '${ev.nome}')">Ativar</button>
+                            <button class="btn-mini btn-edit" onclick="editarEvento('${evData}')">Editar</button>
+                            <button class="btn-mini btn-delete" onclick="excluirEvento('${ev.id}', '${ev.nome}')">Excluir</button>
+                        </div>
                     </div>`;
             });
         } catch (e) {
-            container.innerHTML = '<p style="color:red; font-size:11px;">Erro de conexão com a nuvem.</p>';
+            container.innerHTML = '<p style="color:red; font-size:11px;">Erro ao carregar banco de dados.</p>';
         }
     }
 
-    async function abrirEvento(id) {
+    // --- FUNÇÕES DE AÇÃO ---
+
+    function ativarEvento(id, nome) {
+        // Salva o contexto do evento para a galeria e câmera
+        localStorage.setItem('evento_selecionado', JSON.stringify({id, nome}));
+        // Redireciona para a galeria já filtrada
+        window.location.href = 'galeria.html';
+    }
+
+    async function excluirEvento(id, nome) {
+        if(!confirm(`⚠️ ATENÇÃO: Deseja apagar o evento "${nome}"? \nIsso deletará permanentemente todos os registros de vídeos desta galeria.`)) return;
+
         try {
-            const res = await fetch(`${WORKER_URL}/listar-eventos`);
-            const eventos = await res.json();
-            const config = eventos.find(e => e.id === id);
-            if(config) {
-                localStorage.setItem('config_atual', JSON.stringify(config));
-                window.location.href = 'camera.html';
+            const res = await fetch(`${WORKER_URL}/excluir-evento?id=${id}&evento=${encodeURIComponent(nome)}`, {
+                method: 'DELETE'
+            });
+
+            if(res.ok) {
+                alert("Evento excluído!");
+                renderEventos(); // Atualiza a lista
             }
-        } catch (e) { alert("Erro ao carregar evento"); }
+        } catch (e) {
+            alert("Erro ao excluir.");
+        }
+    }
+
+    function editarEvento(evData) {
+        const ev = JSON.parse(decodeURIComponent(escape(atob(evData))));
+        localStorage.setItem('evento_para_editar', JSON.stringify(ev));
+        window.location.href = 'config_evento.html';
     }
 
     function bloquear() {
