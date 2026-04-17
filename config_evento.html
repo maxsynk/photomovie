@@ -347,16 +347,24 @@
     }
 
     window.onload = () => {
-    const dadosEdicao = localStorage.getItem('evento_para_editar');
-    if (dadosEdicao) {
-        const ev = JSON.parse(dadosEdicao);
-        // Preencha os campos usando os IDs que você tem lá
-        document.getElementById('id_evento').value = ev.id;
-        document.getElementById('nome_evento').value = ev.nome;
-        document.getElementById('tempo_video').value = ev.tempo;
-        // ... repita para musica e moldura ...
+    const editData = localStorage.getItem('evento_para_editar');
+    if (editData) {
+        const ev = JSON.parse(editData);
         
-        // Limpa o dado após carregar para não dar conflito em novas criações
+        // Use os IDs que estão nos seus <input> da página config_evento.html
+        if(document.getElementById('nome')) document.getElementById('nome').value = ev.nome;
+        if(document.getElementById('data')) document.getElementById('data').value = ev.data;
+        if(document.getElementById('tempo')) document.getElementById('tempo').value = ev.tempo;
+        if(document.getElementById('musicaUrl')) document.getElementById('musicaUrl').value = ev.musicaUrl;
+        
+        // IMPORTANTE: Preencher o ID escondido (hidden) para o Worker saber que é uma edição
+        // Se você não tiver um input hidden para o ID, crie um no seu formulário:
+        // <input type="hidden" id="evento_id">
+        if(document.getElementById('evento_id')) {
+            document.getElementById('evento_id').value = ev.id;
+        }
+
+        // Limpa a memória para a próxima vez não vir preenchido errado
         localStorage.removeItem('evento_para_editar');
     }
 }
