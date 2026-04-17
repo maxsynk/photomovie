@@ -6,10 +6,9 @@
     <title>PHOTO MOVIE Pro - Camera</title>
     <style>
         :root { 
-            --turquesa-dark: #008b8b; 
+            --turquesa: #00d1d1; 
             --dourado: #c5a059; 
             --laranja: #ff8c00;
-            --verde-neon: #39ff14;
             --vermelho-neon: #ff0000;
         }
         
@@ -31,18 +30,18 @@
 
         .controls { position: absolute; bottom: 80px; width: 100%; display: flex; justify-content: center; align-items: center; z-index: 100; }
 
-        /* Novo Obturador: Dourado com Pulso Verde */
+        /* Obturador: Turquesa com Pulso Dourado */
         .shutter { 
-            width: 90px; height: 90px; background: var(--dourado); 
+            width: 90px; height: 90px; background: var(--turquesa); 
             border-radius: 50%; display: flex; align-items: center; justify-content: center; 
             cursor: pointer; border: 4px solid white;
-            animation: pulse-verde 2s infinite;
+            animation: pulse-dourado 2s infinite;
         }
 
-        @keyframes pulse-verde {
-            0% { box-shadow: 0 0 0 0 rgba(57, 255, 20, 0.8); }
-            70% { box-shadow: 0 0 0 20px rgba(57, 255, 20, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(57, 255, 20, 0); }
+        @keyframes pulse-dourado {
+            0% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0.8); }
+            70% { box-shadow: 0 0 0 20px rgba(197, 160, 89, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0); }
         }
 
         .btn-ui-flip { 
@@ -52,7 +51,7 @@
             display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);
         }
 
-        /* Status de Mensagens */
+        /* Mensagens de Status */
         #status-msg { 
             position: fixed; inset: 0; z-index: 1500; display: none; flex-direction: column;
             align-items: center; justify-content: center; font-weight: 900; 
@@ -60,32 +59,31 @@
         }
 
         .msg-contagem { font-size: 8rem; color: white; }
-        .msg-finalizando { font-size: 3rem; color: var(--laranja); animation: blink 0.6s infinite; }
+        .msg-finalizando { font-size: 3.5rem; color: var(--laranja); animation: blink 0.6s infinite; }
         
-        /* Vermelho Neon Pulsante */
+        /* FINALIZADO Vermelho Neon Pulsante */
         .msg-finalizado { 
-            font-size: 4rem; color: var(--vermelho-neon); 
-            text-shadow: 0 0 10px var(--vermelho-neon), 0 0 20px var(--vermelho-neon);
+            font-size: 5rem; color: var(--vermelho-neon); 
+            text-shadow: 0 0 15px var(--vermelho-neon), 0 0 30px var(--vermelho-neon);
             animation: pulse-red 0.5s infinite alternate; 
         }
 
-        @keyframes pulse-red { from { transform: scale(1); opacity: 0.8; } to { transform: scale(1.1); opacity: 1; } }
+        @keyframes pulse-red { from { transform: scale(1); opacity: 0.8; } to { transform: scale(1.15); opacity: 1; } }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }
 
-        #upload-loading { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 3000; display: none; flex-direction: column; align-items: center; justify-content: center; color: var(--turquesa-dark); }
+        #upload-loading { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 3000; display: none; flex-direction: column; align-items: center; justify-content: center; color: var(--turquesa); }
         
-        /* Overlay invisível para capturar o toque final */
-        #tap-to-continue { position: fixed; inset: 0; z-index: 2000; display: none; }
+        #tap-overlay { position: fixed; inset: 0; z-index: 2000; display: none; }
     </style>
 </head>
-<body onclick="checarToqueFinal()">
+<body onclick="voltarParaGaleria()">
 
     <div id="evento-info-badge" class="event-badge" style="display:none;"></div>
-    <div id="tap-to-continue"></div>
+    <div id="tap-overlay"></div>
 
     <div id="upload-loading">
         <div style="font-size: 24px; margin-bottom: 10px; font-weight: bold;">ENVIANDO VÍDEO...</div>
-        <small style="color: white;">Aguarde o processamento</small>
+        <small style="color: white; opacity: 0.8;">Processando na nuvem</small>
     </div>
 
     <div id="screen-camera" class="screen active">
@@ -98,7 +96,7 @@
             
             <div class="controls">
                 <div class="shutter" onclick="iniciarContagem()">
-                    <div style="width: 25px; height: 25px; background: #000; border-radius: 4px;"></div>
+                    <div style="width: 28px; height: 28px; background: #000; border-radius: 5px;"></div>
                 </div>
                 <button class="btn-ui-flip" onclick="girarCamera()">🔄</button>
             </div>
@@ -136,7 +134,7 @@
             video.srcObject = stream;
             await video.play();
         } catch (err) {
-            // Fallback para câmeras que não suportam ideal 720p
+            console.warn("Falha no modo ideal, tentando fallback...");
             stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
             video.srcObject = stream;
         }
@@ -189,16 +187,16 @@
         recorder.start();
         drawLoop();
 
-        let segundos = 0;
-        let timer = setInterval(() => {
-            segundos++;
-            if (segundos === (tempoTotal - 3)) {
+        let s = 0;
+        let t = setInterval(() => {
+            s++;
+            if (s === (tempoTotal - 3)) {
                 msg.style.display = 'flex';
                 msg.innerText = "FINALIZANDO";
                 msg.className = "msg-finalizando";
             }
-            if (segundos >= tempoTotal) {
-                clearInterval(timer);
+            if (s >= tempoTotal) {
+                clearInterval(t);
                 if(recorder.state === "recording") recorder.stop();
             }
         }, 1000);
@@ -218,21 +216,20 @@
             const res = await fetch(`${WORKER_URL}/upload`, { method: 'POST', body: formData });
             if(res.ok) {
                 document.getElementById('upload-loading').style.display = 'none';
-                // Exibe o aviso Neon e habilita o toque para sair
-                msg.innerText = "FINALIZADO\n(toque para continuar)";
+                // Mostra o FINALIZADO puro e habilita o clique
+                msg.innerText = "FINALIZADO";
                 msg.className = "msg-finalizado";
                 msg.style.display = 'flex';
-                msg.style.whiteSpace = "pre-line";
                 prontoParaSair = true;
-                document.getElementById('tap-to-continue').style.display = 'block';
+                document.getElementById('tap-overlay').style.display = 'block';
             }
         } catch (e) { 
-            alert("Erro na rede. Tente novamente.");
+            alert("Erro no upload. Tente novamente.");
             document.getElementById('upload-loading').style.display = 'none';
         }
     }
 
-    function checarToqueFinal() {
+    function voltarParaGaleria() {
         if(prontoParaSair) {
             window.location.href = 'galeria.html';
         }
