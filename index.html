@@ -181,11 +181,20 @@
     // Funções de Modal (Sua lógica de senha original)
     function abrirModal() { document.getElementById('modal-senha').style.display = 'flex'; }
     function fecharModal() { document.getElementById('modal-senha').style.display = 'none'; }
-    function validarSenha() { 
-        if (document.getElementById('input-senha').value === "1234") { 
-            sessionStorage.setItem('logado', 'true'); fecharModal(); liberarSistema(); 
-        } 
+    function validarSenha() {
+    const campo = document.getElementById('input-senha');
+    const senhaDigitada = campo.value;
+
+    if (senhaDigitada === SENHA_MESTRA) {
+        sessionStorage.setItem('logado', 'true');
+        fecharModal();
+        liberarSistema(); // Esta função vai esconder o botão de login e mostrar os eventos
+    } else {
+        alert("Senha Incorreta!");
+        campo.value = '';
+        campo.focus();
     }
+}
     function bloquear() { sessionStorage.removeItem('logado'); location.reload(); }
 </script>
 </body>
