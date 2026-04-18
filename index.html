@@ -228,6 +228,7 @@
 
 <script>
     const SENHA_MESTRA = "1234"; 
+    const WORKER_URL = "https://photomovie.maxprimefotovideo.workers.dev"; // Sua URL do Worker
 
     window.onload = () => {
         if(sessionStorage.getItem('logado') === 'true') {
@@ -264,50 +265,59 @@
         renderEventos();
     }
 
-    function renderEventos() {
-        const eventos = JSON.parse(localStorage.getItem('meus_eventos')) || [];
+    // AJUSTADO: Agora busca do Worker e não do localStorage local
+    async function renderEventos() {
         const container = document.getElementById('lista-eventos');
         
-        if(eventos.length === 0) {
-            container.innerHTML = '<p style="font-size:12px; color:#444; text-align:center;">Nenhum evento ativo.</p>';
-            return;
-        }
+        try {
+            const res = await fetch(`${WORKER_URL}/listar-eventos`);
+            const eventos = await res.json();
 
-        container.innerHTML = '';
-        eventos.forEach((ev, index) => {
-            container.innerHTML += `
-                <div class="event-card">
-                    <div class="event-info" onclick="abrirEvento('${ev.nome}')" style="cursor:pointer; flex:1;">
-                        <h4>${ev.nome}</h4>
-                        <span>📅 ${ev.data}</span>
+            if(!eventos || eventos.length === 0) {
+                container.innerHTML = '<p style="font-size:12px; color:#444; text-align:center;">Nenhum evento ativo.</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            eventos.forEach((ev) => {
+                container.innerHTML += `
+                    <div class="event-card">
+                        <div class="event-info" onclick='abrirEvento(${JSON.stringify(ev)})' style="cursor:pointer; flex:1;">
+                            <h4>${ev.nome.replace(/_/g, ' ')}</h4>
+                            <span>📅 ${ev.data || '--/--/--'} | ⏳ ${ev.tempo}s</span>
+                        </div>
+                        <div>
+                            <button class="btn-action" onclick="excluirEvento('${ev.id}', '${ev.nome}')">🗑️</button>
+                        </div>
                     </div>
-                    <div>
-                        <button class="btn-action" onclick="excluirEvento(${index})">🗑️</button>
-                    </div>
-                </div>
-            `;
-        });
+                `;
+            });
+        } catch (err) {
+            container.innerHTML = '<p style="font-size:12px; color:red; text-align:center;">Erro ao carregar eventos.</p>';
+        }
     }
 
-    function abrirEvento(nome) {
-        // Pega todos os eventos salvos
-        const todos = JSON.parse(localStorage.getItem('meus_eventos')) || [];
-        // Encontra os dados exatos do evento clicado
-        const config = todos.find(e => e.nome === nome);
-        
+    // AJUSTADO: Recebe o objeto completo e salva para a câmera usar
+    function abrirEvento(config) {
         if(config) {
-            // Salva como a configuração que a câmera deve usar
             localStorage.setItem('config_atual', JSON.stringify(config));
             window.location.href = 'camera.html'; 
         }
     }
 
-    function excluirEvento(index) {
-        if(confirm("Deseja realmente excluir este evento?")) {
-            let eventos = JSON.parse(localStorage.getItem('meus_eventos'));
-            eventos.splice(index, 1);
-            localStorage.setItem('meus_eventos', JSON.stringify(eventos));
-            renderEventos();
+    // AJUSTADO: Exclui via API para limpar o banco e o R2
+    async function excluirEvento(id, nome) {
+        if(confirm(`Deseja realmente excluir o evento ${nome}?`)) {
+            try {
+                const res = await fetch(`${WORKER_URL}/excluir-evento?id=${id}&evento=${nome}`);
+                if(res.ok) {
+                    renderEventos();
+                } else {
+                    alert("Erro ao excluir no servidor.");
+                }
+            } catch (e) {
+                alert("Erro de conexão ao excluir.");
+            }
         }
     }
 
