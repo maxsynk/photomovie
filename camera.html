@@ -13,10 +13,8 @@
         }
         
         body { margin: 0; background: #000; color: white; font-family: sans-serif; overflow: hidden; }
-
         .screen { display: none; min-height: 100vh; width: 100vw; flex-direction: column; align-items: center; position: absolute; }
         .active { display: flex; }
-
         #cam-container { width: 100%; height: 100vh; position: relative; background: #000; overflow: hidden; }
         #vid-preview { width: 100%; height: 100%; object-fit: cover; }
         
@@ -30,7 +28,6 @@
 
         .controls { position: absolute; bottom: 80px; width: 100%; display: flex; justify-content: center; align-items: center; z-index: 100; }
 
-        /* Obturador: Turquesa com Pulso Dourado */
         .shutter { 
             width: 90px; height: 90px; background: var(--turquesa); 
             border-radius: 50%; display: flex; align-items: center; justify-content: center; 
@@ -51,7 +48,6 @@
             display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);
         }
 
-        /* Mensagens de Status */
         #status-msg { 
             position: fixed; inset: 0; z-index: 1500; display: none; flex-direction: column;
             align-items: center; justify-content: center; font-weight: 900; 
@@ -61,7 +57,6 @@
         .msg-contagem { font-size: 8rem; color: white; }
         .msg-finalizando { font-size: 3.5rem; color: var(--laranja); animation: blink 0.6s infinite; }
         
-        /* FINALIZADO Vermelho Neon Pulsante */
         .msg-finalizado { 
             font-size: 5rem; color: var(--vermelho-neon); 
             text-shadow: 0 0 15px var(--vermelho-neon), 0 0 30px var(--vermelho-neon);
@@ -72,7 +67,6 @@
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }
 
         #upload-loading { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 3000; display: none; flex-direction: column; align-items: center; justify-content: center; color: var(--turquesa); }
-        
         #tap-overlay { position: fixed; inset: 0; z-index: 2000; display: none; }
     </style>
 </head>
@@ -111,6 +105,7 @@
     const frameImg = document.getElementById('moldura-r2');
     const msg = document.getElementById('status-msg');
     
+    // URL do seu Worker (Certifique-se que está correta)
     const WORKER_URL = "https://photomovie.maxprimefotovideo.workers.dev"; 
 
     window.onload = () => {
@@ -118,6 +113,7 @@
         if(configSessao) {
             document.getElementById('evento-info-badge').innerText = configSessao.nome;
             document.getElementById('evento-info-badge').style.display = 'block';
+            // Aqui ele carrega qualquer PNG que você definiu como moldura
             if(configSessao.moldura) frameImg.src = configSessao.moldura;
         }
         ligarCamera();
@@ -125,16 +121,13 @@
 
     async function ligarCamera() {
         if (stream) stream.getTracks().forEach(t => t.stop());
-        const constraints = {
-            video: { facingMode: currentFacingMode, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } },
-            audio: false
-        };
         try {
-            stream = await navigator.mediaDevices.getUserMedia(constraints);
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: currentFacingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
+                audio: false
+            });
             video.srcObject = stream;
-            await video.play();
         } catch (err) {
-            console.warn("Falha no modo ideal, tentando fallback...");
             stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
             video.srcObject = stream;
         }
@@ -150,15 +143,10 @@
         msg.className = "msg-contagem"; 
         msg.style.display = 'flex';
         msg.innerText = c;
-
         let t = setInterval(() => {
             c--;
             if(c > 0) msg.innerText = c;
-            else { 
-                clearInterval(t); 
-                msg.style.display = 'none';
-                gravar(); 
-            }
+            else { clearInterval(t); msg.style.display = 'none'; gravar(); }
         }, 1000);
     }
 
@@ -168,9 +156,12 @@
         const tempoTotal = configSessao ? parseInt(configSessao.tempo) : 10;
         const nomeEvento = configSessao ? configSessao.nome : "Geral";
         
+        // LOOP DE DESENHO: É AQUI QUE O VÍDEO E A MOLDURA SE UNEM
         const drawLoop = () => {
-            ctx.drawImage(video, 0, 0, 720, 1280);
-            if(frameImg.complete && frameImg.src !== "") ctx.drawImage(frameImg, 0, 0, 720, 1280);
+            ctx.drawImage(video, 0, 0, 720, 1280); // Desenha a câmera
+            if(frameImg.complete && frameImg.src !== "") {
+                ctx.drawImage(frameImg, 0, 0, 720, 1280); // Desenha a moldura por cima
+            }
             if(recorder && recorder.state === "recording") requestAnimationFrame(drawLoop);
         };
 
@@ -178,7 +169,6 @@
         recorder = new MediaRecorder(recStream, { mimeType: 'video/webm;codecs=vp8', videoBitsPerSecond: 3500000 });
         
         recorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
-        
         recorder.onstop = async () => {
             const blob = new Blob(chunks, { type: 'video/webm' });
             await realizarUpload(blob, nomeEvento);
@@ -208,7 +198,7 @@
         
         const uuid = "vid_" + Date.now();
         const formData = new FormData();
-        formData.append("video", blob);
+        formData.append("video", blob); // O vídeo já vai "com a moldura" no desenho do canvas
         formData.append("uuid", uuid);
         formData.append("evento", evento);
 
@@ -216,7 +206,6 @@
             const res = await fetch(`${WORKER_URL}/upload`, { method: 'POST', body: formData });
             if(res.ok) {
                 document.getElementById('upload-loading').style.display = 'none';
-                // Mostra o FINALIZADO puro e habilita o clique
                 msg.innerText = "FINALIZADO";
                 msg.className = "msg-finalizado";
                 msg.style.display = 'flex';
@@ -224,15 +213,13 @@
                 document.getElementById('tap-overlay').style.display = 'block';
             }
         } catch (e) { 
-            alert("Erro no upload. Tente novamente.");
+            alert("Erro no upload.");
             document.getElementById('upload-loading').style.display = 'none';
         }
     }
 
     function voltarParaGaleria() {
-        if(prontoParaSair) {
-            window.location.href = 'galeria.html';
-        }
+        if(prontoParaSair) window.location.href = 'galeria.html';
     }
 </script>
 </body>
