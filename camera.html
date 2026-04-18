@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Câmera Pro - Fix</title>
+    <title>Câmera Pro - Fix Moldura</title>
     <style>
         body { margin: 0; background: #000; overflow: hidden; font-family: sans-serif; }
         #cam-container { width: 100vw; height: 100vh; position: relative; }
         video { width: 100%; height: 100%; object-fit: cover; }
-        canvas { display: none; }
-        .controls { position: absolute; bottom: 50px; width: 100%; text-align: center; z-index: 100; }
-        .shutter { 
-            width: 80px; height: 80px; border-radius: 50%; background: #00d1d1; 
-            border: 5px solid white; display: inline-block; cursor: pointer;
+        #moldura-view { 
+            position: absolute; inset: 0; width: 100%; height: 100%; 
+            pointer-events: none; object-fit: fill; z-index: 10; 
+            display: none; /* Só mostra se carregar */
         }
-        #moldura-view { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; object-fit: fill; z-index: 10; }
+        .controls { position: absolute; bottom: 50px; width: 100%; text-align: center; z-index: 100; }
+        .shutter { width: 80px; height: 80px; border-radius: 50%; background: #00d1d1; border: 5px solid white; display: inline-block; cursor: pointer; }
         #status { position: fixed; inset: 0; display: none; background: rgba(0,0,0,0.5); color: #fff; font-size: 80px; align-items: center; justify-content: center; z-index: 200; }
         #loading { position: fixed; inset: 0; display: none; background: #000; color: #00d1d1; align-items: center; justify-content: center; z-index: 300; }
     </style>
@@ -23,38 +23,60 @@
 
     <div id="cam-container">
         <video id="preview" autoplay playsinline muted></video>
-        <img id="moldura-view" src="">
+        <img id="moldura-view" alt="moldura">
         <div class="controls">
             <div class="shutter" id="btn-shoot"></div>
         </div>
     </div>
 
-    <canvas id="canvas" width="720" height="1280"></canvas>
+    <canvas id="canvas" width="720" height="1280" style="display:none;"></canvas>
     <div id="status"></div>
-    <div id="loading">ENVIANDO...</div>
+    <div id="loading">ENVIANDO VÍDEO...</div>
 
 <script>
     const video = document.getElementById('preview');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     const btn = document.getElementById('btn-shoot');
+    const view = document.getElementById('moldura-view');
+    
     const molduraImg = new Image();
-    molduraImg.crossOrigin = "anonymous"; // CRÍTICO PARA A JUNÇÃO FUNCIONAR
-
-    let recorder, chunks = [];
+    molduraImg.crossOrigin = "anonymous"; 
 
     window.onload = async () => {
         const config = JSON.parse(localStorage.getItem('config_atual'));
+        console.log("Configuração carregada:", config);
+
         if (config && config.moldura) {
-            molduraImg.src = config.moldura;
-            document.getElementById('moldura-view').src = config.moldura;
+            // Se o link for relativo, tenta completar com a URL do seu worker
+            let urlMoldura = config.moldura;
+            if (!urlMoldura.startsWith('http')) {
+                urlMoldura = `https://photomovie.maxprimefotovideo.workers.dev/stream?id=${urlMoldura}`;
+            }
+
+            molduraImg.src = urlMoldura;
+            view.src = urlMoldura;
+
+            molduraImg.onload = () => {
+                console.log("Moldura carregada com sucesso para o Canvas!");
+                view.style.display = 'block';
+            };
+
+            molduraImg.onerror = () => {
+                console.error("ERRO: Não foi possível carregar a moldura. Verifique o link:", urlMoldura);
+                alert("Erro ao carregar moldura. Verifique a conexão ou o link da imagem.");
+            };
         }
         
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: "environment", width: 1280, height: 720 }, 
-            audio: false 
-        });
-        video.srcObject = stream;
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "environment", width: 1280, height: 720 }, 
+                audio: false 
+            });
+            video.srcObject = stream;
+        } catch (e) {
+            alert("Erro ao abrir câmera: " + e.message);
+        }
     };
 
     btn.onclick = () => {
@@ -71,22 +93,22 @@
     };
 
     function iniciarGravacao() {
-        chunks = [];
+        const chunks = [];
         const config = JSON.parse(localStorage.getItem('config_atual'));
         const tempo = (config ? parseInt(config.tempo) : 10) * 1000;
 
         const loop = () => {
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            if (molduraImg.complete) {
+            if (molduraImg.complete && molduraImg.naturalWidth > 0) {
                 ctx.drawImage(molduraImg, 0, 0, canvas.width, canvas.height);
             }
             if (recorder && recorder.state === "recording") requestAnimationFrame(loop);
         };
 
         const stream = canvas.captureStream(30);
-        recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8' });
+        const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8' });
         
-        recorder.ondataavailable = e => chunks.push(e.data);
+        recorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
         recorder.onstop = async () => {
             document.getElementById('loading').style.display = 'flex';
             const blob = new Blob(chunks, { type: 'video/webm' });
@@ -95,13 +117,21 @@
             fd.append("uuid", "vid_" + Date.now());
             fd.append("evento", config ? config.nome : "Geral");
 
-            await fetch("https://photomovie.maxprimefotovideo.workers.dev/upload", { method: "POST", body: fd });
-            window.location.href = "galeria.html";
+            try {
+                const res = await fetch("https://photomovie.maxprimefotovideo.workers.dev/upload", { 
+                    method: "POST", 
+                    body: fd 
+                });
+                if(res.ok) window.location.href = "galeria.html";
+                else alert("Erro no upload do servidor.");
+            } catch (err) {
+                alert("Erro de rede ao enviar.");
+            }
         };
 
         recorder.start();
         loop();
-        setTimeout(() => recorder.stop(), tempo);
+        setTimeout(() => { if(recorder.state === "recording") recorder.stop(); }, tempo);
     }
 </script>
 </body>
