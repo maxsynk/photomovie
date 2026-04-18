@@ -48,9 +48,12 @@
         console.log("Configuração carregada:", config);
 
         if (config && config.moldura) {
-            // Se o link for relativo, tenta completar com a URL do seu worker
+            // CORREÇÃO: Força a moldura a carregar via rota de stream do Worker para evitar bloqueio de pixels (CORS)
             let urlMoldura = config.moldura;
-            if (!urlMoldura.startsWith('http')) {
+            if (urlMoldura.includes('pub-') || urlMoldura.includes('.r2.dev')) {
+                const id = urlMoldura.split('/').pop();
+                urlMoldura = `https://photomovie.maxprimefotovideo.workers.dev/stream?id=${id}`;
+            } else if (!urlMoldura.startsWith('http')) {
                 urlMoldura = `https://photomovie.maxprimefotovideo.workers.dev/stream?id=${urlMoldura}`;
             }
 
@@ -99,6 +102,7 @@
 
         const loop = () => {
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            // CORREÇÃO: Garantia que a moldura seja desenhada sobre cada frame do vídeo
             if (molduraImg.complete && molduraImg.naturalWidth > 0) {
                 ctx.drawImage(molduraImg, 0, 0, canvas.width, canvas.height);
             }
@@ -106,7 +110,10 @@
         };
 
         const stream = canvas.captureStream(30);
-        const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8' });
+        const recorder = new MediaRecorder(stream, { 
+            mimeType: 'video/webm;codecs=vp8',
+            videoBitsPerSecond: 3000000 
+        });
         
         recorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
         recorder.onstop = async () => {

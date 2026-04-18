@@ -241,17 +241,16 @@
         if (editData) {
             const ev = JSON.parse(editData);
             
-            // Preenchimento dos campos (IDs corrigidos conforme o HTML acima)
             if(ev.id) document.getElementById('conf-id').value = ev.id;
             if(ev.nome) document.getElementById('conf-nome').value = ev.nome;
             if(ev.data) document.getElementById('conf-data').value = ev.data;
             if(ev.tempo) setTime(parseInt(ev.tempo), document.getElementById('time-'+ev.tempo));
             if(ev.reverse) { reverseActive = true; document.getElementById('btn-reverse').classList.add('active'); }
             
-            if(ev.moldura) {
-                document.getElementById('conf-moldura-url').value = ev.moldura;
+            if(ev.molduraUrl) { // CORREÇÃO: Usando a chave correta do banco
+                document.getElementById('conf-moldura-url').value = ev.molduraUrl;
                 const preview = document.getElementById('frame-preview');
-                preview.src = ev.moldura; preview.style.display = "block";
+                preview.src = ev.molduraUrl; preview.style.display = "block";
                 document.getElementById('upload-label').innerText = "📸 MOLDURA OK";
             }
             
@@ -261,10 +260,7 @@
                 if(ev.musicaOffset) document.getElementById('conf-musica-offset').value = ev.musicaOffset;
             }
 
-            // Alterar visual para indicar Edição
             document.getElementById('titulo-pagina').innerText = "EDITAR EVENTO";
-            
-            // Limpa para não interferir em novos eventos
             localStorage.removeItem('evento_para_editar');
         }
     }
@@ -327,7 +323,9 @@
         try {
             const res = await fetch(`${WORKER_URL}/upload`, { method: 'POST', body: formData });
             const data = await res.json();
-            const urlFinal = `${WORKER_URL}/stream?id=${data.path}`;
+            // CORREÇÃO: Salva apenas o ID ou path para usar na rota /stream
+            const pathArquivo = data.path || (tipo === 'MOLDURA' ? "MOLDURAS_SISTEMA/" : "MUSICAS_SISTEMA/") + tipo.toLowerCase() + "_" + Date.now();
+            const urlFinal = `${WORKER_URL}/stream?id=${pathArquivo}`;
 
             if(tipo === 'MOLDURA') {
                 document.getElementById('conf-moldura-url').value = urlFinal;
@@ -353,12 +351,12 @@
         if(!nomeEvento) return alert("Por favor, digite o nome do evento.");
 
         const config = {
-            id: idExistente || String(Date.now()), // Se tiver ID, mantém. Se não, gera novo.
+            id: idExistente || String(Date.now()),
             nome: nomeEvento,
             data: document.getElementById('conf-data').value,
             tempo: String(document.getElementById('conf-tempo').value),
             reverse: reverseActive,
-            moldura: document.getElementById('conf-moldura-url').value || "",
+            moldura: document.getElementById('conf-moldura-url').value || "", // Chave correta para o Worker
             musicaUrl: document.getElementById('conf-musica-url').value || "",
             musicaOffset: document.getElementById('conf-musica-offset').value || "0"
         };
