@@ -65,25 +65,35 @@
             <button id="btn-delete-single" class="btn-action btn-danger admin-only" style="display:none">EXCLUIR</button>
         </div>
     </div>
-
 <script>
     const WORKER_URL = "https://photomovie.maxprimefotovideo.workers.dev";
     let isAdmin = false;
     let cliquesAdmin = 0;
     let listaArquivosAtuais = [];
+    
+    // VARIÁVEIS DE CONTROLE
+    let nomeParaExibir = "";
+    let pastaParaBuscar = "";
 
-    // Esta função agora lê SEMPRE o que está no localStorage
     async function carregarGaleria(isSilent = false) {
         const config = JSON.parse(localStorage.getItem('config_atual'));
         if(!config) return;
 
-        // Atualiza o nome no topo na hora
-        document.getElementById('nome-evento-titulo').innerText = config.nome.replace(/_/g, ' ');
+        // 1. O nome que aparece na tela é o que você editou
+        nomeParaExibir = config.nome.replace(/_/g, ' ');
+        document.getElementById('nome-evento-titulo').innerText = nomeParaExibir;
+
+        // 2. A pasta de busca deve ser SEMPRE a mesma, mesmo que o nome mude.
+        // Se você não criou um campo "id_original", ele usa o nome da primeira vez.
+        if (!config.id_original) {
+            config.id_original = config.nome;
+            localStorage.setItem('config_atual', JSON.stringify(config));
+        }
+        pastaParaBuscar = config.id_original;
 
         try {
-            // Se você editou o nome mas a pasta no R2 é a antiga, você precisa garantir
-            // que 'config.nome' seja o nome da pasta correta.
-            const res = await fetch(`${WORKER_URL}/listar-galeria?evento=${encodeURIComponent(config.nome)}`);
+            // Buscamos sempre pela PASTA ORIGINAL (id_original)
+            const res = await fetch(`${WORKER_URL}/listar-galeria?evento=${encodeURIComponent(pastaParaBuscar)}`);
             const dados = await res.json();
             listaArquivosAtuais = dados.filter(f => f.path.includes('final_'));
             renderizarGaleria(isSilent);
@@ -92,12 +102,14 @@
 
     window.onload = () => {
         carregarGaleria();
-        setInterval(() => carregarGaleria(true), 8000);
+        // Verifica atualizações a cada 5 segundos (se você editar em outra aba, ele muda o nome aqui)
+        setInterval(() => carregarGaleria(true), 5000);
     };
 
     function renderizarGaleria(isSilent = false) {
         const container = document.getElementById('gallery-container');
         const termoBusca = document.getElementById('input-busca').value;
+        
         const filtrados = listaArquivosAtuais.filter((file, index) => {
             const num = (index + 1).toString();
             return termoBusca === "" || num === termoBusca || num.includes(termoBusca);
@@ -112,12 +124,19 @@
             const url = `${WORKER_URL}/stream?id=${encodeURIComponent(file.path)}`;
             const card = document.createElement('div');
             card.className = 'video-card';
-            card.innerHTML = `<div class="video-number">#${indice}</div><video src="${url}#t=0.5" muted playsinline></video>
-                <button class="btn-del-mini" style="display:${isAdmin?'block':'none'}" onclick="event.stopPropagation(); excluirArquivo('${file.path}')">X</button>`;
+            card.innerHTML = `
+                <div class="video-number">#${indice}</div>
+                <video src="${url}#t=0.5" muted playsinline></video>
+                <button class="btn-del-mini" style="display:${isAdmin?'block':'none'}" onclick="event.stopPropagation(); excluirArquivo('${file.path}')">X</button>
+            `;
             card.onclick = () => abrirZoom(url, file.path);
             container.appendChild(card);
         });
     }
+
+    // ... restante das funções (abrirZoom, excluirArquivo, etc) mantendo 'pastaParaBuscar' como referência
+</script>
+
 
     function abrirZoom(url, path) {
         const modal = document.getElementById('modal-zoom');
