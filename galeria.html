@@ -90,7 +90,6 @@
             overflow: hidden; aspect-ratio: 9/16; position: relative; cursor: pointer; transition: 0.2s;
         }
         
-        /* Ajuste solicitado: Número do vídeo no canto superior direito */
         .video-number {
             position: absolute;
             top: 10px;
@@ -193,10 +192,7 @@
         try {
             const res = await fetch(`${WORKER_URL}/listar-galeria?evento=${encodeURIComponent(eventoNome)}`);
             const dados = await res.json();
-            
-            // Filtra apenas os finais primeiro para garantir que a numeração seja consistente
             listaArquivosAtuais = dados.filter(f => f.path.includes('final_'));
-            
             renderizarGaleria(isSilent);
         } catch (e) { console.error("Erro na galeria", e); }
     }
@@ -209,7 +205,6 @@
         const container = document.getElementById('gallery-container');
         const termoBusca = document.getElementById('input-busca').value;
         
-        // Lógica de filtragem: Se houver número na busca, filtra pelo índice (ID visual)
         const filtrados = listaArquivosAtuais.filter((file, index) => {
             const numeroVideo = (index + 1).toString();
             return termoBusca === "" || numeroVideo === termoBusca || numeroVideo.includes(termoBusca);
@@ -220,14 +215,11 @@
             return;
         }
 
-        // Evita piscar a tela se o conteúdo for o mesmo
         if(isSilent && filtrados.length === container.querySelectorAll('.video-card').length && termoBusca === "") return;
 
         container.innerHTML = "";
         filtrados.forEach((file) => {
-            // Encontra o índice original para manter o número correto mesmo filtrado
             const indiceOriginal = listaArquivosAtuais.findIndex(f => f.path === file.path) + 1;
-            
             const url = `${WORKER_URL}/stream?id=${encodeURIComponent(file.path)}`;
             const card = document.createElement('div');
             card.className = 'video-card';
@@ -315,6 +307,10 @@
         document.getElementById('modal-zoom').style.display = 'none';
         const v = document.getElementById('media-full');
         v.pause(); v.src = "";
+        
+        // Correção solicitada: Limpa a busca e volta para a galeria completa ao fechar
+        document.getElementById('input-busca').value = "";
+        renderizarGaleria(true);
     }
 </script>
 </body>
