@@ -169,24 +169,29 @@
     let cliquesAdmin = 0;
     let listaArquivosAtuais = [];
 
-    // Função para atualizar o nome do evento no topo
-    function atualizarTituloEvento() {
+    // Esta função agora é chamada repetidamente para garantir que o título mude se o localStorage mudar
+    function atualizarInterfaceEvento() {
         const config = JSON.parse(localStorage.getItem('config_atual'));
         if(config && config.nome) {
-            document.getElementById('nome-evento-titulo').innerText = config.nome.replace(/_/g, ' ');
+            const nomeFormatado = config.nome.replace(/_/g, ' ');
+            if (document.getElementById('nome-evento-titulo').innerText !== nomeFormatado) {
+                document.getElementById('nome-evento-titulo').innerText = nomeFormatado;
+            }
+            return config.nome;
         }
+        return null;
     }
 
     window.onload = () => {
-        const config = JSON.parse(localStorage.getItem('config_atual'));
-        if(!config) { window.location.href = "index.html"; return; }
+        const nomeEvento = atualizarInterfaceEvento();
+        if(!nomeEvento) { window.location.href = "index.html"; return; }
         
-        atualizarTituloEvento(); // Garante a atualização imediata
+        carregarArquivos(nomeEvento);
         
-        carregarArquivos(config.nome);
+        // Loop que checa atualizações de arquivos e também o NOME do evento
         setInterval(() => {
-            atualizarTituloEvento(); // Checa se o nome mudou no localStorage durante o uso
-            carregarArquivos(config.nome, true);
+            const nomeAtualizado = atualizarInterfaceEvento();
+            if(nomeAtualizado) carregarArquivos(nomeAtualizado, true);
         }, 8000);
     };
 
