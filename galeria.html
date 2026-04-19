@@ -169,11 +169,11 @@
     let cliquesAdmin = 0;
     let listaArquivosAtuais = [];
 
-    // Esta função agora é chamada repetidamente para garantir que o título mude se o localStorage mudar
     function atualizarInterfaceEvento() {
         const config = JSON.parse(localStorage.getItem('config_atual'));
         if(config && config.nome) {
             const nomeFormatado = config.nome.replace(/_/g, ' ');
+            // Só altera o texto se for diferente para evitar processamento desnecessário
             if (document.getElementById('nome-evento-titulo').innerText !== nomeFormatado) {
                 document.getElementById('nome-evento-titulo').innerText = nomeFormatado;
             }
@@ -188,10 +188,10 @@
         
         carregarArquivos(nomeEvento);
         
-        // Loop que checa atualizações de arquivos e também o NOME do evento
+        // Loop de sincronização
         setInterval(() => {
-            const nomeAtualizado = atualizarInterfaceEvento();
-            if(nomeAtualizado) carregarArquivos(nomeAtualizado, true);
+            const nomeEventoAtualizado = atualizarInterfaceEvento();
+            if(nomeEventoAtualizado) carregarArquivos(nomeEventoAtualizado, true);
         }, 8000);
     };
 
@@ -233,6 +233,7 @@
             return;
         }
 
+        // Se estiver silencioso e nada mudou, não reconstrói o DOM
         if(isSilent && filtrados.length === container.querySelectorAll('.video-card').length && termoBusca === "") return;
 
         container.innerHTML = "";
