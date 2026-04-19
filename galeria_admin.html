@@ -12,14 +12,15 @@
         
         .header { padding: 25px; border-bottom: 2px solid var(--dourado); background: rgba(0,0,0,0.6); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(15px); }
         .header h1 { color: var(--dourado); letter-spacing: 5px; margin: 0; text-transform: uppercase; font-size: 1.8rem; font-weight: 900; }
-        .header p { color: var(--dourado); font-size: 12px; margin-top: 5px; opacity: 0.7; letter-spacing: 3px; text-transform: uppercase; }
 
-        .search-container { padding: 15px; background: rgba(0,0,0,0.3); }
+        /* BUSCADOR COM LUPA */
+        .search-container { padding: 15px; background: rgba(0,0,0,0.3); display: flex; justify-content: center; gap: 8px; }
         .search-container input { 
-            width: 80%; max-width: 300px; padding: 12px; border-radius: 8px; 
+            width: 150px; padding: 12px; border-radius: 8px; 
             border: 1px solid var(--dourado); background: #000; color: var(--dourado); 
             text-align: center; font-weight: bold; outline: none; font-size: 16px;
         }
+        .btn-busca { background: var(--dourado); color: black; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; }
 
         .admin-tools { display: flex; gap: 10px; justify-content: center; padding: 15px; flex-wrap: wrap; }
         .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; padding: 15px; padding-bottom: 120px; }
@@ -41,16 +42,13 @@
         #media-full { width: 85%; max-height: 70vh; border: 2px solid var(--dourado); border-radius: 15px; background: #000; }
 
         .modal-controls { margin-top: 25px; display: flex; gap: 10px; width: 85%; justify-content: center; flex-wrap: wrap; }
-        
         .btn-action { padding: 12px 20px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 12px; text-transform: uppercase; }
         .btn-close { background: #333; color: white; }
         .btn-download { background: var(--dourado); color: black; }
         .btn-danger { background: var(--danger); color: white; }
         .btn-zip { background: #28a745; color: white; }
 
-        /* ESTILO DO VOLTAR IGUAL AO ABRIR GALERIA */
-        .btn-voltar-admin { background: rgba(197, 160, 89, 0.1); color: var(--dourado); border: 1px solid var(--dourado); }
-
+        .btn-voltar-admin { background: rgba(197, 160, 89, 0.1); color: var(--dourado); border: 1px solid var(--dourado); display: block; text-align: center; }
         .nav-footer { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 500; width: 90%; }
     </style>
 </head>
@@ -62,7 +60,8 @@
     </div>
 
     <div class="search-container">
-        <input type="number" id="input-busca" placeholder="DIGITE O Nº DO VÍDEO" oninput="agendarBusca()">
+        <input type="number" id="input-busca" placeholder="Nº">
+        <button class="btn-busca" onclick="executarBusca()">🔍 PESQUISAR</button>
     </div>
 
     <div class="admin-tools">
@@ -73,7 +72,7 @@
     <div id="gallery-container" class="gallery-grid"></div>
 
     <div class="nav-footer">
-        <a href="index.html" class="btn-action btn-voltar-admin" style="display:block; text-align:center;">← VOLTAR</a>
+        <a href="index.html" class="btn-action btn-voltar-admin">← VOLTAR</a>
     </div>
 
     <div id="modal-zoom">
@@ -88,7 +87,6 @@
 <script>
     const WORKER_URL = "https://photomovie.maxprimefotovideo.workers.dev";
     let listaFinais = [];
-    let tempoBusca = null;
 
     window.onload = () => {
         const config = JSON.parse(localStorage.getItem('config_atual'));
@@ -118,19 +116,19 @@
         } catch (e) { container.innerHTML = "Erro ao carregar."; }
     }
 
-    function agendarBusca() {
-        clearTimeout(tempoBusca);
-        tempoBusca = setTimeout(() => {
-            const num = document.getElementById('input-busca').value;
-            if (!num) return;
-            const index = parseInt(num) - 1;
-            if (listaFinais[index]) {
-                const file = listaFinais[index];
-                const url = `${WORKER_URL}/stream?id=${encodeURIComponent(file.path)}`;
-                abrirZoom(url, file.path);
-                document.getElementById('input-busca').value = '';
-            }
-        }, 3000); // Espera 1 segundo para você conseguir digitar "10", "15", etc.
+    // PESQUISA COM BOTÃO (PONTO 4)
+    function executarBusca() {
+        const num = document.getElementById('input-busca').value;
+        if (!num) return;
+        const index = parseInt(num) - 1;
+        if (listaFinais[index]) {
+            const file = listaFinais[index];
+            const url = `${WORKER_URL}/stream?id=${encodeURIComponent(file.path)}`;
+            abrirZoom(url, file.path);
+            document.getElementById('input-busca').value = '';
+        } else {
+            alert("Vídeo não encontrado!");
+        }
     }
 
     function abrirZoom(url, path) {
