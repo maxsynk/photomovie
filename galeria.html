@@ -158,28 +158,44 @@
         if(!gDados) return;
         const config = JSON.parse(gDados);
 
+        // Atualiza apenas o texto visual do nome do evento
         const tituloHTML = document.getElementById('nome-evento-titulo');
         const nomeFormatado = (config.nome || "").replace(/_/g, ' ');
         if(tituloHTML.innerText !== nomeFormatado) tituloHTML.innerText = nomeFormatado;
 
-        idPastaFixo = config.id_fixo || config.nome;
+        // --- CORREÇÃO CRÍTICA AQUI ---
+        // Se mudarmos o nome no "Editar", o id_fixo garante que a galeria 
+        // continue apontando para a pasta correta no R2/Cloudflare.
+        idPastaFixo = config.id_fixo || config.nome; 
 
         try {
+            // Buscamos sempre pelo idPastaFixo (que nunca muda após a criação)
             const res = await fetch(`${WORKER_URL}/listar-galeria?evento=${encodeURIComponent(idPastaFixo)}`);
             const dados = await res.json();
+            
+            // Filtra apenas os vídeos que contém "final_" no nome
             const novosFiltrados = dados.filter(f => f.path.toLowerCase().includes('final_'));
             
+            // Compara se houve mudança real antes de limpar a tela (evita o "piscado" branco)
             if (JSON.stringify(novosFiltrados) !== JSON.stringify(listaArquivosAtuais) || !isSilent) {
                 listaArquivosAtuais = novosFiltrados;
                 renderizarGaleria();
             }
-        } catch (e) { console.error("Erro:", e); }
+        } catch (e) { 
+            console.error("Erro na sincronização:", e);
+            if(!isSilent) document.getElementById('gallery-container').innerHTML = "Erro ao conectar com o servidor.";
+        }
     }
 
     function renderizarGaleria() {
         const container = document.getElementById('gallery-container');
-        container.innerHTML = listaArquivosAtuais.length ? "" : "<p style='grid-column: 1/-1; opacity:0.5; margin-top:50px;'>Aguardando novos vídeos...</p>";
+        
+        if (listaArquivosAtuais.length === 0) {
+            container.innerHTML = "<p style='grid-column: 1/-1; opacity:0.5; margin-top:50px;'>Aguardando novos vídeos...</p>";
+            return;
+        }
 
+        container.innerHTML = "";
         listaArquivosAtuais.forEach((file, index) => {
             const url = `${WORKER_URL}/stream?id=${encodeURIComponent(file.path)}`;
             const card = document.createElement('div');
@@ -193,6 +209,9 @@
             container.appendChild(card);
         });
     }
+
+    // ... (restante das funções abrirZoom, excluirArquivo, etc, permanecem as mesmas)
+</script>
 
     // BUSCA EXATA QUE ABRE O ZOOM (PADRÃO ADMIN)
     function executarBusca() {
