@@ -183,12 +183,12 @@
     const WORKER_URL = "https://photomovie.maxprimefotovideo.workers.dev";
     const player = document.getElementById('audio-player');
 
-    // Função para limpar nomes de pastas (Segurança R2)
     function sanitizarPasta(texto) {
+        if (!texto) return "";
         return texto.normalize("NFD")
-                    .replace(/[\u0300-\u036f]/g, "") // Remove acentos
-                    .replace(/[^\w\s]/gi, '')       // Remove caracteres especiais
-                    .replace(/\s+/g, '_')           // Troca espaço por underline
+                    .replace(/[\u0300-\u036f]/g, "")
+                    .replace(/[^\w\s]/gi, '')
+                    .replace(/\s+/g, '_')
                     .toLowerCase();
     }
 
@@ -196,9 +196,6 @@
         const editData = localStorage.getItem('evento_para_editar');
         if (editData) {
             const ev = JSON.parse(editData);
-            
-            // LOGICA DE OURO: Se já tem id_fixo no banco, trava ele.
-            // Se não tem (evento antigo), sanitiza o nome original e trava.
             const idSeguro = ev.id_fixo || sanitizarPasta(ev.nome);
             
             document.getElementById('conf-id').value = ev.id || "";
@@ -249,8 +246,6 @@
             const total = Math.floor(player.currentTime);
             document.getElementById('trim-min').value = Math.floor(total / 60);
             document.getElementById('trim-sec').value = total % 60;
-        } else {
-            alert("Dê o play na música primeiro!");
         }
     }
 
@@ -267,10 +262,8 @@
     function setTime(val, btn) { document.getElementById('conf-tempo').value = val; document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active')); if(btn) btn.classList.add('active'); }
 
     async function subirArquivo(input, tipo) {
-        // SEMPRE usa o ID Fixo para upload, nunca o nome visual da tela
         const idPasta = document.getElementById('conf-id-fixo').value.trim() || sanitizarPasta(document.getElementById('conf-nome').value);
-        
-        if(!idPasta) { alert("Nome do evento obrigatório!"); return; }
+        if(!idPasta) { alert("Dê um nome ao evento primeiro!"); return; }
         if(!input.files[0]) return;
         
         const file = input.files[0];
@@ -304,10 +297,7 @@
     async function salvarConfig() {
         const nomeVisual = document.getElementById('conf-nome').value.trim();
         let idFixo = document.getElementById('conf-id-fixo').value.trim();
-        
         if(!nomeVisual) return alert("Digite o nome do evento.");
-
-        // Se for novo, gera o ID fixo sanitizado pela primeira e única vez.
         if(!idFixo) { idFixo = sanitizarPasta(nomeVisual); }
 
         const config = {
@@ -337,7 +327,7 @@
             if(res.ok) { 
                 localStorage.setItem('config_atual', JSON.stringify(config));
                 localStorage.removeItem('evento_para_editar');
-                alert("Evento salvo com sucesso!"); 
+                alert("Evento salvo!"); 
                 window.location.href = 'index.html'; 
             }
         } catch (e) { alert("Erro ao salvar."); }
