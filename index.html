@@ -2,229 +2,97 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CENTRAL - Photo Movie</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MASTER HUB | SISTEMA GESTÃO 360º</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
     <style>
-        :root { 
-            --turquesa-dark: #003333; 
-            --dourado: #c5a059;      
-            --dourado-dark: #8e6d2d;
-            --bg-modal: rgba(0, 20, 20, 0.98);
-            --cinza-minimal: #666666; 
-            --ativo-ouro: linear-gradient(135deg, #c5a059, #8e6d2d);
-        }
+        :root { --neon: #00ff41; --bg: #050505; --card: #111; --dourado: #c5a059; }
+        body { background: var(--bg); color: white; font-family: 'Orbitron', sans-serif; margin: 0; text-align: center; }
         
-        body { 
-            margin: 0; background: var(--turquesa-dark); color: white; 
-            font-family: 'Segoe UI', Roboto, sans-serif;
-            display: flex; flex-direction: column; align-items: center;
-            min-height: 100vh; overflow-x: hidden;
-        }
+        .container { padding: 40px 20px; max-width: 600px; margin: auto; }
+        .header h1 { font-weight: 900; letter-spacing: 5px; color: var(--neon); text-shadow: 0 0 15px var(--neon); margin-bottom: 5px; }
+        .header p { font-size: 10px; letter-spacing: 3px; opacity: 0.7; margin-bottom: 40px; }
 
-        .header { margin-top: 1.8cm; text-align: center; margin-bottom: 40px; }
-        .header h1 { color: var(--dourado); font-size: 52px; font-weight: 900; letter-spacing: 3px; margin: 0; text-transform: uppercase; animation: pulse-gold 3s infinite ease-in-out; }
-        .header p { color: var(--dourado); font-size: 20px; margin: -5px 0 0 0; letter-spacing: 4px; font-weight: 300; text-transform: lowercase; opacity: 0.9; }
-
-        @keyframes pulse-gold {
-            0%, 100% { text-shadow: 0 0 5px rgba(197, 160, 89, 0.2); transform: scale(1); }
-            50% { text-shadow: 0 0 25px rgba(197, 160, 89, 0.7); transform: scale(1.02); }
-        }
-
-        .main-container { flex: 1; display: flex; flex-direction: column; align-items: center; width: 92%; max-width: 500px; }
-
-        .btn-central {
-            width: 100%; padding: 22px; margin: 10px 0; border-radius: 12px;
-            text-transform: uppercase; font-weight: 800; font-size: 16px;
-            cursor: pointer; text-decoration: none; text-align: center;
-            display: none; box-sizing: border-box; transition: all 0.3s ease;
-        }
-
-        .btn-create { background: var(--ativo-ouro); color: #1a1a1a; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        #btn-galeria { background: rgba(197, 160, 89, 0.1); color: var(--dourado); border: 1px solid var(--dourado); margin-bottom: 25px; }
-        #btn-admin { background: rgba(197, 160, 89, 0.1); color: #c5a059; border: 1px solid #c5a059; }
-        #btn-login { display: block; background: transparent; color: var(--dourado); border: 2px solid var(--dourado); margin-top: 50px; }
-
-        .event-list-container { width: 100%; margin-top: 30px; display: none; }
-
-        /* GRID DO CARD MELHORADO */
-        .event-card {
-            background: rgba(0,0,0,0.5); border: 2px solid rgba(197, 160, 89, 0.2);
-            padding: 15px; border-radius: 20px; margin-bottom: 18px;
-            display: grid;
-            grid-template-columns: 1fr 100px; /* Coluna da info e coluna da câmera */
-            gap: 10px;
-            transition: 0.3s;
-        }
+        .menu-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
         
-        .event-card.active-border { border-color: var(--dourado); background: rgba(197, 160, 89, 0.08); }
-
-        .event-info-col { display: flex; flex-direction: column; gap: 12px; justify-content: center; }
-
-        .event-info h4 { margin: 0; color: var(--dourado); text-transform: uppercase; font-size: 18px; line-height: 1.2; }
-        .event-info span { font-size: 11px; color: #aaa; display: block; margin-top: 4px; }
-
-        /* BOTÃO DE CÂMERA LADO DIREITO TOTAL */
-        .btn-camera-main {
-            background: var(--ativo-ouro); color: #000;
-            border: none; border-radius: 15px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 40px; cursor: pointer; transition: 0.2s;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            grid-row: span 2; /* Faz ocupar a altura de cima a baixo */
+        .btn-main {
+            background: none; border: 2px solid var(--neon); color: var(--neon);
+            padding: 20px; font-family: 'Orbitron'; font-weight: bold; font-size: 14px;
+            text-transform: uppercase; cursor: pointer; border-radius: 5px;
+            transition: 0.3s; text-decoration: none; display: block;
         }
-        .btn-camera-main:active { transform: scale(0.95); }
+        .btn-main:hover { background: var(--neon); color: black; box-shadow: 0 0 20px var(--neon); }
 
-        .group-actions-row { display: flex; gap: 8px; width: 100%; }
-
-        .status-btn {
-            flex: 2; padding: 12px; border-radius: 10px; font-size: 10px; font-weight: 900;
-            cursor: pointer; text-transform: uppercase; border: none;
+        /* Estilo para o Botão do Cliente */
+        .btn-cliente {
+            border-color: var(--dourado); color: var(--dourado);
+            margin-top: 10px;
         }
-        .btn-is-on { background: var(--ativo-ouro); color: #000; }
-        .btn-is-off { background: #222; color: #666; border: 1px solid #333; }
+        .btn-cliente:hover { background: var(--dourado); color: black; box-shadow: 0 0 20px var(--dourado); }
 
-        .btn-edit-big { flex: 1.5; background: #333; color: #fff; border: 1px solid #555; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 10px; }
-        .btn-del-big { flex: 0.8; background: rgba(255,59,48,0.1); color: #ff3b30; border: 1px solid #ff3b30; border-radius: 10px; cursor: pointer; font-size: 16px; }
-
-        #modal-senha { position: fixed; inset: 0; background: var(--bg-modal); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(15px); }
-        .modal-content { background: #002222; padding: 35px; border-radius: 25px; border: 1px solid var(--dourado); text-align: center; width: 85%; max-width: 320px; }
-        .modal-content input { width: 100%; padding: 18px; background: #000; border: 1px solid var(--dourado); color: var(--dourado); border-radius: 12px; text-align: center; font-size: 28px; letter-spacing: 12px; margin-bottom: 25px; box-sizing: border-box; outline: none; }
-        .btn-confirm { background: var(--dourado); color: #000; border: none; padding: 15px; border-radius: 10px; font-weight: 900; width: 100%; cursor: pointer; }
+        .status-bar { margin-top: 50px; padding: 15px; background: var(--card); border-radius: 10px; border-left: 5px solid var(--neon); text-align: left; }
+        .status-bar label { font-size: 10px; display: block; opacity: 0.5; }
+        .status-bar span { font-size: 16px; font-weight: bold; color: var(--neon); }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>PHOTO MOVIE</h1>
-        <p>colecionando momentos</p>
-    </div>
-
-    <div class="main-container">
-        <button id="btn-login" class="btn-central" onclick="abrirModal()">🔓 ACESSAR SISTEMA</button>
-        <a href="config_evento.html" id="btn-create" class="btn-protected btn-central btn-create" onclick="localStorage.removeItem('evento_para_editar')">➕ CRIAR NOVO EVENTO</a>
-        <a href="galeria_admin.html" id="btn-admin" class="btn-protected btn-central">👑 GALERIA ADMIN</a>
-        <a href="galeria.html" id="btn-galeria" class="btn-protected btn-central">🎞️ ABRIR GALERIA</a>
-        
-        <div id="container-eventos" class="event-list-container">
-            <h3 style="font-size: 12px; color: var(--dourado); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; text-align: center;">Painel de Eventos</h3>
-            <div id="lista-eventos"></div>
+    <div class="container">
+        <div class="header">
+            <h1>MASTER HUB</h1>
+            <p>SISTEMA GESTÃO 360º</p>
         </div>
 
-        <button id="btn-lock" class="btn-protected btn-central" onclick="bloquear()" style="background: transparent; color: #ff5555; border: 1px solid rgba(255,85,85,0.3); margin-top: 40px; font-size: 12px;">SAIR DO SISTEMA</button>
-    </div>
-
-    <div id="modal-senha">
-        <div class="modal-content">
-            <h3 style="color:var(--dourado); letter-spacing: 2px;">SENHA MESTRA</h3>
-            <input type="password" id="input-senha" inputmode="numeric" placeholder="••••">
-            <button class="btn-confirm" onclick="validarSenha()">ENTRAR</button>
-            <p onclick="fecharModal()" style="margin-top:20px; font-size:13px; color:#999; cursor:pointer">Voltar</p>
-        </div>
-    </div>
-
-<script>
-    const SENHA_MESTRA = "1234"; 
-    const WORKER_URL = "https://photomovie.maxprimefotovideo.workers.dev";
-
-    window.onload = () => { if(sessionStorage.getItem('logado') === 'true') liberarSistema(); }
-
-    function abrirModal() { document.getElementById('modal-senha').style.display = 'flex'; document.getElementById('input-senha').focus(); }
-    function fecharModal() { document.getElementById('modal-senha').style.display = 'none'; document.getElementById('input-senha').value = ''; }
-
-    function validarSenha() {
-        if (document.getElementById('input-senha').value === SENHA_MESTRA) {
-            sessionStorage.setItem('logado', 'true');
-            fecharModal();
-            liberarSistema();
-        } else { alert("Senha Incorreta"); }
-    }
-
-    function liberarSistema() {
-        document.getElementById('btn-login').style.display = 'none';
-        document.querySelectorAll('.btn-protected').forEach(b => b.style.display = 'block');
-        document.getElementById('container-eventos').style.display = 'block';
-        renderEventos();
-    }
-
-    async function renderEventos() {
-        const container = document.getElementById('lista-eventos');
-        const eventoAtivoConfig = JSON.parse(localStorage.getItem('config_atual'));
-
-        try {
-            const res = await fetch(`${WORKER_URL}/listar-eventos?t=${Date.now()}`);
-            if (!res.ok) throw new Error(`Erro ${res.status}`);
-            const eventos = await res.json();
+        <div class="menu-grid">
+            <a href="camera.html" class="btn-main">📸 ABRIR CAPTURA</a>
+            <a href="config.html" class="btn-main">⚙️ CONFIGURAÇÕES</a>
+            <a href="galeria.html" class="btn-main">🖼️ VER GALERIA ADMIN</a>
             
-            if(!eventos || eventos.length === 0) { 
-                container.innerHTML = '<p style="text-align:center; opacity:0.5;">Sem eventos no momento.</p>'; 
-                return; 
+            <button onclick="gerarLinkZap()" class="btn-main btn-cliente">
+                🔗 COPIAR LINK CLIENTE
+            </button>
+        </div>
+
+        <div class="status-bar">
+            <label>EVENTO ATUAL:</label>
+            <span id="txt-evento">NENHUM SELECIONADO</span>
+        </div>
+    </div>
+
+    <script>
+        function atualizarStatus() {
+            const gDados = localStorage.getItem('config_atual');
+            if (gDados) {
+                const config = JSON.parse(gDados);
+                document.getElementById('txt-evento').innerText = (config.nome || "SEM NOME").toUpperCase();
+            }
+        }
+
+        function gerarLinkZap() {
+            const gDados = localStorage.getItem('config_atual');
+            if (!gDados) {
+                alert("ERRO: Configure um evento primeiro!");
+                return;
             }
 
-            container.innerHTML = '';
-            eventos.forEach((ev) => {
-                const estaAtivo = eventoAtivoConfig && eventoAtivoConfig.id === ev.id;
-                const evData = JSON.stringify(ev).replace(/"/g, '&quot;');
+            const config = JSON.parse(gDados);
+            // Prioriza o ID FIXO para o link ser estável, se não usa o Nome
+            const idEvento = config.id_fixo || config.nome;
+            
+            // Monta a URL completa (ajusta automaticamente conforme o seu domínio)
+            const baseURL = window.location.origin + window.location.pathname.replace('index.html', '');
+            const linkFinal = `${baseURL}galeria.html?evento=${encodeURIComponent(idEvento)}`;
 
-                const card = document.createElement('div');
-                card.className = `event-card ${estaAtivo ? 'active-border' : ''}`;
-                
-                card.innerHTML = `
-                    <div class="event-info-col">
-                        <div class="event-info">
-                            <h4>${ev.nome.replace(/_/g, ' ')}</h4>
-                            <span>DATA: ${ev.data || '--/--/--'} | DURAÇÃO: ${ev.tempo}s</span>
-                        </div>
-                        <div class="group-actions-row">
-                            <button class="status-btn ${estaAtivo ? 'btn-is-on' : 'btn-is-off'}" onclick='alternarAtivacao(${evData})'>
-                                ${estaAtivo ? '● ATIVO' : 'ATIVAR'}
-                            </button>
-                            <button class="btn-edit-big" onclick='irParaEditar(${evData})'>EDITAR</button>
-                            <button class="btn-del-big" onclick="excluirEvento('${ev.id}', '${ev.nome}')">×</button>
-                        </div>
-                    </div>
-                    <button class="btn-camera-main" onclick="irParaCamera(${evData})">📸</button>
-                `;
-                container.appendChild(card);
+            // Copia para o celular/computador
+            navigator.clipboard.writeText(linkFinal).then(() => {
+                alert("LINK COPIADO COM SUCESSO!\n\nEvento: " + idEvento + "\nCole no WhatsApp do cliente.");
+            }).catch(() => {
+                // Caso o navegador bloqueie a cópia direta
+                prompt("COPIE O LINK ABAIXO:", linkFinal);
             });
-        } catch (err) { 
-            container.innerHTML = `<p style="color: #ff5555; text-align:center;">Erro de conexão.</p>`; 
         }
-    }
 
-    function irParaEditar(evento) {
-        localStorage.setItem('evento_para_editar', JSON.stringify(evento));
-        window.location.href = `config_evento.html?id=${evento.id}`;
-    }
-
-    function alternarAtivacao(evento) {
-        const atual = JSON.parse(localStorage.getItem('config_atual'));
-        if (atual && atual.id === evento.id) {
-            localStorage.removeItem('config_atual');
-        } else {
-            localStorage.setItem('config_atual', JSON.stringify(evento));
-        }
-        renderEventos();
-    }
-
-    function irParaCamera(evento) {
-        localStorage.setItem('config_atual', JSON.stringify(evento));
-        window.location.href = 'camera.html';
-    }
-
-    async function excluirEvento(id, nome) {
-        if(confirm(`ATENÇÃO: Apagar evento ${nome} e arquivos?`)) {
-            try { 
-                const res = await fetch(`${WORKER_URL}/deletar-evento-completo`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: id, evento: nome })
-                });
-                if(res.ok) renderEventos(); 
-            } catch (e) { alert("Erro de conexão."); }
-        }
-    }
-
-    function bloquear() { sessionStorage.removeItem('logado'); location.reload(); }
-</script>
+        window.onload = atualizarStatus;
+    </script>
 </body>
 </html>
