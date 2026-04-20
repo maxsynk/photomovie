@@ -158,15 +158,12 @@
     <div id="music-modal" class="modal">
         <div class="modal-content">
             <h4 style="color:var(--dourado); text-align:center; margin-bottom: 5px;">STUDIO MUSICAL</h4>
-            
             <div class="action-box" onclick="document.getElementById('file-musica').click()" style="padding: 15px;">
                 <span id="music-file-label">📤 UPAR MP3</span>
                 <input type="file" id="file-musica" accept="audio/mpeg, audio/mp3" style="display:none" onchange="subirArquivo(this, 'MUSICA')">
             </div>
-
             <div id="music-controls" style="margin-top: 10px;">
                 <audio id="audio-player" controls style="display: none;"></audio>
-                
                 <label>INICIAR MÚSICA EM (MM:SS):</label>
                 <div class="trim-container">
                     <input type="number" id="trim-min" class="trim-input" placeholder="00" min="0" value="0" oninput="sincronizarPlayer()">
@@ -174,12 +171,10 @@
                     <input type="number" id="trim-sec" class="trim-input" placeholder="00" min="0" max="59" value="0" oninput="sincronizarPlayer()">
                     <button type="button" onclick="marcarTempoAtual()" style="background: var(--turquesa-dark); border: 1px solid var(--turquesa); color: var(--turquesa); border-radius: 10px; padding: 12px; cursor: pointer; font-weight: bold; flex-shrink: 0;">MARCAR</button>
                 </div>
-                
                 <div style="background: rgba(197, 160, 89, 0.1); padding: 12px; border-radius: 12px; margin-top: 15px; border: 1px solid rgba(197, 160, 89, 0.2);">
                     <label style="margin: 0; color: var(--dourado);"><input type="checkbox" id="conf-musica-loop-vol" checked> VOLUME DINÂMICO (Fade)</label>
                 </div>
             </div>
-
             <button class="btn-save-main" onclick="fecharModalMusica()">CONCLUIR</button>
         </div>
     </div>
@@ -192,12 +187,12 @@
         const editData = localStorage.getItem('evento_para_editar');
         if (editData) {
             const ev = JSON.parse(editData);
-            document.getElementById('conf-id').value = ev.id || "";
             
-            // TRAVA O ID FIXO (PASTA) PARA NÃO PERDER ARQUIVOS NA EDIÇÃO
-            const idRecuperado = ev.id_fixo || ev.nome || "";
-            document.getElementById('conf-id-fixo').value = idRecuperado; 
-
+            // TRAVA O ID FIXO: Se já existe, usa ele. Se não, trava o nome atual como ID.
+            const idFixoOriginal = ev.id_fixo || ev.nome || "";
+            
+            document.getElementById('conf-id').value = ev.id || "";
+            document.getElementById('conf-id-fixo').value = idFixoOriginal; 
             document.getElementById('conf-nome').value = ev.nome || "";
             document.getElementById('conf-data').value = ev.data || "";
             
@@ -210,15 +205,15 @@
             
             if(ev.musicaUrl) {
                 document.getElementById('conf-musica-url').value = ev.musicaUrl;
-                document.getElementById('conf-musica-name').value = ev.musicaName || "musica_evento.mp3";
+                document.getElementById('conf-musica-name').value = ev.musicaName || "";
                 document.getElementById('music-filename-display').innerText = ev.musicaName || "Arquivo carregado";
                 document.getElementById('music-status-text').innerText = "🎵 MÚSICA CONFIGURADA";
+                player.src = `${WORKER_URL}/stream?id=${ev.musicaUrl}`;
+                player.style.display = "block";
                 const totalSeconds = parseInt(ev.musicaTrim) || 0;
                 document.getElementById('trim-min').value = Math.floor(totalSeconds / 60);
                 document.getElementById('trim-sec').value = totalSeconds % 60;
                 document.getElementById('conf-musica-loop-vol').checked = ev.musicaLoopVol !== false;
-                player.src = `${WORKER_URL}/stream?id=${ev.musicaUrl}`;
-                player.style.display = "block";
             }
 
             if(ev.molduraUrl) {
@@ -228,7 +223,6 @@
                 document.getElementById('upload-label').innerText = "📸 MOLDURA OK";
             }
             document.getElementById('titulo-pagina').innerText = "EDITAR EVENTO";
-            localStorage.removeItem('evento_para_editar');
         }
     };
 
@@ -257,35 +251,18 @@
         else if (p === 'slow-extremo') { setV("0.5", "0.2", "0.5", false); }
         else if (p === 'normal') { setV("1.0", "1.0", "1.0", false); }
     }
-
-    function setV(a,b,c,r){ 
-        document.getElementById('conf-v1').value=a; 
-        document.getElementById('conf-v2').value=b; 
-        document.getElementById('conf-v3').value=c; 
-        document.getElementById('conf-reverso').checked=r; 
-    }
-
-    function toggleModal(id, show) { 
-        document.getElementById(id).style.display = show ? 'flex' : 'none'; 
-        if(!show) player.pause();
-    }
-    
+    function setV(a,b,c,r){ document.getElementById('conf-v1').value=a; document.getElementById('conf-v2').value=b; document.getElementById('conf-v3').value=c; document.getElementById('conf-reverso').checked=r; }
+    function toggleModal(id, show) { document.getElementById(id).style.display = show ? 'flex' : 'none'; if(!show) player.pause(); }
     function fecharModalMusica() { toggleModal('music-modal', false); }
-    
-    function setTime(val, btn) { 
-        document.getElementById('conf-tempo').value = val; 
-        document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active')); 
-        if(btn) btn.classList.add('active'); 
-    }
+    function setTime(val, btn) { document.getElementById('conf-tempo').value = val; document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active')); if(btn) btn.classList.add('active'); }
 
     async function subirArquivo(input, tipo) {
-        let idFixo = document.getElementById('conf-id-fixo').value.trim();
-        let nomeAtual = document.getElementById('conf-nome').value.trim();
+        // SEMPRE usa o ID Fixo se ele existir, senão usa o nome
+        const idFixo = document.getElementById('conf-id-fixo').value.trim();
+        const nomeAtual = document.getElementById('conf-nome').value.trim();
+        const nomePasta = idFixo || nomeAtual;
         
-        // PRIORIZA SEMPRE O ID_FIXO PARA A PASTA DO SERVIDOR
-        let nomePasta = idFixo || nomeAtual;
-        
-        if(!nomePasta) { alert("Digite o nome do evento antes de subir arquivos!"); return; }
+        if(!nomePasta) { alert("Nome do evento obrigatório!"); return; }
         if(!input.files[0]) return;
         
         const file = input.files[0];
@@ -310,32 +287,25 @@
                 document.getElementById('conf-musica-url').value = pathRelativo;
                 document.getElementById('conf-musica-name').value = file.name;
                 document.getElementById('music-filename-display').innerText = file.name;
-                document.getElementById('music-status-text').innerText = "🎵 MÚSICA CONFIGURADA";
                 label.innerText = "✅ " + file.name;
                 player.src = URL.createObjectURL(file);
-                player.style.display = "block";
             }
         } catch (e) { alert("Erro no upload."); label.innerText = "ERRO"; }
     }
 
     async function salvarConfig() {
-        const nomeEvento = document.getElementById('conf-nome').value.trim();
-        if(!nomeEvento) return alert("Digite o nome do evento.");
-        
-        // MANTÉM O ID_FIXO ORIGINAL PARA NÃO QUEBRAR O CAMINHO DOS VÍDEOS
+        const nomeVisual = document.getElementById('conf-nome').value.trim();
         let idFixo = document.getElementById('conf-id-fixo').value.trim();
-        if(!idFixo) {
-            idFixo = nomeEvento; 
-        }
+        
+        if(!nomeVisual) return alert("Digite o nome do evento.");
 
-        const m = parseInt(document.getElementById('trim-min').value) || 0;
-        const s = parseInt(document.getElementById('trim-sec').value) || 0;
-        const totalSec = (m * 60) + s;
+        // Se é novo, o ID Fixo vira o nome. Se é edição, mantém o original pra sempre.
+        if(!idFixo) { idFixo = nomeVisual; }
 
         const config = {
             id: document.getElementById('conf-id').value || String(Date.now()),
             id_fixo: idFixo, 
-            nome: nomeEvento, 
+            nome: nomeVisual, 
             data: document.getElementById('conf-data').value,
             tempo: String(document.getElementById('conf-tempo').value),
             preset: document.getElementById('conf-preset').value,
@@ -346,7 +316,7 @@
             molduraUrl: document.getElementById('conf-moldura-url').value,
             musicaUrl: document.getElementById('conf-musica-url').value,
             musicaName: document.getElementById('conf-musica-name').value,
-            musicaTrim: String(totalSec),
+            musicaTrim: String((parseInt(document.getElementById('trim-min').value)||0)*60 + (parseInt(document.getElementById('trim-sec').value)||0)),
             musicaLoopVol: document.getElementById('conf-musica-loop-vol').checked
         };
 
@@ -358,7 +328,8 @@
             });
             if(res.ok) { 
                 localStorage.setItem('config_atual', JSON.stringify(config));
-                alert("Evento salvo com sucesso!"); 
+                localStorage.removeItem('evento_para_editar');
+                alert("Evento salvo!"); 
                 window.location.href = 'index.html'; 
             }
         } catch (e) { alert("Erro ao salvar."); }
