@@ -193,9 +193,14 @@
         if (editData) {
             const ev = JSON.parse(editData);
             document.getElementById('conf-id').value = ev.id || "";
-            document.getElementById('conf-id-fixo').value = ev.id_fixo || ev.nome || ""; // Trava o ID da pasta
+            
+            // TRAVA O ID FIXO (PASTA) PARA NÃO PERDER ARQUIVOS NA EDIÇÃO
+            const idRecuperado = ev.id_fixo || ev.nome || "";
+            document.getElementById('conf-id-fixo').value = idRecuperado; 
+
             document.getElementById('conf-nome').value = ev.nome || "";
             document.getElementById('conf-data').value = ev.data || "";
+            
             if(ev.preset) document.getElementById('conf-preset').value = ev.preset;
             if(ev.v1) document.getElementById('conf-v1').value = ev.v1;
             if(ev.v2) document.getElementById('conf-v2').value = ev.v2;
@@ -225,7 +230,7 @@
             document.getElementById('titulo-pagina').innerText = "EDITAR EVENTO";
             localStorage.removeItem('evento_para_editar');
         }
-    }
+    };
 
     function sincronizarPlayer() {
         if(player && player.src) {
@@ -252,7 +257,13 @@
         else if (p === 'slow-extremo') { setV("0.5", "0.2", "0.5", false); }
         else if (p === 'normal') { setV("1.0", "1.0", "1.0", false); }
     }
-    function setV(a,b,c,r){ document.getElementById('conf-v1').value=a; document.getElementById('conf-v2').value=b; document.getElementById('conf-v3').value=c; document.getElementById('conf-reverso').checked=r; }
+
+    function setV(a,b,c,r){ 
+        document.getElementById('conf-v1').value=a; 
+        document.getElementById('conf-v2').value=b; 
+        document.getElementById('conf-v3').value=c; 
+        document.getElementById('conf-reverso').checked=r; 
+    }
 
     function toggleModal(id, show) { 
         document.getElementById(id).style.display = show ? 'flex' : 'none'; 
@@ -260,13 +271,21 @@
     }
     
     function fecharModalMusica() { toggleModal('music-modal', false); }
-    function setTime(val, btn) { document.getElementById('conf-tempo').value = val; document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active')); if(btn) btn.classList.add('active'); }
+    
+    function setTime(val, btn) { 
+        document.getElementById('conf-tempo').value = val; 
+        document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active')); 
+        if(btn) btn.classList.add('active'); 
+    }
 
     async function subirArquivo(input, tipo) {
-        let nomePasta = document.getElementById('conf-id-fixo').value.trim();
-        if(!nomePasta) nomePasta = document.getElementById('conf-nome').value.trim();
+        let idFixo = document.getElementById('conf-id-fixo').value.trim();
+        let nomeAtual = document.getElementById('conf-nome').value.trim();
         
-        if(!nomePasta) { alert("Nome do evento obrigatório para subir arquivos!"); return; }
+        // PRIORIZA SEMPRE O ID_FIXO PARA A PASTA DO SERVIDOR
+        let nomePasta = idFixo || nomeAtual;
+        
+        if(!nomePasta) { alert("Digite o nome do evento antes de subir arquivos!"); return; }
         if(!input.files[0]) return;
         
         const file = input.files[0];
@@ -276,14 +295,15 @@
         const formData = new FormData();
         formData.append("file", file);
         const fileName = tipo === 'MOLDURA' ? `moldura_principal.png` : `musica_evento.mp3`;
-        formData.append("uuid", fileName); formData.append("evento", nomePasta);
+        formData.append("uuid", fileName); 
+        formData.append("evento", nomePasta);
 
         try {
             await fetch(`${WORKER_URL}/upload`, { method: 'POST', body: formData });
             const pathRelativo = `${nomePasta}/${fileName}`;
             if(tipo === 'MOLDURA') {
                 document.getElementById('conf-moldura-url').value = pathRelativo;
-                document.getElementById('frame-preview').src = `${WORKER_URL}/stream?id=${pathRelativo}`;
+                document.getElementById('frame-preview').src = `${WORKER_URL}/stream?id=${pathRelativo}&t=${Date.now()}`;
                 document.getElementById('frame-preview').style.display = "block";
                 label.innerText = "📸 MOLDURA OK";
             } else {
@@ -302,9 +322,11 @@
         const nomeEvento = document.getElementById('conf-nome').value.trim();
         if(!nomeEvento) return alert("Digite o nome do evento.");
         
-        // Se for novo evento, o id_fixo vira o nome atual. Se for edição, mantém o que já existia.
-        let idFixo = document.getElementById('conf-id-fixo').value;
-        if(!idFixo) idFixo = nomeEvento;
+        // MANTÉM O ID_FIXO ORIGINAL PARA NÃO QUEBRAR O CAMINHO DOS VÍDEOS
+        let idFixo = document.getElementById('conf-id-fixo').value.trim();
+        if(!idFixo) {
+            idFixo = nomeEvento; 
+        }
 
         const m = parseInt(document.getElementById('trim-min').value) || 0;
         const s = parseInt(document.getElementById('trim-sec').value) || 0;
@@ -312,8 +334,8 @@
 
         const config = {
             id: document.getElementById('conf-id').value || String(Date.now()),
-            id_fixo: idFixo, // A âncora para a galeria encontrar a pasta
-            nome: nomeEvento, // A "Capa" que pode ser mudada
+            id_fixo: idFixo, 
+            nome: nomeEvento, 
             data: document.getElementById('conf-data').value,
             tempo: String(document.getElementById('conf-tempo').value),
             preset: document.getElementById('conf-preset').value,
@@ -335,9 +357,8 @@
                 body: JSON.stringify(config)
             });
             if(res.ok) { 
-                // Atualiza a config ativa para a Galeria ler imediatamente
                 localStorage.setItem('config_atual', JSON.stringify(config));
-                alert("Evento salvo!"); 
+                alert("Evento salvo com sucesso!"); 
                 window.location.href = 'index.html'; 
             }
         } catch (e) { alert("Erro ao salvar."); }
