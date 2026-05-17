@@ -91,7 +91,6 @@
 
     <div class="container">
         <input type="hidden" id="conf-id">
-        <input type="hidden" id="conf-id-fixo">
 
         <div class="section">
             <h3>1. O Evento</h3>
@@ -196,10 +195,9 @@
         const editData = localStorage.getItem('evento_para_editar');
         if (editData) {
             const ev = JSON.parse(editData);
-            const idSeguro = ev.id_fixo || sanitizarPasta(ev.nome);
             
-            document.getElementById('conf-id').value = ev.id || "";
-            document.getElementById('conf-id-fixo').value = idSeguro; 
+            // Usamos ev.id como o nome identificador/pasta para evitar o uso do id_fixo incompatível
+            document.getElementById('conf-id').value = ev.id || sanitizarPasta(ev.nome);
             document.getElementById('conf-nome').value = ev.nome || "";
             document.getElementById('conf-data').value = ev.data || "";
             
@@ -262,7 +260,8 @@
     function setTime(val, btn) { document.getElementById('conf-tempo').value = val; document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active')); if(btn) btn.classList.add('active'); }
 
     async function subirArquivo(input, tipo) {
-        const idPasta = document.getElementById('conf-id-fixo').value.trim() || sanitizarPasta(document.getElementById('conf-nome').value);
+        const nomeVisual = document.getElementById('conf-nome').value.trim();
+        const idPasta = document.getElementById('conf-id').value.trim() || sanitizarPasta(nomeVisual);
         if(!idPasta) { alert("Dê um nome ao evento primeiro!"); return; }
         if(!input.files[0]) return;
         
@@ -296,14 +295,15 @@
 
     async function salvarConfig() {
         const nomeVisual = document.getElementById('conf-nome').value.trim();
-        let idFixo = document.getElementById('conf-id-fixo').value.trim();
         if(!nomeVisual) return alert("Digite o nome do evento.");
-        if(!idFixo) { idFixo = sanitizarPasta(nomeVisual); }
+        
+        // O ID único do evento passa a ser diretamente o nome sanitizado da pasta (ex: "casamento_joao_e_maria")
+        let idEventoValido = document.getElementById('conf-id').value.trim();
+        if(!idEventoValido) { idEventoValido = sanitizarPasta(nomeVisual); }
 
-        // Objeto local COMPLETO retido para persistência local (Câmera e Motores)
         const configLocal = {
-            id: document.getElementById('conf-id').value || String(Date.now()),
-            id_fixo: idFixo, 
+            id: idEventoValido,
+            id_fixo: idEventoValido, // Mantido localmente para compatibilidade de rotas antigas
             nome: nomeVisual, 
             data: document.getElementById('conf-data').value,
             tempo: String(document.getElementById('conf-tempo').value),
@@ -319,10 +319,9 @@
             musicaLoopVol: document.getElementById('conf-musica-loop-vol').checked
         };
 
-        // CORREÇÃO CRUCIAL: Objeto enxugado apenas com o que o Cloudflare Worker espera mapear no BD
+        // Envia apenas o que o banco SQLite original possui (6 colunas padrão suportadas)
         const payloadWorker = {
             id: configLocal.id,
-            id_fixo: configLocal.id_fixo,
             nome: configLocal.nome,
             data: configLocal.data || "",
             molduraUrl: configLocal.molduraUrl || "",
@@ -347,7 +346,7 @@
                 alert("Erro retornado pelo servidor: " + (errData.error || res.statusText));
             }
         } catch (e) { 
-            alert("Erro de rede ao tentar salvar o evento."); 
+            alert("Erro de conexão ao tentar salvar."); 
         }
     }
 </script>
