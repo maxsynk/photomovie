@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CONFIGURAR EVENTO - Photo Movie</title>
+    <title>CONFIGURAR EVENTO - PHOTO MOVIE</title>
     <style>
         :root { 
             --turquesa: #00d1d1; 
@@ -196,7 +196,6 @@
         if (editData) {
             const ev = JSON.parse(editData);
             
-            // Usamos ev.id como o nome identificador/pasta para evitar o uso do id_fixo incompatível
             document.getElementById('conf-id').value = ev.id || sanitizarPasta(ev.nome);
             document.getElementById('conf-nome').value = ev.nome || "";
             document.getElementById('conf-data').value = ev.data || "";
@@ -206,7 +205,21 @@
             if(ev.v2) document.getElementById('conf-v2').value = ev.v2;
             if(ev.v3) document.getElementById('conf-v3').value = ev.v3;
             if(ev.reverso) document.getElementById('conf-reverso').checked = (ev.reverso === true || ev.reverso === "true");
-            if(ev.tempo) setTime(parseInt(ev.tempo), document.getElementById('time-'+ev.tempo));
+            
+            // CORREÇÃO DE LEITURA: Caso o tempo venha envelopado no musicaTrim do banco
+            let tempoDefinido = 10; 
+            let totalSeconds = 0;
+            
+            if (ev.musicaTrim && ev.musicaTrim.includes('|')) {
+                const partes = ev.musicaTrim.split('|');
+                totalSeconds = parseInt(partes[0]) || 0;
+                tempoDefinido = parseInt(partes[1]) || 10;
+            } else if (ev.tempo) {
+                tempoDefinido = parseInt(ev.tempo);
+                totalSeconds = parseInt(ev.musicaTrim) || 0;
+            }
+            
+            setTime(tempoDefinido, document.getElementById('time-' + tempoDefinido));
             
             if(ev.musicaUrl) {
                 document.getElementById('conf-musica-url').value = ev.musicaUrl;
@@ -215,7 +228,7 @@
                 document.getElementById('music-status-text').innerText = "🎵 MÚSICA CONFIGURADA";
                 player.src = `${WORKER_URL}/stream?id=${ev.musicaUrl}`;
                 player.style.display = "block";
-                const totalSeconds = parseInt(ev.musicaTrim) || 0;
+                
                 document.getElementById('trim-min').value = Math.floor(totalSeconds / 60);
                 document.getElementById('trim-sec').value = totalSeconds % 60;
                 document.getElementById('conf-musica-loop-vol').checked = ev.musicaLoopVol !== false;
@@ -297,16 +310,18 @@
         const nomeVisual = document.getElementById('conf-nome').value.trim();
         if(!nomeVisual) return alert("Digite o nome do evento.");
         
-        // O ID único do evento passa a ser diretamente o nome sanitizado da pasta (ex: "casamento_joao_e_maria")
         let idEventoValido = document.getElementById('conf-id').value.trim();
         if(!idEventoValido) { idEventoValido = sanitizarPasta(nomeVisual); }
 
+        const tempoGravacao = String(document.getElementById('conf-tempo').value);
+        const segundosMusica = String((parseInt(document.getElementById('trim-min').value)||0)*60 + (parseInt(document.getElementById('trim-sec').value)||0));
+
         const configLocal = {
             id: idEventoValido,
-            id_fixo: idEventoValido, // Mantido localmente para compatibilidade de rotas antigas
+            id_fixo: idEventoValido,
             nome: nomeVisual, 
             data: document.getElementById('conf-data').value,
-            tempo: String(document.getElementById('conf-tempo').value),
+            tempo: tempoGravacao,
             preset: document.getElementById('conf-preset').value,
             v1: document.getElementById('conf-v1').value,
             v2: document.getElementById('conf-v2').value,
@@ -315,18 +330,18 @@
             molduraUrl: document.getElementById('conf-moldura-url').value,
             musicaUrl: document.getElementById('conf-musica-url').value,
             musicaName: document.getElementById('conf-musica-name').value,
-            musicaTrim: String((parseInt(document.getElementById('trim-min').value)||0)*60 + (parseInt(document.getElementById('trim-sec').value)||0)),
+            musicaTrim: segundosMusica,
             musicaLoopVol: document.getElementById('conf-musica-loop-vol').checked
         };
 
-        // Envia apenas o que o banco SQLite original possui (6 colunas padrão suportadas)
+        // CORREÇÃO DE ENVIO: Injetando o valor do tempo concatenado com o trim da música no campo que o SQLite aceita.
         const payloadWorker = {
             id: configLocal.id,
             nome: configLocal.nome,
             data: configLocal.data || "",
             molduraUrl: configLocal.molduraUrl || "",
             musicaUrl: configLocal.musicaUrl || "",
-            musicaTrim: configLocal.musicaTrim || "0"
+            musicaTrim: `${segundosMusica}|${tempoGravacao}` 
         };
 
         try {
