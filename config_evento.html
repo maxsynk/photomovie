@@ -300,7 +300,8 @@
         if(!nomeVisual) return alert("Digite o nome do evento.");
         if(!idFixo) { idFixo = sanitizarPasta(nomeVisual); }
 
-        const config = {
+        // Objeto local COMPLETO retido para persistência local (Câmera e Motores)
+        const configLocal = {
             id: document.getElementById('conf-id').value || String(Date.now()),
             id_fixo: idFixo, 
             nome: nomeVisual, 
@@ -318,19 +319,36 @@
             musicaLoopVol: document.getElementById('conf-musica-loop-vol').checked
         };
 
+        // CORREÇÃO CRUCIAL: Objeto enxugado apenas com o que o Cloudflare Worker espera mapear no BD
+        const payloadWorker = {
+            id: configLocal.id,
+            id_fixo: configLocal.id_fixo,
+            nome: configLocal.nome,
+            data: configLocal.data || "",
+            molduraUrl: configLocal.molduraUrl || "",
+            musicaUrl: configLocal.musicaUrl || "",
+            musicaTrim: configLocal.musicaTrim || "0"
+        };
+
         try {
             const res = await fetch(`${WORKER_URL}/salvar-evento`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(config)
+                body: JSON.stringify(payloadWorker)
             });
+            
             if(res.ok) { 
-                localStorage.setItem('config_atual', JSON.stringify(config));
+                localStorage.setItem('config_atual', JSON.stringify(configLocal));
                 localStorage.removeItem('evento_para_editar');
-                alert("Evento salvo!"); 
+                alert("Evento salvo com sucesso!"); 
                 window.location.href = 'index.html'; 
+            } else {
+                const errData = await res.json().catch(() => ({}));
+                alert("Erro retornado pelo servidor: " + (errData.error || res.statusText));
             }
-        } catch (e) { alert("Erro ao salvar."); }
+        } catch (e) { 
+            alert("Erro de rede ao tentar salvar o evento."); 
+        }
     }
 </script>
 </body>
