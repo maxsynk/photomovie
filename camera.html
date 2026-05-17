@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Câmera Pro - Photo Movie</title>
     <style>
-        :root { --turquesa: #00d1d1; --dourado: #c5a059; --preto: #000; }
+        :root { --turquesa: #00d1d1; --dourado: #c5a059; --preto: #000; --vermelho: #ff3b30; }
         body { margin: 0; background: #000; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
         
         #cam-container { width: 100vw; height: 100vh; position: relative; display: flex; flex-direction: column; }
@@ -22,6 +22,22 @@
             position: absolute; top: 30px; width: 100%; text-align: center;
             z-index: 20; color: var(--dourado); text-transform: uppercase;
             letter-spacing: 3px; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        /* Indicador de Gravação REC */
+        #rec-indicator {
+            position: absolute; top: 70px; left: 50%; transform: translateX(-50%);
+            z-index: 25; background: rgba(0, 0, 0, 0.6); color: #fff;
+            padding: 6px 15px; border-radius: 20px; font-weight: bold;
+            font-size: 14px; display: none; align-items: center; gap: 8px;
+            border: 1px solid var(--vermelho); letter-spacing: 1px;
+        }
+        .dot {
+            width: 10px; height: 10px; background-color: var(--vermelho);
+            border-radius: 50%; animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; } 50% { opacity: 0; }
         }
 
         .controls-wrapper {
@@ -75,6 +91,9 @@
     <div id="cam-container">
         <div class="event-overlay" id="txt-evento">PHOTO MOVIE</div>
         
+        <!-- Alerta de GRAVANDO (REC) -->
+        <div id="rec-indicator"><div class="dot"></div>GRAVANDO</div>
+        
         <video id="preview" autoplay playsinline muted></video>
         <img id="moldura-view" alt="moldura">
 
@@ -104,9 +123,11 @@
     const btn = document.getElementById('btn-shoot');
     const view = document.getElementById('moldura-view');
     const txtEvento = document.getElementById('txt-evento');
+    const recIndicator = document.getElementById('rec-indicator');
     
     let currentStream;
     let useFrontCamera = false;
+    let gravandoAtiva = false; // Controle interno do loop de animação
     const molduraImg = new Image();
     molduraImg.crossOrigin = "anonymous"; 
 
@@ -171,35 +192,52 @@
         const tempo = (config ? parseInt(config.tempo) : 10) * 1000;
         const nomeEvento = config ? (config.id_fixo || config.nome) : "Geral";
 
-        let recorder;
+        // Ativa a animação visual do REC
+        recIndicator.style.display = 'flex';
+        gravandoAtiva = true;
 
         const loop = () => {
-            if (video.paused || video.ended) return;
-            // Desenha o vídeo
+            if (video.paused || video.ended || !gravandoAtiva) return;
+            
+            // Renderiza o vídeo invertido no canvas se for a câmera frontal (espelhamento natural)
+            ctx.save();
+            if(useFrontCamera) {
+                ctx.translate(canvas.width, 0);
+                ctx.scale(-1, 1);
+            }
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            // Desenha a moldura por cima
+            ctx.restore();
+
+            // Desenha a moldura por cima fixada
             if (molduraImg.complete) {
                 ctx.drawImage(molduraImg, 0, 0, canvas.width, canvas.height);
             }
-            if (recorder && recorder.state === "recording") {
-                requestAnimationFrame(loop);
-            }
+            
+            requestAnimationFrame(loop);
         };
 
         const stream = canvas.captureStream(30);
-        recorder = new MediaRecorder(stream, { 
-            mimeType: 'video/webm;codecs=vp8',
-            videoBitsPerSecond: 3000000 
-        });
+        
+        // Verificação de suporte de codec para garantir alta compatibilidade
+        let options = { mimeType: 'video/webm;codecs=vp8', videoBitsPerSecond: 3000000 };
+        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+            options = { mimeType: 'video/webm' };
+        }
+        
+        const recorder = new MediaRecorder(stream, options);
         
         recorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
         
         recorder.onstop = async () => {
+            // Desliga o indicador de gravação
+            recIndicator.style.display = 'none';
             document.getElementById('loading').style.display = 'flex';
+            
             const blob = new Blob(chunks, { type: 'video/webm' });
             
             const fd = new FormData();
-            fd.append("video", blob);
+            // CORREÇÃO CRUCIAL: Modificado de "video" para "file" para alinhar com o código Python
+            fd.append("file", blob, "vid_" + Date.now() + ".webm");
             fd.append("uuid", "vid_" + Date.now() + ".webm");
             fd.append("evento", nomeEvento); 
 
@@ -208,10 +246,11 @@
                 if(res.ok) {
                     setTimeout(() => { window.location.href = "galeria.html"; }, 800);
                 } else {
-                    alert("Erro no envio.");
+                    alert("Erro no envio do arquivo para o servidor.");
                     document.getElementById('loading').style.display = 'none';
                 }
             } catch (err) {
+                alert("Falha de rede ao enviar.");
                 document.getElementById('loading').style.display = 'none';
             }
         };
@@ -220,6 +259,7 @@
         loop(); 
         
         setTimeout(() => { 
+            gravandoAtiva = false;
             if(recorder.state === "recording") recorder.stop(); 
         }, tempo);
     }
