@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CONFIGURAR EVENTO - PHOTO MOVIE</title>
+    <title>CONFIGURAR EVENTO - Photo Movie</title>
     <style>
         :root { 
             --turquesa: #00d1d1; 
@@ -26,6 +26,7 @@
         }
 
         .header h1 { color: var(--dourado); margin: 0; font-size: 36px; letter-spacing: 5px; font-weight: 900; text-transform: uppercase; }
+        .version-tag { font-size: 10px; color: #555; font-family: monospace; margin-top: 5px; display: block; }
 
         .container { padding: 20px; max-width: 500px; margin: 0 auto; }
 
@@ -87,6 +88,7 @@
     <div class="header">
         <h1 id="titulo-pagina">PHOTO MOVIE</h1>
         <p>colecionando momentos</p>
+        <span class="version-tag">v1.0.1</span>
     </div>
 
     <div class="container">
@@ -206,20 +208,8 @@
             if(ev.v3) document.getElementById('conf-v3').value = ev.v3;
             if(ev.reverso) document.getElementById('conf-reverso').checked = (ev.reverso === true || ev.reverso === "true");
             
-            // CORREÇÃO DE LEITURA: Caso o tempo venha envelopado no musicaTrim do banco
-            let tempoDefinido = 10; 
-            let totalSeconds = 0;
-            
-            if (ev.musicaTrim && ev.musicaTrim.includes('|')) {
-                const partes = ev.musicaTrim.split('|');
-                totalSeconds = parseInt(partes[0]) || 0;
-                tempoDefinido = parseInt(partes[1]) || 10;
-            } else if (ev.tempo) {
-                tempoDefinido = parseInt(ev.tempo);
-                totalSeconds = parseInt(ev.musicaTrim) || 0;
-            }
-            
-            setTime(tempoDefinido, document.getElementById('time-' + tempoDefinido));
+            // Tenta obter o tempo salvo localmente ou vindo do objeto de edição
+            if(ev.tempo) setTime(parseInt(ev.tempo), document.getElementById('time-'+ev.tempo));
             
             if(ev.musicaUrl) {
                 document.getElementById('conf-musica-url').value = ev.musicaUrl;
@@ -228,7 +218,7 @@
                 document.getElementById('music-status-text').innerText = "🎵 MÚSICA CONFIGURADA";
                 player.src = `${WORKER_URL}/stream?id=${ev.musicaUrl}`;
                 player.style.display = "block";
-                
+                const totalSeconds = parseInt(ev.musicaTrim) || 0;
                 document.getElementById('trim-min').value = Math.floor(totalSeconds / 60);
                 document.getElementById('trim-sec').value = totalSeconds % 60;
                 document.getElementById('conf-musica-loop-vol').checked = ev.musicaLoopVol !== false;
@@ -313,15 +303,12 @@
         let idEventoValido = document.getElementById('conf-id').value.trim();
         if(!idEventoValido) { idEventoValido = sanitizarPasta(nomeVisual); }
 
-        const tempoGravacao = String(document.getElementById('conf-tempo').value);
-        const segundosMusica = String((parseInt(document.getElementById('trim-min').value)||0)*60 + (parseInt(document.getElementById('trim-sec').value)||0));
-
         const configLocal = {
             id: idEventoValido,
-            id_fixo: idEventoValido,
+            id_fixo: idEventoValido, 
             nome: nomeVisual, 
             data: document.getElementById('conf-data').value,
-            tempo: tempoGravacao,
+            tempo: String(document.getElementById('conf-tempo').value),
             preset: document.getElementById('conf-preset').value,
             v1: document.getElementById('conf-v1').value,
             v2: document.getElementById('conf-v2').value,
@@ -330,18 +317,19 @@
             molduraUrl: document.getElementById('conf-moldura-url').value,
             musicaUrl: document.getElementById('conf-musica-url').value,
             musicaName: document.getElementById('conf-musica-name').value,
-            musicaTrim: segundosMusica,
+            musicaTrim: String((parseInt(document.getElementById('trim-min').value)||0)*60 + (parseInt(document.getElementById('trim-sec').value)||0)),
             musicaLoopVol: document.getElementById('conf-musica-loop-vol').checked
         };
 
-        // CORREÇÃO DE ENVIO: Injetando o valor do tempo concatenado com o trim da música no campo que o SQLite aceita.
+        // Envia os dados estruturados para o Worker
         const payloadWorker = {
             id: configLocal.id,
             nome: configLocal.nome,
             data: configLocal.data || "",
             molduraUrl: configLocal.molduraUrl || "",
             musicaUrl: configLocal.musicaUrl || "",
-            musicaTrim: `${segundosMusica}|${tempoGravacao}` 
+            musicaTrim: configLocal.musicaTrim || "0",
+            tempo: configLocal.tempo // Garante que o campo tempo está sendo despachado
         };
 
         try {
@@ -354,7 +342,7 @@
             if(res.ok) { 
                 localStorage.setItem('config_atual', JSON.stringify(configLocal));
                 localStorage.removeItem('evento_para_editar');
-                alert("Evento salvo com sucesso!"); 
+                alert("Evento saved successfully!"); 
                 window.location.href = 'index.html'; 
             } else {
                 const errData = await res.json().catch(() => ({}));
