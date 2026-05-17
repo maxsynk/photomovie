@@ -25,6 +25,7 @@
         .header { margin-top: 1.8cm; text-align: center; margin-bottom: 40px; }
         .header h1 { color: var(--dourado); font-size: 52px; font-weight: 900; letter-spacing: 3px; margin: 0; text-transform: uppercase; animation: pulse-gold 3s infinite ease-in-out; }
         .header p { color: var(--dourado); font-size: 20px; margin: -5px 0 0 0; letter-spacing: 4px; font-weight: 300; text-transform: lowercase; opacity: 0.9; }
+        .version-tag { font-size: 10px; color: rgba(197, 160, 89, 0.4); font-family: monospace; margin-top: 5px; display: block; letter-spacing: 1px; }
 
         @keyframes pulse-gold {
             0%, 100% { text-shadow: 0 0 5px rgba(197, 160, 89, 0.2); transform: scale(1); }
@@ -42,7 +43,6 @@
 
         .btn-create { background: var(--ativo-ouro); color: #1a1a1a; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         #btn-galeria { background: rgba(197, 160, 89, 0.1); color: var(--dourado); border: 1px solid var(--dourado); }
-        /* BOTÃO LINK CLIENTE - MESMO ESTILO DO GALERIA */
         #btn-copy-link { background: rgba(197, 160, 89, 0.1); color: var(--dourado); border: 1px solid var(--dourado); margin-bottom: 25px; }
         
         #btn-admin { background: rgba(197, 160, 89, 0.1); color: #c5a059; border: 1px solid #c5a059; }
@@ -96,6 +96,7 @@
     <div class="header">
         <h1>PHOTO MOVIE</h1>
         <p>colecionando momentos</p>
+        <span class="version-tag">v1.0.1</span>
     </div>
 
     <div class="main-container">
@@ -147,11 +148,10 @@
         renderEventos();
     }
 
-    // FUNÇÃO PARA COPIAR LINK
     function copiarLinkCliente() {
         const config = JSON.parse(localStorage.getItem('config_atual'));
         if (!config) { alert("Ative um evento primeiro!"); return; }
-        const idEvento = config.id_fixo || config.nome;
+        const idEvento = config.id || config.id_fixo || config.nome;
         const link = `https://maxsynk.github.io/photomovie/galeria.html?evento=${encodeURIComponent(idEvento)}`;
         navigator.clipboard.writeText(link).then(() => { alert("Link copiado!"); });
     }
@@ -172,14 +172,18 @@
             container.innerHTML = '';
             eventos.forEach((ev) => {
                 const estaAtivo = eventoAtivoConfig && eventoAtivoConfig.id === ev.id;
+                
+                // Fallback de segurança: Se o Worker retornar o campo tempo nulo ou vazio, assume 10s por padrão
+                const tempoExibicao = ev.tempo ? ev.tempo : "10";
+
                 const evData = JSON.stringify(ev).replace(/"/g, '&quot;');
                 const card = document.createElement('div');
                 card.className = `event-card ${estaAtivo ? 'active-border' : ''}`;
                 card.innerHTML = `
                     <div class="event-info-col">
                         <div class="event-info">
-                            <h4>${ev.nome.replace(/_/g, ' ')}</h4>
-                            <span>DATA: ${ev.data || '--/--/--'} | DURAÇÃO: ${ev.tempo}s</span>
+                            <h4>${ev.nome ? ev.nome.replace(/_/g, ' ') : 'EVENTO SEM NOME'}</h4>
+                            <span>DATA: ${ev.data || '--/--/--'} | DURAÇÃO: ${tempoExibicao}s</span>
                         </div>
                         <div class="group-actions-row">
                             <button class="status-btn ${estaAtivo ? 'btn-is-on' : 'btn-is-off'}" onclick='alternarAtivacao(${evData})'>
@@ -194,7 +198,7 @@
                 container.appendChild(card);
             });
         } catch (err) { 
-            container.innerHTML = `<p style="color: #ff5555; text-align:center;">Erro de conexão.</p>`; 
+            container.innerHTML = `<p style="color: #ff5555; text-align:center;">Erro de conexão ao carregar lista.</p>`; 
         }
     }
 
@@ -208,12 +212,15 @@
         if (atual && atual.id === evento.id) {
             localStorage.removeItem('config_atual');
         } else {
+            // Salva o objeto completo do evento selecionado incluindo fallbacks para garantir consistência
+            if (!evento.tempo) evento.tempo = "10";
             localStorage.setItem('config_atual', JSON.stringify(evento));
         }
         renderEventos();
     }
 
     function irParaCamera(evento) {
+        if (!evento.tempo) evento.tempo = "10";
         localStorage.setItem('config_atual', JSON.stringify(evento));
         window.location.href = 'camera.html';
     }
