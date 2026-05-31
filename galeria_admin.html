@@ -36,6 +36,7 @@
             width: 100%;
             margin-top: 15px;
             padding-left: 10px;
+            cursor: pointer;
         }
         .v-line { width: 2px; height: 30px; background: var(--dourado); border-radius: 2px; margin-right: 10px; }
         #nome-evento-titulo { 
@@ -72,19 +73,25 @@
             background: #000; border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 12px; 
             overflow: hidden; aspect-ratio: 9/16; position: relative; cursor: pointer;
         }
+        .video-card:hover { border-color: var(--dourado); }
         .video-card video { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
         .video-id-badge { position: absolute; top: 8px; left: 8px; background: var(--dourado); color: black; padding: 2px 8px; border-radius: 4px; font-weight: 900; font-size: 12px; z-index: 10; }
-        .btn-del-mini { position: absolute; top: 8px; right: 8px; background: var(--danger); border: none; color: white; border-radius: 50%; width: 30px; height: 30px; font-weight: bold; cursor: pointer; z-index: 20; }
+        .btn-del-mini { position: absolute; top: 8px; right: 8px; background: var(--danger); border: none; color: white; border-radius: 50%; width: 30px; height: 30px; font-weight: bold; cursor: pointer; z-index: 20; font-size: 16px; }
+        .btn-del-mini:hover { background: #ff0000; transform: scale(1.05); }
 
         #modal-zoom { position: fixed; inset: 0; background: rgba(0,0,0,0.98); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; }
-        #media-full { width: 85%; max-height: 70vh; border: 2px solid var(--dourado); border-radius: 15px; background: #000; }
-        .modal-controls { margin-top: 25px; display: flex; gap: 10px; width: 85%; justify-content: center; flex-wrap: wrap; }
-        .btn-action { padding: 12px 20px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 12px; text-transform: uppercase; }
+        #media-full { width: 90%; max-height: 70vh; border: 2px solid var(--dourado); border-radius: 15px; background: #000; }
+        .modal-controls { margin-top: 25px; display: flex; gap: 15px; width: 90%; justify-content: center; flex-wrap: wrap; }
+        .btn-action { padding: 12px 25px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 14px; text-transform: uppercase; }
         .btn-close { background: #333; color: white; }
         .btn-download { background: var(--dourado); color: black; }
         .btn-danger { background: var(--danger); color: white; }
         .btn-zip { background: #28a745; color: white; }
         .nav-footer { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 500; width: 90%; }
+        
+        .empty-gallery { text-align: center; padding: 50px; color: #666; grid-column: 1/-1; }
+        .empty-gallery p { font-size: 16px; margin-top: 20px; }
+        .loading { text-align: center; padding: 50px; color: var(--dourado); grid-column: 1/-1; }
     </style>
 </head>
 <body>
@@ -93,12 +100,12 @@
         <div class="header">
             <h1>PHOTO MOVIE</h1>
             <p class="subtitle">COLECIONANDO MOMENTOS</p>
-            <span class="version-tag">v1.0.1</span>
-            <div class="admin-label">GALERIA ADMIN</div>
+            <span class="version-tag">v1.0.2</span>
+            <div class="admin-label">👑 GALERIA ADMIN</div>
             
-            <div class="event-info-container">
+            <div class="event-info-container" onclick="copiarLinkAdmin()">
                 <div class="v-line"></div>
-                <p id="nome-evento-titulo">SINCRONIZANDO...</p>
+                <p id="nome-evento-titulo">CARREGANDO...</p>
             </div>
         </div>
 
@@ -113,7 +120,11 @@
         <button class="btn-action btn-danger" onclick="excluirTudo()">⚠️ APAGAR GALERIA</button>
     </div>
 
-    <div id="gallery-container" class="gallery-grid"></div>
+    <div id="gallery-container" class="gallery-grid">
+        <div class="loading">
+            <p>⏳ CARREGANDO VÍDEOS...</p>
+        </div>
+    </div>
 
     <div class="nav-footer">
         <a href="index.html" class="btn-action btn-close" style="display: block; text-align: center; background: rgba(197, 160, 89, 0.1); color: var(--dourado); border: 1px solid var(--dourado);">← VOLTAR</a>
@@ -123,8 +134,8 @@
         <video id="media-full" controls playsinline crossorigin="anonymous"></video>
         <div class="modal-controls">
             <button class="btn-action btn-close" onclick="fecharZoom()">FECHAR</button>
-            <button id="btn-download-force" class="btn-action btn-download">BAIXAR MP4</button>
-            <button id="btn-delete-modal" class="btn-action btn-danger">EXCLUIR VÍDEO</button>
+            <button id="btn-download-force" class="btn-action btn-download">📥 BAIXAR MP4</button>
+            <button id="btn-delete-modal" class="btn-action btn-danger">🗑️ EXCLUIR VÍDEO</button>
         </div>
     </div>
 
@@ -132,62 +143,144 @@
     const WORKER_URL = "https://photomovie.maxprimefotovideo.workers.dev";
     let listaFinais = [];
     let idPastaFixo = ""; 
+    let carregando = false;
+
+    function copiarLinkAdmin() {
+        if(!idPastaFixo) {
+            alert("Aguardando carregamento do evento...");
+            return;
+        }
+        const link = `${window.location.origin}${window.location.pathname}?evento=${encodeURIComponent(idPastaFixo)}`;
+        navigator.clipboard.writeText(link).then(() => {
+            alert("✅ Link da Galeria Admin Copiado!\n" + link);
+        }).catch(() => {
+            alert("Link: " + link);
+        });
+    }
 
     window.onload = () => {
-        const config = JSON.parse(localStorage.getItem('config_atual'));
-        if(!config) { window.location.href = "index.html"; return; }
-        document.getElementById('nome-evento-titulo').innerText = (config.nome || "").replace(/_/g, ' ');
-        
-        // CORREÇÃO: Puxa o ID padronizado direto para a sincronização da Galeria Admin
-        idPastaFixo = config.id || config.id_fixo || config.nome; 
-        
-        carregarArquivos();
-        setInterval(carregarArquivos, 3000);
+        carregarEvento();
     };
 
+    async function carregarEvento() {
+        // Tenta pegar da URL primeiro
+        const urlParams = new URLSearchParams(window.location.search);
+        let eventoEncontrado = urlParams.get('evento');
+        
+        // Se não veio na URL, tenta do localStorage
+        if(!eventoEncontrado) {
+            const config = JSON.parse(localStorage.getItem('config_atual'));
+            if(config) {
+                eventoEncontrado = config.nome || config.id || config.id_fixo;
+                document.getElementById('nome-evento-titulo').innerText = (eventoEncontrado || "").replace(/_/g, ' ');
+            }
+        }
+        
+        // Se ainda não tem evento, busca o primeiro da lista
+        if(!eventoEncontrado) {
+            try {
+                const res = await fetch(`${WORKER_URL}/listar-eventos?t=${Date.now()}`);
+                const eventos = await res.json();
+                if(eventos && eventos.length > 0) {
+                    eventoEncontrado = eventos[0].nome;
+                    document.getElementById('nome-evento-titulo').innerText = eventoEncontrado.replace(/_/g, ' ');
+                }
+            } catch(e) {
+                console.log("Erro ao buscar eventos:", e);
+            }
+        }
+
+        if(!eventoEncontrado) {
+            document.getElementById('nome-evento-titulo').innerHTML = "⚠️ NENHUM EVENTO";
+            document.getElementById('gallery-container').innerHTML = '<div class="empty-gallery"><p>❌ Nenhum evento encontrado</p><small>Crie um evento no menu principal</small></div>';
+            return;
+        }
+        
+        idPastaFixo = eventoEncontrado;
+        document.getElementById('nome-evento-titulo').innerHTML = eventoEncontrado.replace(/_/g, ' ');
+        
+        carregarArquivos();
+        setInterval(carregarArquivos, 5000);
+    }
+
     async function carregarArquivos() {
+        if(carregando) return;
+        carregando = true;
+        
         try {
-            const res = await fetch(`${WORKER_URL}/listar-galeria?evento=${encodeURIComponent(idPastaFixo)}`);
+            // ✅ CORREÇÃO: Adicionar timestamp para evitar cache
+            const url = `${WORKER_URL}/listar-galeria?evento=${encodeURIComponent(idPastaFixo)}&t=${Date.now()}`;
+            console.log("🔍 Buscando admin:", url);
+            
+            const res = await fetch(url);
             const dados = await res.json();
-            const novosFinais = dados.filter(f => f.path.includes('final_'));
+            
+            console.log("📦 Arquivos brutos:", dados);
+            
+            // ✅ CORREÇÃO: Filtrar apenas vídeos que começam com "final_" e terminam com .mp4
+            const novosFinais = dados.filter(f => {
+                const path = f.path || "";
+                const filename = path.split('/').pop();
+                return filename.startsWith('final_') && filename.endsWith('.mp4');
+            });
+            
+            console.log("🎬 Vídeos finais encontrados:", novosFinais.length);
+            
             if (JSON.stringify(novosFinais) !== JSON.stringify(listaFinais)) {
                 listaFinais = novosFinais;
                 renderizarGaleria();
             }
-        } catch (e) { console.error("Erro ao carregar arquivos."); }
+        } catch (e) { 
+            console.error("Erro ao carregar arquivos:", e);
+            document.getElementById('gallery-container').innerHTML = '<div class="empty-gallery"><p>⚠️ Erro ao conectar com o servidor</p><small>Verifique sua conexão</small></div>';
+        } finally {
+            carregando = false;
+        }
     }
 
     function renderizarGaleria() {
         const container = document.getElementById('gallery-container');
-        container.innerHTML = "";
-        if (listaFinais.length === 0) {
-            container.innerHTML = "<p style='grid-column: 1/-1; opacity:0.5; margin-top:50px;'>Nenhum vídeo encontrado.</p>";
+        
+        if (!listaFinais || listaFinais.length === 0) {
+            container.innerHTML = '<div class="empty-gallery"><p>📹 Nenhum vídeo encontrado</p><small>Grave um vídeo na câmera para aparecer aqui</small></div>';
             return;
         }
+        
+        container.innerHTML = "";
+        
         listaFinais.forEach((file, index) => {
             const url = `${WORKER_URL}/stream?id=${encodeURIComponent(file.path)}`;
+            const numeroVideo = index + 1;
+            
             const card = document.createElement('div');
             card.className = 'video-card';
             card.innerHTML = `
-                <div class="video-id-badge">#${index + 1}</div>
-                <button class="btn-del-mini" onclick="event.stopPropagation(); excluirArquivo('${file.path}')">X</button>
-                <video src="${url}#t=0.5" muted playsinline></video>
+                <div class="video-id-badge">#${numeroVideo}</div>
+                <button class="btn-del-mini" onclick="event.stopPropagation(); excluirArquivo('${file.path}')">✕</button>
+                <video src="${url}#t=0.5" muted playsinline preload="metadata"></video>
             `;
             card.onclick = () => abrirZoom(url, file.path);
             container.appendChild(card);
         });
     }
 
-    function ejecutarBusca() {
+    function executarBusca() {
         const num = document.getElementById('input-busca').value;
-        if (!num) return;
+        if (!num) {
+            alert("Digite um número de vídeo");
+            return;
+        }
+        
         const index = parseInt(num) - 1;
+        
         if (listaFinais[index]) {
             const file = listaFinais[index];
             const url = `${WORKER_URL}/stream?id=${encodeURIComponent(file.path)}`;
             abrirZoom(url, file.path);
             document.getElementById('input-busca').value = '';
-        } else { alert("Vídeo #" + num + " não encontrado!"); }
+        } else { 
+            alert(`❌ Vídeo #${num} não encontrado!\nTotal de vídeos: ${listaFinais.length}`);
+        }
     }
 
     function abrirZoom(url, path) {
@@ -196,47 +289,106 @@
         modal.style.display = 'flex';
         video.src = url;
         video.play();
+        
         document.getElementById('btn-download-force').onclick = () => forcarDownload(url, path.split('/').pop());
-        document.getElementById('btn-delete-modal').onclick = () => { excluirArquivo(path); fecharZoom(); };
+        document.getElementById('btn-delete-modal').onclick = () => { 
+            excluirArquivo(path); 
+            fecharZoom(); 
+        };
     }
 
     async function excluirArquivo(path) {
-        if(!confirm("Excluir vídeo?")) return;
-        await fetch(`${WORKER_URL}/deletar`, { method: 'POST', body: JSON.stringify({ id: path, evento: idPastaFixo }) });
-        carregarArquivos();
+        if(!confirm("🗑️ Tem certeza que deseja excluir este vídeo permanentemente?")) return;
+        
+        try {
+            const response = await fetch(`${WORKER_URL}/deletar`, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: path, evento: idPastaFixo }) 
+            });
+            
+            if(response.ok) {
+                alert("✅ Vídeo excluído com sucesso!");
+                carregarArquivos();
+            } else {
+                alert("❌ Erro ao excluir vídeo");
+            }
+        } catch(e) {
+            alert("❌ Erro de conexão ao excluir");
+        }
     }
 
     async function excluirTudo() {
-        if(prompt("Digite 'apagar':") !== 'apagar') return;
-        for(let f of listaFinais) {
-            await fetch(`${WORKER_URL}/deletar`, { method: 'POST', body: JSON.stringify({ id: f.path, evento: idPastaFixo }) });
+        if(prompt("⚠️ Digite 'APAGAR TUDO' para confirmar a exclusão de TODOS os vídeos:") !== 'APAGAR TUDO') {
+            alert("Exclusão cancelada");
+            return;
         }
+        
+        let excluidos = 0;
+        for(let f of listaFinais) {
+            try {
+                await fetch(`${WORKER_URL}/deletar`, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path: f.path, evento: idPastaFixo }) 
+                });
+                excluidos++;
+            } catch(e) {
+                console.error("Erro ao excluir:", f.path);
+            }
+        }
+        alert(`✅ ${excluidos} vídeo(s) excluído(s)!`);
         carregarArquivos();
     }
 
     async function baixarTudoZip() {
+        if(listaFinais.length === 0) {
+            alert("Nenhum vídeo para baixar");
+            return;
+        }
+        
         const btn = document.querySelector('.btn-zip');
         const originalText = btn.innerText;
-        btn.innerText = "⏳ PROCESSANDO...";
-        const zip = new JSZip();
-        for(let i = 0; i < listaFinais.length; i++) {
-            const res = await fetch(`${WORKER_URL}/stream?id=${encodeURIComponent(listaFinais[i].path)}`);
-            zip.file(`video_${i+1}.mp4`, await res.blob());
+        btn.innerText = "⏳ EMPACOTANDO...";
+        btn.disabled = true;
+        
+        try {
+            const zip = new JSZip();
+            
+            for(let i = 0; i < listaFinais.length; i++) {
+                const res = await fetch(`${WORKER_URL}/stream?id=${encodeURIComponent(listaFinais[i].path)}`);
+                const blob = await res.blob();
+                zip.file(`video_${i+1}.mp4`, blob);
+                btn.innerText = `📦 ${i+1}/${listaFinais.length}`;
+            }
+            
+            const content = await zip.generateAsync({type:"blob"});
+            saveAs(content, `Galeria_Admin_${idPastaFixo.replace(/\//g, '_')}.zip`);
+            alert(`✅ ZIP criado com ${listaFinais.length} vídeo(s)!`);
+        } catch(e) {
+            alert("❌ Erro ao criar ZIP: " + e.message);
+        } finally {
+            btn.innerText = originalText;
+            btn.disabled = false;
         }
-        const content = await zip.generateAsync({type:"blob"});
-        saveAs(content, `Galeria_Admin_${idPastaFixo}.zip`);
-        btn.innerText = originalText;
     }
 
     async function forcarDownload(url, filename) {
-        const res = await fetch(url);
-        saveAs(await res.blob(), filename);
+        try {
+            const res = await fetch(url);
+            const blob = await res.blob();
+            saveAs(blob, filename);
+        } catch(e) {
+            alert("❌ Erro ao baixar: " + e.message);
+        }
     }
 
     function fecharZoom() {
-        document.getElementById('modal-zoom').style.display = 'none';
-        document.getElementById('media-full').pause();
-        document.getElementById('media-full').src = "";
+        const modal = document.getElementById('modal-zoom');
+        const video = document.getElementById('media-full');
+        modal.style.display = 'none';
+        video.pause();
+        video.src = "";
     }
 </script>
 </body>
