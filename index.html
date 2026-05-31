@@ -208,16 +208,24 @@
     }
 
     function alternarAtivacao(evento) {
-        const atual = JSON.parse(localStorage.getItem('config_atual'));
-        if (atual && atual.id === evento.id) {
-            localStorage.removeItem('config_atual');
-        } else {
-            // Salva o objeto completo do evento selecionado incluindo fallbacks para garantir consistência
-            if (!evento.tempo) evento.tempo = "10";
-            localStorage.setItem('config_atual', JSON.stringify(evento));
-        }
-        renderEventos();
+    const atual = localStorage.getItem('config_atual');
+    if (atual && JSON.parse(atual).id === evento.id) {
+        localStorage.removeItem('config_atual');
+        alert(`Evento "${evento.nome}" DESATIVADO`);
+    } else {
+        // Garante que o evento tem todos os campos necessários
+        const eventoCompleto = {
+            id: evento.id,
+            nome: evento.nome,
+            tempo: evento.tempo || "10",
+            molduraUrl: evento.molduraUrl || "",
+            musicaUrl: evento.musicaUrl || ""
+        };
+        localStorage.setItem('config_atual', JSON.stringify(eventoCompleto));
+        alert(`✅ Evento "${evento.nome}" ATIVADO!`);
     }
+    renderEventos();
+}
 
     function irParaCamera(evento) {
         if (!evento.tempo) evento.tempo = "10";
