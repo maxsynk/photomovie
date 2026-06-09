@@ -45,6 +45,18 @@
         
         .empty-gallery { text-align: center; padding: 50px; color: #666; grid-column: 1/-1; }
         .empty-gallery p { font-size: 16px; margin-top: 20px; }
+        
+        /* Indicador de carregamento */
+        .video-card.loading { opacity: 0.5; }
+        .video-card.loading::after {
+            content: "⏳";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 30px;
+            color: var(--dourado);
+        }
     </style>
 </head>
 <body>
@@ -53,7 +65,7 @@
         <div class="header">
             <h1 id="logo-exit">PHOTO MOVIE</h1>
             <p class="subtitle">COLECIONANDO MOMENTOS</p>
-            <span class="version-tag">v1.0.2</span>
+            <span class="version-tag">v1.0.3</span>
             <div class="event-info-container" onclick="copiarLinkGaleria()">
                 <div class="v-line"></div>
                 <p id="nome-evento-titulo">CARREGANDO...</p>
@@ -166,7 +178,7 @@
             
             console.log("📦 Arquivos encontrados:", dados);
             
-            // ✅ CORREÇÃO: Filtrar apenas vídeos que começam com "final_" e terminam com .mp4
+            // CORREÇÃO: Filtrar apenas vídeos MP4 processados (final_*.mp4)
             let novos = dados.filter(f => {
                 const path = f.path || "";
                 const filename = path.split('/').pop();
@@ -208,8 +220,20 @@
             card.className = 'video-card';
             card.innerHTML = `
                 <div class="video-number">#${numeroRealVideo}</div>
-                <video src="${url}#t=0.5" muted playsinline preload="metadata"></video>
+                <video muted playsinline preload="metadata"></video>
             `;
+            
+            // CORREÇÃO: Carregar o vídeo após criar o elemento
+            const videoElement = card.querySelector('video');
+            videoElement.src = url;
+            videoElement.load();
+            
+            // CORREÇÃO: Adicionar evento de erro para debug
+            videoElement.onerror = () => {
+                console.error(`Erro ao carregar vídeo: ${url}`);
+                videoElement.poster = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23c5a059"><path d="M8 5v14l11-7z"/></svg>';
+            };
+            
             card.onclick = () => abrirZoom(url, file.path);
             container.appendChild(card);
         });
@@ -243,9 +267,26 @@
     function abrirZoom(url, path) {
         const modal = document.getElementById('modal-zoom');
         const video = document.getElementById('media-full');
+        
+        // CORREÇÃO: Resetar o vídeo antes de carregar novo
+        video.pause();
+        video.src = "";
+        
         modal.style.display = 'flex';
+        
+        // CORREÇÃO: Carregar o vídeo corretamente
         video.src = url;
-        video.play();
+        video.load();
+        
+        // Tentar reproduzir automaticamente (pode ser bloqueado pelo navegador)
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
+                console.log("Auto-play bloqueado:", error);
+                // Mostrar botão de play destacado
+                video.controls = true;
+            });
+        }
         
         document.getElementById('btn-download-force').onclick = async () => {
             try {
