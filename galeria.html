@@ -3,10 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta property="og:title" content="Galeria de Fotos - Photo Movie">
-    <meta property="og:description" content="Acesse suas fotos do evento aqui.">
-    <meta property="og:image" content="https://maxsynk.github.io/photomovie/seu-logo.png">
-    <meta property="og:url" content="https://maxsynk.github.io/photomovie/galeria.html">
     <title>PHOTO MOVIE - GALERIA</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
@@ -15,7 +11,7 @@
         
         .sticky-top { position: sticky; top: 0; z-index: 100; background: var(--bg); }
         .header { padding: 20px; border-bottom: 2px solid var(--dourado); background: rgba(0,0,0,0.8); backdrop-filter: blur(15px); }
-        .header h1 { color: var(--dourado); letter-spacing: 5px; margin: 0; text-transform: uppercase; font-size: 1.8rem; font-weight: 900; }
+        .header h1 { color: var(--dourado); letter-spacing: 5px; margin: 0; text-transform: uppercase; font-size: 1.8rem; font-weight: 900; cursor: pointer; }
         .subtitle { font-size: 11px; letter-spacing: 4px; opacity: 0.9; margin-top: 2px; text-transform: uppercase; color: var(--dourado); }
         .version-tag { font-size: 9px; color: rgba(197, 160, 89, 0.4); font-family: monospace; display: block; margin-top: 2px; letter-spacing: 1px; }
         
@@ -27,19 +23,91 @@
         .search-area input { width: 180px; padding: 12px; border-radius: 8px; border: 1px solid var(--dourado); background: #000; color: var(--dourado); text-align: center; font-size: 18px; outline: none; }
         .btn-busca { background: var(--dourado); color: black; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
-        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; padding: 15px; padding-bottom: 120px; }
-        .video-card { background: #000; border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 12px; overflow: hidden; aspect-ratio: 9/16; position: relative; cursor: pointer; }
-        .video-card:hover { border-color: var(--dourado); }
-        .video-number { position: absolute; top: 10px; right: 10px; color: var(--dourado); font-weight: bold; background: rgba(0,0,0,0.6); padding: 4px 10px; border-radius: 20px; z-index: 5; font-size: 12px; }
-        .video-thumb { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 1; }
-        .video-card video { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; opacity: 0; z-index: 2; }
-        .video-card:hover video { opacity: 1; }
-        .video-card:hover .video-thumb { opacity: 0; }
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; padding: 15px; padding-bottom: 120px; }
         
-        .loading-thumb { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--dourado); font-size: 12px; }
+        .video-card { 
+            background: #000; 
+            border: 2px solid rgba(197, 160, 89, 0.3); 
+            border-radius: 12px; 
+            overflow: hidden; 
+            aspect-ratio: 9/16; 
+            position: relative; 
+            cursor: pointer; 
+        }
+        .video-card:hover { border-color: var(--dourado); transform: scale(1.02); transition: 0.2s; }
+        
+        .video-card video { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        
+        .video-number { 
+            position: absolute; 
+            bottom: 8px; 
+            right: 8px; 
+            color: var(--dourado); 
+            font-weight: bold; 
+            background: rgba(0,0,0,0.7); 
+            padding: 4px 10px; 
+            border-radius: 20px; 
+            z-index: 10; 
+            font-size: 12px;
+            font-family: monospace;
+        }
+        
+        .play-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+        
+        .play-icon::after {
+            content: "▶";
+            color: var(--dourado);
+            font-size: 20px;
+            margin-left: 3px;
+        }
+        
+        .video-card:hover .play-icon {
+            opacity: 1;
+        }
 
-        #modal-zoom { position: fixed; inset: 0; background: rgba(0,0,0,0.98); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; }
-        #media-full { width: 90%; max-height: 70vh; border: 2px solid var(--dourado); border-radius: 15px; background: #000; }
+        #modal-zoom { 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(0,0,0,0.95); 
+            display: none; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 1000; 
+        }
+        
+        #media-full { 
+            width: 90%; 
+            max-height: 70vh; 
+            border: 3px solid var(--dourado); 
+            border-radius: 15px; 
+            background: #000;
+            box-shadow: 0 0 50px rgba(197,160,89,0.3);
+        }
+        
         .modal-controls { margin-top: 25px; display: flex; gap: 15px; width: 90%; justify-content: center; flex-wrap: wrap; }
         .btn-action { padding: 12px 25px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 14px; }
         .btn-close { background: #333; color: white; }
@@ -50,6 +118,12 @@
         
         .empty-gallery { text-align: center; padding: 50px; color: #666; grid-column: 1/-1; }
         .empty-gallery p { font-size: 16px; margin-top: 20px; }
+        
+        .loading-spinner {
+            text-align: center;
+            padding: 50px;
+            color: var(--dourado);
+        }
     </style>
 </head>
 <body>
@@ -58,7 +132,7 @@
         <div class="header">
             <h1 id="logo-exit">PHOTO MOVIE</h1>
             <p class="subtitle">COLECIONANDO MOMENTOS</p>
-            <span class="version-tag">v1.0.4</span>
+            <span class="version-tag">v1.0.5</span>
             <div class="event-info-container" onclick="copiarLinkGaleria()">
                 <div class="v-line"></div>
                 <p id="nome-evento-titulo">CARREGANDO...</p>
@@ -71,9 +145,8 @@
     </div>
 
     <div id="gallery-container" class="gallery-grid">
-        <div class="empty-gallery">
-            <p>📹 Nenhum vídeo encontrado</p>
-            <small>Grave um vídeo na câmera para aparecer aqui</small>
+        <div class="loading-spinner">
+            <p>⏳ CARREGANDO VÍDEOS...</p>
         </div>
     </div>
 
@@ -95,13 +168,6 @@
     let idPastaFixo = ""; 
     let carregando = false;
 
-    function bloquearVoltar() {
-        window.history.pushState(null, null, window.location.href);
-        window.onpopstate = function () {
-            window.history.go(1);
-        };
-    }
-
     let cliquesSaida = 0;
     document.getElementById('logo-exit').onclick = () => {
         if(++cliquesSaida >= 7) {
@@ -120,44 +186,6 @@
         }).catch(() => {
             alert("Link: " + link);
         });
-    }
-
-    // Função para capturar thumbnail do vídeo
-    function gerarThumbnail(videoUrl, callback) {
-        const video = document.createElement('video');
-        video.crossOrigin = 'anonymous';
-        video.muted = true;
-        video.preload = 'metadata';
-        
-        video.onloadeddata = () => {
-            // Avançar para 0.5 segundos para capturar um frame
-            video.currentTime = 0.5;
-        };
-        
-        video.onseeked = () => {
-            // Criar canvas para capturar o frame
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
-            // Converter para URL de dados
-            const thumbnailUrl = canvas.toDataURL('image/jpeg', 0.8);
-            callback(thumbnailUrl);
-            
-            // Limpar
-            video.src = '';
-            video.load();
-        };
-        
-        video.onerror = () => {
-            console.error('Erro ao carregar vídeo para thumbnail:', videoUrl);
-            callback(null);
-        };
-        
-        video.src = videoUrl;
-        video.load();
     }
 
     async function sincronizarInterface() {
@@ -206,12 +234,14 @@
             
             console.log("📦 Arquivos encontrados:", dados);
             
+            // Filtrar apenas vídeos MP4 processados
             let novos = dados.filter(f => {
                 const path = f.path || "";
                 const filename = path.split('/').pop();
                 return filename.startsWith('final_') && filename.endsWith('.mp4');
             });
             
+            // Ordenar do mais recente para o mais antigo
             novos.reverse();
             
             console.log("🎬 Vídeos finais:", novos.length);
@@ -245,32 +275,42 @@
             const card = document.createElement('div');
             card.className = 'video-card';
             
-            // Estrutura: thumb + video (hover mostra video)
-            card.innerHTML = `
-                <div class="video-number">#${numeroRealVideo}</div>
-                <img class="video-thumb" src="" alt="Thumbnail">
-                <video muted playsinline preload="metadata"></video>
-                <div class="loading-thumb">⏳</div>
-            `;
+            // Criar elemento video
+            const video = document.createElement('video');
+            video.src = url;
+            video.muted = true;
+            video.playsInline = true;
+            video.preload = "metadata";
             
-            const thumbImg = card.querySelector('.video-thumb');
-            const videoElement = card.querySelector('video');
-            const loadingDiv = card.querySelector('.loading-thumb');
+            // Tentar mostrar o primeiro frame como thumbnail
+            video.onloadeddata = function() {
+                video.currentTime = 0.1;
+            };
             
-            // Configurar vídeo
-            videoElement.src = url;
-            videoElement.load();
+            video.onseeked = function() {
+                // Quando conseguir buscar o frame, pausa e mostra
+                video.pause();
+            };
             
-            // Gerar thumbnail
-            gerarThumbnail(url, (thumbnailUrl) => {
-                loadingDiv.style.display = 'none';
-                if (thumbnailUrl) {
-                    thumbImg.src = thumbnailUrl;
-                } else {
-                    // Fallback: usar um ícone
-                    thumbImg.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23c5a059"><path d="M8 5v14l11-7z"/></svg>';
-                }
-            });
+            // Se falhar, pelo menos tenta carregar
+            video.onerror = function(e) {
+                console.error("Erro no vídeo:", url, e);
+            };
+            
+            video.load();
+            
+            // Adicionar ícone de play
+            const playIcon = document.createElement('div');
+            playIcon.className = 'play-icon';
+            
+            // Número do vídeo
+            const numberBadge = document.createElement('div');
+            numberBadge.className = 'video-number';
+            numberBadge.textContent = `#${numeroRealVideo}`;
+            
+            card.appendChild(video);
+            card.appendChild(playIcon);
+            card.appendChild(numberBadge);
             
             card.onclick = () => abrirZoom(url, file.path);
             container.appendChild(card);
@@ -306,20 +346,23 @@
         const modal = document.getElementById('modal-zoom');
         const video = document.getElementById('media-full');
         
+        // Reset
         video.pause();
         video.src = "";
         
         modal.style.display = 'flex';
+        
+        // Forçar recarregamento
         video.src = url;
         video.load();
         
-        const playPromise = video.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                console.log("Auto-play bloqueado:", error);
+        // Tentar reproduzir
+        setTimeout(() => {
+            video.play().catch(e => {
+                console.log("Auto-play bloqueado:", e);
                 video.controls = true;
             });
-        }
+        }, 100);
         
         document.getElementById('btn-download-force').onclick = async () => {
             try {
@@ -341,8 +384,8 @@
         video.src = "";
     }
 
+    // Inicializar
     window.onload = () => {
-        bloquearVoltar();
         sincronizarInterface();
         setInterval(sincronizarInterface, 10000);
     };
