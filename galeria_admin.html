@@ -373,3 +373,46 @@
         const btn = document.querySelector('.btn-zip');
         const originalText = btn.innerText;
         btn.innerText = "⏳ EMPACOTANDO...";
+        btn.disabled = true;
+        
+        try {
+            const zip = new JSZip();
+            
+            for(let i = 0; i < listaFinais.length; i++) {
+                const res = await fetch(`${WORKER_URL}/stream?id=${encodeURIComponent(listaFinais[i].path)}`);
+                const blob = await res.blob();
+                zip.file(`video_${i+1}.mp4`, blob);
+                btn.innerText = `📦 ${i+1}/${listaFinais.length}`;
+            }
+            
+            const content = await zip.generateAsync({type:"blob"});
+            saveAs(content, `Galeria_Admin_${idPastaFixo.replace(/\//g, '_')}.zip`);
+            alert(`✅ ZIP criado com ${listaFinais.length} vídeo(s)!`);
+        } catch(e) {
+            alert("❌ Erro ao criar ZIP: " + e.message);
+        } finally {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    }
+
+    async function forcarDownload(url, filename) {
+        try {
+            const res = await fetch(url);
+            const blob = await res.blob();
+            saveAs(blob, filename);
+        } catch(e) {
+            alert("❌ Erro ao baixar: " + e.message);
+        }
+    }
+
+    function fecharZoom() {
+        const modal = document.getElementById('modal-zoom');
+        const video = document.getElementById('media-full');
+        modal.style.display = 'none';
+        video.pause();
+        video.src = "";
+    }
+</script>
+</body>
+</html>
