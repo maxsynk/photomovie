@@ -100,7 +100,7 @@
         <div class="header">
             <h1>PHOTO MOVIE</h1>
             <p class="subtitle">COLECIONANDO MOMENTOS</p>
-            <span class="version-tag">v1.0.2</span>
+            <span class="version-tag">v1.0.3</span>
             <div class="admin-label">👑 GALERIA ADMIN</div>
             
             <div class="event-info-container" onclick="copiarLinkAdmin()">
@@ -208,7 +208,6 @@
         carregando = true;
         
         try {
-            // ✅ CORREÇÃO: Adicionar timestamp para evitar cache
             const url = `${WORKER_URL}/listar-galeria?evento=${encodeURIComponent(idPastaFixo)}&t=${Date.now()}`;
             console.log("🔍 Buscando admin:", url);
             
@@ -217,7 +216,7 @@
             
             console.log("📦 Arquivos brutos:", dados);
             
-            // ✅ CORREÇÃO: Filtrar apenas vídeos que começam com "final_" e terminam com .mp4
+            // CORREÇÃO: Filtrar apenas vídeos MP4 processados
             const novosFinais = dados.filter(f => {
                 const path = f.path || "";
                 const filename = path.split('/').pop();
@@ -257,8 +256,19 @@
             card.innerHTML = `
                 <div class="video-id-badge">#${numeroVideo}</div>
                 <button class="btn-del-mini" onclick="event.stopPropagation(); excluirArquivo('${file.path}')">✕</button>
-                <video src="${url}#t=0.5" muted playsinline preload="metadata"></video>
+                <video muted playsinline preload="metadata"></video>
             `;
+            
+            // CORREÇÃO: Carregar o vídeo corretamente
+            const videoElement = card.querySelector('video');
+            videoElement.src = url;
+            videoElement.load();
+            
+            videoElement.onerror = () => {
+                console.error(`Erro ao carregar vídeo admin: ${url}`);
+                videoElement.poster = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23c5a059"><path d="M8 5v14l11-7z"/></svg>';
+            };
+            
             card.onclick = () => abrirZoom(url, file.path);
             container.appendChild(card);
         });
@@ -286,9 +296,22 @@
     function abrirZoom(url, path) {
         const modal = document.getElementById('modal-zoom');
         const video = document.getElementById('media-full');
+        
+        // CORREÇÃO: Resetar antes de carregar
+        video.pause();
+        video.src = "";
+        
         modal.style.display = 'flex';
         video.src = url;
-        video.play();
+        video.load();
+        
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
+                console.log("Auto-play bloqueado:", error);
+                video.controls = true;
+            });
+        }
         
         document.getElementById('btn-download-force').onclick = () => forcarDownload(url, path.split('/').pop());
         document.getElementById('btn-delete-modal').onclick = () => { 
@@ -350,46 +373,3 @@
         const btn = document.querySelector('.btn-zip');
         const originalText = btn.innerText;
         btn.innerText = "⏳ EMPACOTANDO...";
-        btn.disabled = true;
-        
-        try {
-            const zip = new JSZip();
-            
-            for(let i = 0; i < listaFinais.length; i++) {
-                const res = await fetch(`${WORKER_URL}/stream?id=${encodeURIComponent(listaFinais[i].path)}`);
-                const blob = await res.blob();
-                zip.file(`video_${i+1}.mp4`, blob);
-                btn.innerText = `📦 ${i+1}/${listaFinais.length}`;
-            }
-            
-            const content = await zip.generateAsync({type:"blob"});
-            saveAs(content, `Galeria_Admin_${idPastaFixo.replace(/\//g, '_')}.zip`);
-            alert(`✅ ZIP criado com ${listaFinais.length} vídeo(s)!`);
-        } catch(e) {
-            alert("❌ Erro ao criar ZIP: " + e.message);
-        } finally {
-            btn.innerText = originalText;
-            btn.disabled = false;
-        }
-    }
-
-    async function forcarDownload(url, filename) {
-        try {
-            const res = await fetch(url);
-            const blob = await res.blob();
-            saveAs(blob, filename);
-        } catch(e) {
-            alert("❌ Erro ao baixar: " + e.message);
-        }
-    }
-
-    function fecharZoom() {
-        const modal = document.getElementById('modal-zoom');
-        const video = document.getElementById('media-full');
-        modal.style.display = 'none';
-        video.pause();
-        video.src = "";
-    }
-</script>
-</body>
-</html>
