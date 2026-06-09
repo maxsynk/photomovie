@@ -31,7 +31,12 @@
         .video-card { background: #000; border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 12px; overflow: hidden; aspect-ratio: 9/16; position: relative; cursor: pointer; }
         .video-card:hover { border-color: var(--dourado); }
         .video-number { position: absolute; top: 10px; right: 10px; color: var(--dourado); font-weight: bold; background: rgba(0,0,0,0.6); padding: 4px 10px; border-radius: 20px; z-index: 5; font-size: 12px; }
-        .video-card video { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+        .video-thumb { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 1; }
+        .video-card video { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; opacity: 0; z-index: 2; }
+        .video-card:hover video { opacity: 1; }
+        .video-card:hover .video-thumb { opacity: 0; }
+        
+        .loading-thumb { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--dourado); font-size: 12px; }
 
         #modal-zoom { position: fixed; inset: 0; background: rgba(0,0,0,0.98); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; }
         #media-full { width: 90%; max-height: 70vh; border: 2px solid var(--dourado); border-radius: 15px; background: #000; }
@@ -45,18 +50,6 @@
         
         .empty-gallery { text-align: center; padding: 50px; color: #666; grid-column: 1/-1; }
         .empty-gallery p { font-size: 16px; margin-top: 20px; }
-        
-        /* Indicador de carregamento */
-        .video-card.loading { opacity: 0.5; }
-        .video-card.loading::after {
-            content: "⏳";
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 30px;
-            color: var(--dourado);
-        }
     </style>
 </head>
 <body>
@@ -65,7 +58,7 @@
         <div class="header">
             <h1 id="logo-exit">PHOTO MOVIE</h1>
             <p class="subtitle">COLECIONANDO MOMENTOS</p>
-            <span class="version-tag">v1.0.3</span>
+            <span class="version-tag">v1.0.4</span>
             <div class="event-info-container" onclick="copiarLinkGaleria()">
                 <div class="v-line"></div>
                 <p id="nome-evento-titulo">CARREGANDO...</p>
@@ -129,6 +122,44 @@
         });
     }
 
+    // Função para capturar thumbnail do vídeo
+    function gerarThumbnail(videoUrl, callback) {
+        const video = document.createElement('video');
+        video.crossOrigin = 'anonymous';
+        video.muted = true;
+        video.preload = 'metadata';
+        
+        video.onloadeddata = () => {
+            // Avançar para 0.5 segundos para capturar um frame
+            video.currentTime = 0.5;
+        };
+        
+        video.onseeked = () => {
+            // Criar canvas para capturar o frame
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Converter para URL de dados
+            const thumbnailUrl = canvas.toDataURL('image/jpeg', 0.8);
+            callback(thumbnailUrl);
+            
+            // Limpar
+            video.src = '';
+            video.load();
+        };
+        
+        video.onerror = () => {
+            console.error('Erro ao carregar vídeo para thumbnail:', videoUrl);
+            callback(null);
+        };
+        
+        video.src = videoUrl;
+        video.load();
+    }
+
     async function sincronizarInterface() {
         if(carregando) return;
         carregando = true;
@@ -137,7 +168,6 @@
             const urlParams = new URLSearchParams(window.location.search);
             let eventoEncontrado = urlParams.get('evento');
 
-            // Se não veio na URL, tenta pegar do localStorage
             if(!eventoEncontrado) {
                 const gDados = localStorage.getItem('config_atual');
                 if(gDados) {
@@ -146,7 +176,6 @@
                 }
             }
             
-            // Se ainda não tem evento, busca o primeiro da lista
             if(!eventoEncontrado) {
                 try {
                     const res = await fetch(`${WORKER_URL}/listar-eventos?t=${Date.now()}`);
@@ -169,7 +198,6 @@
             idPastaFixo = eventoEncontrado;
             document.getElementById('nome-evento-titulo').innerHTML = eventoEncontrado.replace(/_/g, ' ');
 
-            // Buscar arquivos com timestamp para evitar cache
             const url = `${WORKER_URL}/listar-galeria?evento=${encodeURIComponent(eventoEncontrado)}&t=${Date.now()}`;
             console.log("🔍 Buscando:", url);
             
@@ -178,14 +206,12 @@
             
             console.log("📦 Arquivos encontrados:", dados);
             
-            // CORREÇÃO: Filtrar apenas vídeos MP4 processados (final_*.mp4)
             let novos = dados.filter(f => {
                 const path = f.path || "";
                 const filename = path.split('/').pop();
                 return filename.startsWith('final_') && filename.endsWith('.mp4');
             });
             
-            // Ordenar: do mais recente para o mais antigo
             novos.reverse();
             
             console.log("🎬 Vídeos finais:", novos.length);
@@ -218,21 +244,33 @@
             
             const card = document.createElement('div');
             card.className = 'video-card';
+            
+            // Estrutura: thumb + video (hover mostra video)
             card.innerHTML = `
                 <div class="video-number">#${numeroRealVideo}</div>
+                <img class="video-thumb" src="" alt="Thumbnail">
                 <video muted playsinline preload="metadata"></video>
+                <div class="loading-thumb">⏳</div>
             `;
             
-            // CORREÇÃO: Carregar o vídeo após criar o elemento
+            const thumbImg = card.querySelector('.video-thumb');
             const videoElement = card.querySelector('video');
+            const loadingDiv = card.querySelector('.loading-thumb');
+            
+            // Configurar vídeo
             videoElement.src = url;
             videoElement.load();
             
-            // CORREÇÃO: Adicionar evento de erro para debug
-            videoElement.onerror = () => {
-                console.error(`Erro ao carregar vídeo: ${url}`);
-                videoElement.poster = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23c5a059"><path d="M8 5v14l11-7z"/></svg>';
-            };
+            // Gerar thumbnail
+            gerarThumbnail(url, (thumbnailUrl) => {
+                loadingDiv.style.display = 'none';
+                if (thumbnailUrl) {
+                    thumbImg.src = thumbnailUrl;
+                } else {
+                    // Fallback: usar um ícone
+                    thumbImg.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23c5a059"><path d="M8 5v14l11-7z"/></svg>';
+                }
+            });
             
             card.onclick = () => abrirZoom(url, file.path);
             container.appendChild(card);
@@ -268,22 +306,17 @@
         const modal = document.getElementById('modal-zoom');
         const video = document.getElementById('media-full');
         
-        // CORREÇÃO: Resetar o vídeo antes de carregar novo
         video.pause();
         video.src = "";
         
         modal.style.display = 'flex';
-        
-        // CORREÇÃO: Carregar o vídeo corretamente
         video.src = url;
         video.load();
         
-        // Tentar reproduzir automaticamente (pode ser bloqueado pelo navegador)
         const playPromise = video.play();
         if (playPromise !== undefined) {
             playPromise.catch(error => {
                 console.log("Auto-play bloqueado:", error);
-                // Mostrar botão de play destacado
                 video.controls = true;
             });
         }
@@ -311,7 +344,6 @@
     window.onload = () => {
         bloquearVoltar();
         sincronizarInterface();
-        // Atualizar a cada 10 segundos
         setInterval(sincronizarInterface, 10000);
     };
 </script>
