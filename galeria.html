@@ -17,7 +17,7 @@
             top: 0;
             z-index: 100;
         }
-        .header h1 { color: #c5a059; font-size: 24px; }
+        .header h1 { color: #c5a059; font-size: 24px; cursor: pointer; }
         
         .evento-nome {
             text-align: center;
@@ -109,6 +109,7 @@
             max-height: 70vh;
             border: 3px solid #c5a059;
             border-radius: 15px;
+            background: #000;
         }
         
         .modal-buttons {
@@ -145,12 +146,18 @@
             background: #000;
             border-top: 1px solid #c5a059;
         }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #c5a059;
+        }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <h1>PHOTO MOVIE</h1>
+    <h1 id="logo-exit">PHOTO MOVIE</h1>
 </div>
 <div class="evento-nome" id="evento-nome">CARREGANDO...</div>
 <div class="search">
@@ -159,7 +166,7 @@
 </div>
 
 <div class="gallery" id="gallery">
-    <div class="empty">📹 Nenhum vídeo encontrado</div>
+    <div class="loading">⏳ CARREGANDO VÍDEOS...</div>
 </div>
 
 <div class="footer">
@@ -179,73 +186,108 @@ const WORKER_URL = "https://photomovie.maxprimefotovideo.workers.dev";
 let videos = [];
 let eventoAtual = "";
 
+let cliquesSaida = 0;
+document.getElementById('logo-exit').onclick = () => {
+    if(++cliquesSaida >= 7) {
+        window.location.href = 'index.html';
+    }
+};
+
 async function carregar() {
-    // Pega evento da URL ou localStorage
-    const params = new URLSearchParams(location.search);
-    let evento = params.get('evento');
+    const gallery = document.getElementById('gallery');
+    gallery.innerHTML = '<div class="loading">⏳ CARREGANDO VÍDEOS...</div>';
     
-    if (!evento) {
-        const config = localStorage.getItem('config_atual');
-        if (config) {
-            evento = JSON.parse(config).nome;
+    try {
+        // Pega evento da URL ou localStorage
+        const params = new URLSearchParams(location.search);
+        let evento = params.get('evento');
+        
+        if (!evento) {
+            const config = localStorage.getItem('config_atual');
+            if (config) {
+                try {
+                    evento = JSON.parse(config).nome;
+                } catch(e) {}
+            }
         }
-    }
-    
-    if (!evento) {
-        const res = await fetch(`${WORKER_URL}/listar-eventos`);
-        const eventos = await res.json();
-        if (eventos.length > 0) {
-            evento = eventos[0].nome;
+        
+        if (!evento) {
+            const res = await fetch(`${WORKER_URL}/listar-eventos?t=${Date.now()}`);
+            const eventos = await res.json();
+            if (eventos.length > 0) {
+                evento = eventos[0].nome;
+            }
         }
+        
+        if (!evento) {
+            gallery.innerHTML = '<div class="empty">❌ NENHUM EVENTO ENCONTRADO<br><small>Crie um evento no menu principal</small></div>';
+            document.getElementById('evento-nome').innerHTML = "⚠️ NENHUM EVENTO";
+            return;
+        }
+        
+        eventoAtual = evento;
+        document.getElementById('evento-nome').innerHTML = evento.replace(/_/g, ' ');
+        
+        // Buscar arquivos
+        const res = await fetch(`${WORKER_URL}/listar-galeria?evento=${encodeURIComponent(evento)}&t=${Date.now()}`);
+        const arquivos = await res.json();
+        
+        console.log("Arquivos encontrados:", arquivos);
+        
+        // Filtrar apenas vídeos MP4 finais
+        videos = arquivos.filter(f => {
+            const nome = f.path.split('/').pop();
+            return nome.startsWith('final_') && nome.endsWith('.mp4');
+        });
+        
+        // Ordenar: mais recentes primeiro
+        videos.reverse();
+        
+        console.log("Vídeos finais:", videos.length);
+        
+        if (videos.length === 0) {
+            gallery.innerHTML = '<div class="empty">📹 NENHUM VÍDEO ENCONTRADO<br><small>Grave um vídeo na câmera</small></div>';
+            return;
+        }
+        
+        renderizar();
+        
+    } catch (error) {
+        console.error("Erro:", error);
+        gallery.innerHTML = `<div class="empty">❌ ERRO AO CARREGAR<br><small>${error.message}</small></div>`;
     }
-    
-    if (!evento) {
-        document.getElementById('evento-nome').innerHTML = "⚠️ NENHUM EVENTO";
-        return;
-    }
-    
-    eventoAtual = evento;
-    document.getElementById('evento-nome').innerHTML = evento.replace(/_/g, ' ');
-    
-    // Carregar vídeos
-    const res = await fetch(`${WORKER_URL}/listar-galeria?evento=${evento}&t=${Date.now()}`);
-    const arquivos = await res.json();
-    
-    // Filtrar apenas final_*.mp4
-    videos = arquivos.filter(f => {
-        const nome = f.path.split('/').pop();
-        return nome.startsWith('final_') && nome.endsWith('.mp4');
-    });
-    
-    // Inverter para mostrar mais recente primeiro
-    videos.reverse();
-    
-    renderizar();
 }
 
 function renderizar() {
     const gallery = document.getElementById('gallery');
-    
-    if (videos.length === 0) {
-        gallery.innerHTML = '<div class="empty">📹 Nenhum vídeo encontrado</div>';
-        return;
-    }
-    
     gallery.innerHTML = '';
     
     videos.forEach((video, index) => {
-        const num = videos.length - index;
-        const url = `${WORKER_URL}/stream?id=${video.path}`;
+        const numero = videos.length - index;
+        const videoUrl = `${WORKER_URL}/stream?id=${encodeURIComponent(video.path)}`;
         
         const card = document.createElement('div');
         card.className = 'video-card';
-        card.innerHTML = `
-            <video src="${url}" muted playsinline preload="metadata"></video>
-            <div class="video-number">#${num}</div>
-        `;
         
-        // Clicar abre o vídeo
-        card.onclick = () => abrirVideo(url, video.path);
+        const videoElem = document.createElement('video');
+        videoElem.src = videoUrl;
+        videoElem.muted = true;
+        videoElem.playsInline = true;
+        videoElem.preload = "metadata";
+        
+        // Tentar mostrar thumbnail
+        videoElem.onloadeddata = () => {
+            videoElem.currentTime = 0.1;
+        };
+        
+        const numberDiv = document.createElement('div');
+        numberDiv.className = 'video-number';
+        numberDiv.textContent = `#${numero}`;
+        
+        card.appendChild(videoElem);
+        card.appendChild(numberDiv);
+        
+        card.onclick = () => abrirVideo(videoUrl, video.path);
         
         gallery.appendChild(card);
     });
@@ -256,14 +298,16 @@ function abrirVideo(url, path) {
     const video = document.getElementById('modal-video');
     
     video.pause();
-    video.src = url;
+    video.src = "";
+    
     modal.style.display = 'flex';
+    video.src = url;
     video.load();
     
-    // Tenta tocar automaticamente
+    // Tentar reproduzir
     setTimeout(() => {
-        video.play().catch(() => {
-            // Se bloquear, mostra os controles
+        video.play().catch(e => {
+            console.log("Auto-play bloqueado:", e);
             video.controls = true;
         });
     }, 100);
@@ -293,14 +337,14 @@ function buscarVideo() {
     
     const index = videos.length - num;
     if (videos[index]) {
-        const url = `${WORKER_URL}/stream?id=${videos[index].path}`;
-        abrirVideo(url, videos[index].path);
+        const videoUrl = `${WORKER_URL}/stream?id=${encodeURIComponent(videos[index].path)}`;
+        abrirVideo(videoUrl, videos[index].path);
     } else {
         alert(`Vídeo #${num} não encontrado. Total: ${videos.length}`);
     }
 }
 
-// Iniciar
+// Atualizar a cada 10 segundos
 carregar();
 setInterval(carregar, 10000);
 </script>
