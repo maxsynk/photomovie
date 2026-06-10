@@ -135,25 +135,32 @@
             
             console.log("📦 Tamanho do vídeo:", blob.size, "bytes");
             
+            // CORREÇÃO: Nome correto para o processador detectar
+            const videoNome = "video_" + Date.now() + ".webm";
+            
             const fd = new FormData();
-            const videoNome = "vid_" + Date.now() + ".webm";
             fd.append("file", blob, videoNome);
             fd.append("uuid", videoNome);
             fd.append("evento", nomeEvento);
             
             try {
+                console.log("📤 Enviando para:", `${WORKER_URL}/upload`);
                 const res = await fetch(`${WORKER_URL}/upload`, { method: "POST", body: fd });
-                console.log("📡 Upload resposta:", res.status);
+                const resposta = await res.json();
+                console.log("📡 Upload resposta:", res.status, resposta);
                 
                 if(res.ok) {
-                    alert("✅ Vídeo enviado com sucesso!");
-                    setTimeout(() => { window.location.href = "galeria.html"; }, 800);
+                    alert("✅ Vídeo enviado com sucesso! Aguarde o processamento...");
+                    // Não redirecionar imediatamente - deixar o processador trabalhar
+                    setTimeout(() => { 
+                        window.location.href = "galeria.html"; 
+                    }, 3000);
                 } else {
-                    const erro = await res.text();
-                    alert("❌ Erro: " + erro);
+                    alert("❌ Erro: " + JSON.stringify(resposta));
                     document.getElementById('loading').style.display = 'none';
                 }
             } catch (err) {
+                console.error("❌ Erro de rede:", err);
                 alert("❌ Falha de rede: " + err.message);
                 document.getElementById('loading').style.display = 'none';
             }
@@ -161,7 +168,10 @@
         
         recorder.start();
         loop();
-        setTimeout(() => { gravandoAtiva = false; if(recorder.state === "recording") recorder.stop(); }, tempo);
+        setTimeout(() => { 
+            gravandoAtiva = false; 
+            if(recorder.state === "recording") recorder.stop(); 
+        }, tempo);
     }
 </script>
 </body>
