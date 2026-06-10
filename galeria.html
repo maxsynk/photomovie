@@ -198,7 +198,7 @@ async function carregar() {
     gallery.innerHTML = '<div class="loading">⏳ CARREGANDO VÍDEOS...</div>';
     
     try {
-        // Pega evento da URL ou localStorage
+        // Pega evento da URL
         const params = new URLSearchParams(location.search);
         let evento = params.get('evento');
         
@@ -220,7 +220,7 @@ async function carregar() {
         }
         
         if (!evento) {
-            gallery.innerHTML = '<div class="empty">❌ NENHUM EVENTO ENCONTRADO<br><small>Crie um evento no menu principal</small></div>';
+            gallery.innerHTML = '<div class="empty">❌ NENHUM EVENTO ENCONTRADO</div>';
             document.getElementById('evento-nome').innerHTML = "⚠️ NENHUM EVENTO";
             return;
         }
@@ -232,18 +232,18 @@ async function carregar() {
         const res = await fetch(`${WORKER_URL}/listar-galeria?evento=${encodeURIComponent(evento)}&t=${Date.now()}`);
         const arquivos = await res.json();
         
-        console.log("Arquivos encontrados:", arquivos);
+        console.log("Arquivos:", arquivos);
         
-        // Filtrar apenas vídeos MP4 finais
+        // Filtrar vídeos finais
         videos = arquivos.filter(f => {
             const nome = f.path.split('/').pop();
             return nome.startsWith('final_') && nome.endsWith('.mp4');
         });
         
-        // Ordenar: mais recentes primeiro
+        // Mais recentes primeiro
         videos.reverse();
         
-        console.log("Vídeos finais:", videos.length);
+        console.log("Vídeos:", videos.length);
         
         if (videos.length === 0) {
             gallery.innerHTML = '<div class="empty">📹 NENHUM VÍDEO ENCONTRADO<br><small>Grave um vídeo na câmera</small></div>';
@@ -254,7 +254,7 @@ async function carregar() {
         
     } catch (error) {
         console.error("Erro:", error);
-        gallery.innerHTML = `<div class="empty">❌ ERRO AO CARREGAR<br><small>${error.message}</small></div>`;
+        gallery.innerHTML = `<div class="empty">❌ ERRO: ${error.message}</div>`;
     }
 }
 
@@ -275,10 +275,10 @@ function renderizar() {
         videoElem.playsInline = true;
         videoElem.preload = "metadata";
         
-        // Tentar mostrar thumbnail
-        videoElem.onloadeddata = () => {
+        // Tentar mostrar o primeiro frame
+        videoElem.addEventListener('loadeddata', () => {
             videoElem.currentTime = 0.1;
-        };
+        });
         
         const numberDiv = document.createElement('div');
         numberDiv.className = 'video-number';
@@ -297,6 +297,7 @@ function abrirVideo(url, path) {
     const modal = document.getElementById('modal');
     const video = document.getElementById('modal-video');
     
+    // Reset
     video.pause();
     video.src = "";
     
@@ -304,7 +305,7 @@ function abrirVideo(url, path) {
     video.src = url;
     video.load();
     
-    // Tentar reproduzir
+    // Tentar tocar
     setTimeout(() => {
         video.play().catch(e => {
             console.log("Auto-play bloqueado:", e);
@@ -344,7 +345,7 @@ function buscarVideo() {
     }
 }
 
-// Atualizar a cada 10 segundos
+// Iniciar
 carregar();
 setInterval(carregar, 10000);
 </script>
