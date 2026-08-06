@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>PHOTO MOVIE - GALERIA</title>
+    <title>AUTOGRAPH CAM - GALERIA</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #001a1a; color: white; font-family: Arial, sans-serif; }
@@ -157,7 +157,7 @@
 <body>
 
 <div class="header">
-    <h1 id="logo-exit">PHOTO MOVIE</h1>
+    <h1 id="logo-exit">AUTOGRAPH CAM</h1>
 </div>
 <div class="evento-nome" id="evento-nome">CARREGANDO...</div>
 <div class="search">
@@ -170,11 +170,12 @@
 </div>
 
 <div class="footer">
-    <div style="color:#c5a059;">📸 PHOTO MOVIE 360º</div>
+    <div style="color:#c5a059;">📸 AUTOGRAPH CAM 360º</div>
 </div>
 
 <div class="modal" id="modal">
-    <video id="modal-video" controls playsinline></video>
+    <!-- Adicionado webkit-playsinline e preload para modal -->
+    <video id="modal-video" controls playsinline webkit-playsinline preload="metadata"></video>
     <div class="modal-buttons">
         <button class="btn-fechar" onclick="fecharModal()">FECHAR</button>
         <button class="btn-baixar" id="btn-baixar">📥 BAIXAR</button>
@@ -195,10 +196,14 @@ document.getElementById('logo-exit').onclick = () => {
 
 async function carregar() {
     const gallery = document.getElementById('gallery');
-    gallery.innerHTML = '<div class="loading">⏳ CARREGANDO VÍDEOS...</div>';
+    
+    // Evita recarregar a tela se o modal estiver aberto (impede o vídeo de piscar/fechar)
+    const modal = document.getElementById('modal');
+    if (modal.style.display === 'flex') return;
+
+    if (videos.length === 0) gallery.innerHTML = '<div class="loading">⏳ CARREGANDO VÍDEOS...</div>';
     
     try {
-        // Pega evento da URL
         const params = new URLSearchParams(location.search);
         let evento = params.get('evento');
         
@@ -228,33 +233,27 @@ async function carregar() {
         eventoAtual = evento;
         document.getElementById('evento-nome').innerHTML = evento.replace(/_/g, ' ');
         
-        // Buscar arquivos
         const res = await fetch(`${WORKER_URL}/listar-galeria?evento=${encodeURIComponent(evento)}&t=${Date.now()}`);
         const arquivos = await res.json();
         
-        console.log("Arquivos:", arquivos);
-        
         // Filtrar vídeos finais
-        videos = arquivos.filter(f => {
+        const novosVideos = arquivos.filter(f => {
             const nome = f.path.split('/').pop();
             return nome.startsWith('final_') && nome.endsWith('.mp4');
-        });
+        }).reverse();
         
-        // Mais recentes primeiro
-        videos.reverse();
-        
-        console.log("Vídeos:", videos.length);
-        
-        if (videos.length === 0) {
-            gallery.innerHTML = '<div class="empty">📹 NENHUM VÍDEO ENCONTRADO<br><small>Grave um vídeo na câmera</small></div>';
-            return;
+        // Só renderiza novamente se houver vídeos novos para não travar a rolagem
+        if (novosVideos.length !== videos.length) {
+            videos = novosVideos;
+            if (videos.length === 0) {
+                gallery.innerHTML = '<div class="empty">📹 NENHUM VÍDEO ENCONTRADO<br><small>Grave um vídeo na câmera</small></div>';
+            } else {
+                renderizar();
+            }
         }
-        
-        renderizar();
         
     } catch (error) {
         console.error("Erro:", error);
-        gallery.innerHTML = `<div class="empty">❌ ERRO: ${error.message}</div>`;
     }
 }
 
@@ -272,12 +271,13 @@ function renderizar() {
         const videoElem = document.createElement('video');
         videoElem.src = videoUrl;
         videoElem.muted = true;
-        videoElem.playsInline = true;
+        // Injeção de atributos cruciais para mobile
+        videoElem.setAttribute('playsinline', '');
+        videoElem.setAttribute('webkit-playsinline', '');
         videoElem.preload = "metadata";
         
-        // Tentar mostrar o primeiro frame
-        videoElem.addEventListener('loadeddata', () => {
-            videoElem.currentTime = 0.1;
+        videoElem.addEventListener('loadedmetadata', () => {
+            videoElem.currentTime = 0.1; // Puxa o primeiro frame para criar a "capa"
         });
         
         const numberDiv = document.createElement('div');
@@ -297,19 +297,14 @@ function abrirVideo(url, path) {
     const modal = document.getElementById('modal');
     const video = document.getElementById('modal-video');
     
-    // Reset
     video.pause();
-    video.src = "";
-    
     modal.style.display = 'flex';
     video.src = url;
-    video.load();
+    video.load(); // Força recarregamento no iOS
     
-    // Tentar tocar
     setTimeout(() => {
         video.play().catch(e => {
             console.log("Auto-play bloqueado:", e);
-            video.controls = true;
         });
     }, 100);
     
