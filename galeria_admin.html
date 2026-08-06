@@ -131,7 +131,8 @@
     </div>
 
     <div id="modal-zoom">
-        <video id="media-full" controls playsinline crossorigin="anonymous"></video>
+        <!-- Adicionado webkit-playsinline e preload para garantir streaming fluído no modal também -->
+        <video id="media-full" controls playsinline webkit-playsinline crossorigin="anonymous" preload="metadata"></video>
         <div class="modal-controls">
             <button class="btn-action btn-close" onclick="fecharZoom()">FECHAR</button>
             <button id="btn-download-force" class="btn-action btn-download">📥 BAIXAR MP4</button>
@@ -163,11 +164,9 @@
     };
 
     async function carregarEvento() {
-        // Tenta pegar da URL primeiro
         const urlParams = new URLSearchParams(window.location.search);
         let eventoEncontrado = urlParams.get('evento');
         
-        // Se não veio na URL, tenta do localStorage
         if(!eventoEncontrado) {
             const config = JSON.parse(localStorage.getItem('config_atual'));
             if(config) {
@@ -176,7 +175,6 @@
             }
         }
         
-        // Se ainda não tem evento, busca o primeiro da lista
         if(!eventoEncontrado) {
             try {
                 const res = await fetch(`${WORKER_URL}/listar-eventos?t=${Date.now()}`);
@@ -216,7 +214,6 @@
             
             console.log("📦 Arquivos brutos:", dados);
             
-            // CORREÇÃO: Filtrar apenas vídeos MP4 processados
             const novosFinais = dados.filter(f => {
                 const path = f.path || "";
                 const filename = path.split('/').pop();
@@ -253,16 +250,22 @@
             
             const card = document.createElement('div');
             card.className = 'video-card';
+            
+            // Injeção de atributos webkit-playsinline
             card.innerHTML = `
                 <div class="video-id-badge">#${numeroVideo}</div>
                 <button class="btn-del-mini" onclick="event.stopPropagation(); excluirArquivo('${file.path}')">✕</button>
-                <video muted playsinline preload="metadata"></video>
+                <video muted playsinline webkit-playsinline preload="metadata"></video>
             `;
             
-            // CORREÇÃO: Carregar o vídeo corretamente
             const videoElement = card.querySelector('video');
             videoElement.src = url;
             videoElement.load();
+            
+            // Força a exibição do primeiro frame como miniatura no celular
+            videoElement.addEventListener('loadedmetadata', () => {
+                videoElement.currentTime = 0.1;
+            });
             
             videoElement.onerror = () => {
                 console.error(`Erro ao carregar vídeo admin: ${url}`);
@@ -297,7 +300,6 @@
         const modal = document.getElementById('modal-zoom');
         const video = document.getElementById('media-full');
         
-        // CORREÇÃO: Resetar antes de carregar
         video.pause();
         video.src = "";
         
