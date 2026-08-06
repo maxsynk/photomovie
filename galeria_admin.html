@@ -260,10 +260,6 @@
             videoElement.src = url;
             videoElement.load();
             
-            videoElement.addEventListener('loadedmetadata', () => {
-                videoElement.currentTime = 0.1;
-            });
-            
             videoElement.onerror = () => {
                 console.error(`Erro ao carregar vídeo admin: ${url}`);
                 videoElement.poster = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23c5a059"><path d="M8 5v14l11-7z"/></svg>';
