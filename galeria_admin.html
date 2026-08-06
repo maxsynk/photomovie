@@ -131,7 +131,6 @@
     </div>
 
     <div id="modal-zoom">
-        <!-- Adicionado webkit-playsinline e preload para garantir streaming fluído no modal também -->
         <video id="media-full" controls playsinline webkit-playsinline crossorigin="anonymous" preload="metadata"></video>
         <div class="modal-controls">
             <button class="btn-action btn-close" onclick="fecharZoom()">FECHAR</button>
@@ -251,7 +250,6 @@
             const card = document.createElement('div');
             card.className = 'video-card';
             
-            // Injeção de atributos webkit-playsinline
             card.innerHTML = `
                 <div class="video-id-badge">#${numeroVideo}</div>
                 <button class="btn-del-mini" onclick="event.stopPropagation(); excluirArquivo('${file.path}')">✕</button>
@@ -262,7 +260,6 @@
             videoElement.src = url;
             videoElement.load();
             
-            // Força a exibição do primeiro frame como miniatura no celular
             videoElement.addEventListener('loadedmetadata', () => {
                 videoElement.currentTime = 0.1;
             });
