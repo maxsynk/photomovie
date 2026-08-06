@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>AUTOGRAPH CAM - GALERIA</title>
+    <title>PHOTO MOVIE - GALERIA</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #001a1a; color: white; font-family: Arial, sans-serif; }
@@ -157,7 +157,7 @@
 <body>
 
 <div class="header">
-    <h1 id="logo-exit">AUTOGRAPH CAM</h1>
+    <h1 id="logo-exit">PHOTO MOVIE</h1>
 </div>
 <div class="evento-nome" id="evento-nome">CARREGANDO...</div>
 <div class="search">
@@ -170,11 +170,10 @@
 </div>
 
 <div class="footer">
-    <div style="color:#c5a059;">📸 AUTOGRAPH CAM 360º</div>
+    <div style="color:#c5a059;">📸 PHOTO MOVIE 360º</div>
 </div>
 
 <div class="modal" id="modal">
-    <!-- Adicionado webkit-playsinline e preload para modal -->
     <video id="modal-video" controls playsinline webkit-playsinline preload="metadata"></video>
     <div class="modal-buttons">
         <button class="btn-fechar" onclick="fecharModal()">FECHAR</button>
@@ -197,7 +196,6 @@ document.getElementById('logo-exit').onclick = () => {
 async function carregar() {
     const gallery = document.getElementById('gallery');
     
-    // Evita recarregar a tela se o modal estiver aberto (impede o vídeo de piscar/fechar)
     const modal = document.getElementById('modal');
     if (modal.style.display === 'flex') return;
 
@@ -236,13 +234,11 @@ async function carregar() {
         const res = await fetch(`${WORKER_URL}/listar-galeria?evento=${encodeURIComponent(evento)}&t=${Date.now()}`);
         const arquivos = await res.json();
         
-        // Filtrar vídeos finais
         const novosVideos = arquivos.filter(f => {
             const nome = f.path.split('/').pop();
             return nome.startsWith('final_') && nome.endsWith('.mp4');
         }).reverse();
         
-        // Só renderiza novamente se houver vídeos novos para não travar a rolagem
         if (novosVideos.length !== videos.length) {
             videos = novosVideos;
             if (videos.length === 0) {
@@ -271,14 +267,11 @@ function renderizar() {
         const videoElem = document.createElement('video');
         videoElem.src = videoUrl;
         videoElem.muted = true;
-        // Injeção de atributos cruciais para mobile
         videoElem.setAttribute('playsinline', '');
         videoElem.setAttribute('webkit-playsinline', '');
         videoElem.preload = "metadata";
         
-        videoElem.addEventListener('loadedmetadata', () => {
-            videoElem.currentTime = 0.1; // Puxa o primeiro frame para criar a "capa"
-        });
+        // Linha removida para evitar o travamento em 0 segundos no mobile
         
         const numberDiv = document.createElement('div');
         numberDiv.className = 'video-number';
@@ -300,7 +293,7 @@ function abrirVideo(url, path) {
     video.pause();
     modal.style.display = 'flex';
     video.src = url;
-    video.load(); // Força recarregamento no iOS
+    video.load();
     
     setTimeout(() => {
         video.play().catch(e => {
@@ -340,7 +333,6 @@ function buscarVideo() {
     }
 }
 
-// Iniciar
 carregar();
 setInterval(carregar, 10000);
 </script>
