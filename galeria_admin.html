@@ -115,8 +115,9 @@
         if(!eventoEncontrado) {
             const config = JSON.parse(localStorage.getItem('config_atual'));
             if(config) {
-                eventoEncontrado = config.nome || config.id || config.id_fixo;
-                document.getElementById('nome-evento-titulo').innerText = (eventoEncontrado || "").replace(/_/g, ' ');
+                // CORREÇÃO MESTRE: Prioriza o ID numérico do evento!
+                eventoEncontrado = config.id || config.nome || config.id_fixo;
+                document.getElementById('nome-evento-titulo').innerText = (config.nome || "Evento").replace(/_/g, ' ');
             }
         }
         
@@ -125,8 +126,8 @@
                 const res = await fetch(`${WORKER_URL}/listar-eventos?t=${Date.now()}`);
                 const eventos = await res.json();
                 if(eventos && eventos.length > 0) {
-                    eventoEncontrado = eventos[0].nome;
-                    document.getElementById('nome-evento-titulo').innerText = eventoEncontrado.replace(/_/g, ' ');
+                    eventoEncontrado = eventos[0].id; // Pega o ID, não o nome
+                    document.getElementById('nome-evento-titulo').innerText = eventos[0].nome.replace(/_/g, ' ');
                 }
             } catch(e) { console.log("Erro ao buscar eventos:", e); }
         }
@@ -137,8 +138,8 @@
             return;
         }
         
-        idPastaFixo = eventoEncontrado;
-        document.getElementById('nome-evento-titulo').innerHTML = eventoEncontrado.replace(/_/g, ' ');
+        idPastaFixo = String(eventoEncontrado); // Garante que é string
+        document.getElementById('nome-evento-titulo').innerHTML = "ID: " + idPastaFixo;
         carregarArquivos();
         setInterval(carregarArquivos, 5000);
     }
@@ -258,7 +259,7 @@
                 btn.innerText = `📦 ${i+1}/${listaFinais.length}`;
             }
             const content = await zip.generateAsync({type:"blob"});
-            saveAs(content, `Galeria_Admin_${idPastaFixo.replace(/\//g, '_')}.zip`);
+            saveAs(content, `Galeria_Admin_${idPastaFixo}.zip`);
             alert(`✅ ZIP criado com ${listaFinais.length} vídeo(s)!`);
         } catch(e) { alert("❌ Erro ao criar ZIP: " + e.message); } 
         finally { btn.innerText = originalText; btn.disabled = false; }
