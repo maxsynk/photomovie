@@ -115,7 +115,6 @@
         if(!eventoEncontrado) {
             const config = JSON.parse(localStorage.getItem('config_atual'));
             if(config) {
-                // CORREÇÃO MESTRE: Prioriza o ID numérico do evento!
                 eventoEncontrado = config.id || config.nome || config.id_fixo;
                 document.getElementById('nome-evento-titulo').innerText = (config.nome || "Evento").replace(/_/g, ' ');
             }
@@ -126,7 +125,7 @@
                 const res = await fetch(`${WORKER_URL}/listar-eventos?t=${Date.now()}`);
                 const eventos = await res.json();
                 if(eventos && eventos.length > 0) {
-                    eventoEncontrado = eventos[0].id; // Pega o ID, não o nome
+                    eventoEncontrado = eventos[0].id;
                     document.getElementById('nome-evento-titulo').innerText = eventos[0].nome.replace(/_/g, ' ');
                 }
             } catch(e) { console.log("Erro ao buscar eventos:", e); }
@@ -138,7 +137,7 @@
             return;
         }
         
-        idPastaFixo = String(eventoEncontrado); // Garante que é string
+        idPastaFixo = String(eventoEncontrado);
         document.getElementById('nome-evento-titulo').innerHTML = "ID: " + idPastaFixo;
         carregarArquivos();
         setInterval(carregarArquivos, 5000);
@@ -175,19 +174,35 @@
             return;
         }
         container.innerHTML = "";
+        
+        // CRIA UM MAPA DE PROMESSAS PARA CARREGAR OS VÍDEOS
         listaFinais.forEach((file, index) => {
             const url = `${WORKER_URL}/stream?id=${encodeURIComponent(file.path)}`;
             const numeroVideo = index + 1;
             const card = document.createElement('div');
             card.className = 'video-card';
+            
             card.innerHTML = `
                 <div class="video-id-badge">#${numeroVideo}</div>
                 <button class="btn-del-mini" onclick="event.stopPropagation(); excluirArquivo('${file.path}')">✕</button>
-                <video muted playsinline webkit-playsinline preload="metadata"></video>
+                <video muted playsinline webkit-playsinline preload="metadata" style="background: #000;"></video>
             `;
+            
             const videoElement = card.querySelector('video');
-            videoElement.src = url;
-            videoElement.load();
+            
+            // LÓGICA MILAGROSA DE CARREGAMENTO
+            fetch(url)
+            .then(response => response.blob())
+            .then(blob => {
+                const blobUrl = URL.createObjectURL(blob);
+                videoElement.src = blobUrl;
+                videoElement.load();
+            })
+            .catch(err => {
+                console.error("Erro ao carregar o blob do vídeo:", err);
+                videoElement.poster = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23c5a059"><path d="M8 5v14l11-7z"/></svg>';
+            });
+            
             card.onclick = () => abrirZoom(url, file.path);
             container.appendChild(card);
         });
@@ -208,12 +223,27 @@
     function abrirZoom(url, path) {
         const modal = document.getElementById('modal-zoom');
         const video = document.getElementById('media-full');
-        video.pause(); video.src = "";
+        video.pause(); 
+        video.src = "";
+        
         modal.style.display = 'flex';
-        video.src = url;
-        video.load();
-        const playPromise = video.play();
-        if (playPromise !== undefined) { playPromise.catch(error => { video.controls = true; }); }
+        
+        // MESMA LÓGICA DE CARREGAMENTO NO MODAL
+        fetch(url)
+        .then(response => response.blob())
+        .then(blob => {
+            const blobUrl = URL.createObjectURL(blob);
+            video.src = blobUrl;
+            video.load();
+            const playPromise = video.play();
+            if (playPromise !== undefined) { 
+                playPromise.catch(error => { video.controls = true; }); 
+            }
+        })
+        .catch(err => {
+            alert("Erro ao carregar o vídeo para visualização.");
+        });
+        
         document.getElementById('btn-download-force').onclick = () => forcarDownload(url, path.split('/').pop());
         document.getElementById('btn-delete-modal').onclick = () => { excluirArquivo(path); fecharZoom(); };
     }
