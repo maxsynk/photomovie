@@ -216,16 +216,22 @@
             finalStream = new MediaStream([...videoStream.getVideoTracks(), ...audioStream.getAudioTracks()]);
         }
 
-        // VOLTAMOS AO MP4 PARA EVITAR O BUG DO FFMPEG
+        // SELEÇÃO AUTOMÁTICA DE FORMATO COMPATÍVEL
+        let selectedMime = 'video/webm;codecs=vp8';
+        if (MediaRecorder.isTypeSupported('video/webm')) {
+            selectedMime = 'video/webm';
+        } else if (MediaRecorder.isTypeSupported('video/mp4')) {
+            selectedMime = 'video/mp4';
+        }
+
         recorder = new MediaRecorder(finalStream, { 
-            mimeType: 'video/mp4;codecs=h264', 
-            videoBitsPerSecond: 4000000,
-            audioBitsPerSecond: 128000
+            mimeType: selectedMime, 
+            videoBitsPerSecond: 4000000
         });
         
         recorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
         recorder.onstop = uploadVideo;
-        recorder.start(1000); 
+        recorder.start(500); // grava blocos menores a cada 500ms para estabilizar
         renderLoop();
 
         let timeLeft = duration;
@@ -261,10 +267,13 @@
         const config = JSON.parse(localStorage.getItem('config_atual'));
         const eventFolder = config.id || "Geral"; 
         
-        // ENVIA COMO MP4
-        const blob = new Blob(chunks, { type: 'video/mp4' });
+        const isWebm = recorder.mimeType.includes('webm');
+        const fileExt = isWebm ? '.webm' : '.mp4';
+        const blobType = isWebm ? 'video/webm' : 'video/mp4';
+
+        const blob = new Blob(chunks, { type: blobType });
         const formData = new FormData();
-        const fileName = `vid_${Date.now()}.mp4`; 
+        const fileName = `vid_${Date.now()}${fileExt}`; 
         
         formData.append("file", blob, fileName); 
         formData.append("uuid", fileName);
