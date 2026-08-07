@@ -219,15 +219,16 @@
             finalStream = new MediaStream([...videoStream.getVideoTracks(), ...audioStream.getAudioTracks()]);
         }
 
-        // CORREÇÃO DO ERRO 3199971767: Força a gravação com Keyframes a cada 1s
+        // 🔥 CORREÇÃO DEFINITIVA: Usar MP4 (codec H264) em vez de WebM
+        // O FFmpeg lê MP4 perfeitamente. Isso acaba com o erro 3199971767!
         recorder = new MediaRecorder(finalStream, { 
-            mimeType: 'video/webm;codecs=vp8', 
-            videoBitsPerSecond: 5000000,
+            mimeType: 'video/mp4;codecs=h264', 
+            videoBitsPerSecond: 4000000,
             audioBitsPerSecond: 128000
         });
+        
         recorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
         recorder.onstop = uploadVideo;
-        // O timeslice de 1000ms força o navegador a criar um "keyframe" a cada segundo
         recorder.start(1000); 
         renderLoop();
 
@@ -263,10 +264,10 @@
 
         const config = JSON.parse(localStorage.getItem('config_atual'));
         const eventFolder = config.id || "Geral"; 
-        const blob = new Blob(chunks, { type: 'video/webm' });
+        const blob = new Blob(chunks, { type: 'video/mp4' });
         
         const formData = new FormData();
-        const fileName = `vid_${Date.now()}.webm`;
+        const fileName = `vid_${Date.now()}.mp4`; // Extensão .mp4 agora!
         formData.append("file", blob, fileName); 
         formData.append("uuid", fileName);
         formData.append("evento", String(eventFolder));
