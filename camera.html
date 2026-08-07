@@ -7,11 +7,21 @@
     <style>
         :root { --bg: #001a1a; --dourado: #c5a059; --vermelho-neon: #ff0033; }
         body { margin: 0; background: var(--bg); overflow: hidden; color: white; font-family: 'Segoe UI', sans-serif; }
-        #app { position: relative; width: 100vw; height: 100vh; }
+        #app { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
         video { width: 100%; height: 100%; object-fit: cover; background: #000; }
+        
+        /* Moldura ajustada para não vazar da tela */
         #moldura-overlay { 
-            position: absolute; inset: 0; width: 100%; height: 100%; 
-            pointer-events: none; z-index: 5; display: none; object-fit: cover; 
+            position: absolute; 
+            inset: 0;
+            width: 100%; 
+            height: 100%; 
+            max-width: 100vw;
+            max-height: 100vh;
+            pointer-events: none; 
+            z-index: 5; 
+            display: none; 
+            object-fit: contain; /* Encaixa perfeitamente sem estourar bordas */
         }
         
         .header { 
@@ -84,7 +94,7 @@
             <div id="timer-display">3</div>
         </div>
 
-        <img id="moldura-overlay">
+        <img id="moldura-overlay" alt="Moldura do Evento">
         <div id="warning-flash"></div>
 
         <div class="top-controls">
@@ -167,11 +177,14 @@
             document.getElementById('event-name').innerText = config.nome || "PHOTO MOVIE";
             let path = config.molduraUrl || config.moldura;
             if (path) {
-                const id = path.includes('id=') ? path.split('id=')[1] : path;
-                const url = `${WORKER_URL}/stream?id=${id}`;
+                const cleanId = path.includes('id=') ? path.split('id=')[1] : path;
+                const url = path.startsWith('http') ? path : `${WORKER_URL}/stream?id=${cleanId}`;
+                
                 molduraImg.src = url;
-                document.getElementById('moldura-overlay').src = url;
-                molduraImg.onload = () => document.getElementById('moldura-overlay').style.display = 'block';
+                const overlayElem = document.getElementById('moldura-overlay');
+                overlayElem.src = url;
+                
+                molduraImg.onload = () => overlayElem.style.display = 'block';
             }
         }
         initCamera();
@@ -216,11 +229,8 @@
             finalStream = new MediaStream([...videoStream.getVideoTracks(), ...audioStream.getAudioTracks()]);
         }
 
-        // SELEÇÃO AUTOMÁTICA DE FORMATO COMPATÍVEL
-        let selectedMime = 'video/webm;codecs=vp8';
-        if (MediaRecorder.isTypeSupported('video/webm')) {
-            selectedMime = 'video/webm';
-        } else if (MediaRecorder.isTypeSupported('video/mp4')) {
+        let selectedMime = 'video/webm';
+        if (MediaRecorder.isTypeSupported('video/mp4')) {
             selectedMime = 'video/mp4';
         }
 
@@ -231,7 +241,7 @@
         
         recorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
         recorder.onstop = uploadVideo;
-        recorder.start(500); // grava blocos menores a cada 500ms para estabilizar
+        recorder.start(500);
         renderLoop();
 
         let timeLeft = duration;
