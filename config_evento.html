@@ -80,6 +80,61 @@
         
         .trim-container { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
         .trim-input { text-align: center; color: var(--turquesa); font-family: monospace; font-size: 18px; width: 60px; }
+
+        /* Estilo para o checkbox de reverso */
+        .reverso-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 209, 209, 0.05);
+            border-radius: 14px;
+            border: 1px solid rgba(0, 209, 209, 0.15);
+        }
+        .reverso-container input[type="checkbox"] {
+            width: 24px;
+            height: 24px;
+            accent-color: var(--turquesa);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .reverso-container label {
+            margin: 0;
+            cursor: pointer;
+            color: var(--turquesa);
+            font-size: 13px;
+        }
+
+        .info-efeito {
+            background: rgba(197, 160, 89, 0.08);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #999;
+            text-align: center;
+        }
+        .info-efeito strong {
+            color: var(--dourado);
+        }
+
+        /* Indicador de preset ativo */
+        .preset-indicator {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-top: 8px;
+        }
+        .preset-indicator.custom { background: #333; color: #888; }
+        .preset-indicator.normal { background: #1a3a1a; color: #4caf50; }
+        .preset-indicator.vizz { background: #3a1a1a; color: #ff6b6b; }
+        .preset-indicator.boomerang { background: #1a1a3a; color: #6b6bff; }
+        .preset-indicator.slow { background: #1a2a3a; color: #4fc3f7; }
     </style>
 </head>
 <body>
@@ -121,15 +176,22 @@
                 <option value="custom">Configuração Manual</option>
             </select>
 
+            <div id="preset-indicator" class="preset-indicator normal">Normal</div>
+
             <div class="speed-grid">
-                <div class="speed-box"><label>Início</label><select id="conf-v1"><option value="0.2">0.2x</option><option value="0.5">0.5x</option><option value="1.0" selected>1.0x</option><option value="2.0">2.0x</option><option value="4.0">4.0x</option></select></div>
-                <div class="speed-box"><label>Meio</label><select id="conf-v2"><option value="0.2">0.2x</option><option value="0.5">0.5x</option><option value="1.0" selected>1.0x</option><option value="2.0">2.0x</option><option value="4.0">4.0x</option></select></div>
-                <div class="speed-box"><label>Fim</label><select id="conf-v3"><option value="0.2">0.2x</option><option value="0.5">0.5x</option><option value="1.0" selected>1.0x</option><option value="2.0">2.0x</option><option value="4.0">4.0x</option></select></div>
+                <div class="speed-box"><label>Início</label><select id="conf-v1" onchange="atualizarPresetManual()"><option value="0.2">0.2x</option><option value="0.5">0.5x</option><option value="1.0" selected>1.0x</option><option value="2.0">2.0x</option><option value="4.0">4.0x</option></select></div>
+                <div class="speed-box"><label>Meio</label><select id="conf-v2" onchange="atualizarPresetManual()"><option value="0.2">0.2x</option><option value="0.5">0.5x</option><option value="1.0" selected>1.0x</option><option value="2.0">2.0x</option><option value="4.0">4.0x</option></select></div>
+                <div class="speed-box"><label>Fim</label><select id="conf-v3" onchange="atualizarPresetManual()"><option value="0.2">0.2x</option><option value="0.5">0.5x</option><option value="1.0" selected>1.0x</option><option value="2.0">2.0x</option><option value="4.0">4.0x</option></select></div>
             </div>
 
-            <div style="margin-top: 20px; display: flex; align-items: center; gap: 10px;">
-                <input type="checkbox" id="conf-reverso" style="width: 22px; height: 22px; accent-color: var(--turquesa);">
-                <label style="margin:0; cursor:pointer;">Ativar Efeito Reverso</label>
+            <div class="reverso-container">
+                <input type="checkbox" id="conf-reverso" onchange="atualizarPresetManual()">
+                <label for="conf-reverso">🔄 Ativar Efeito Reverso (vídeo toca ao contrário)</label>
+            </div>
+
+            <div class="info-efeito" id="info-efeito">
+                💡 <strong>Dica:</strong> Velocidades diferentes criam efeitos dinâmicos. 
+                Experimente "Vizz Classic" para um efeito profissional!
             </div>
         </div>
 
@@ -191,6 +253,21 @@
                     .toLowerCase();
     }
 
+    // Função para atualizar o indicador de preset
+    function atualizarIndicadorPreset(preset) {
+        const indicator = document.getElementById('preset-indicator');
+        const labels = {
+            'normal': { text: 'Normal', class: 'normal' },
+            'vizz-classic': { text: 'Vizz Classic', class: 'vizz' },
+            'boomerang': { text: 'Boomerang', class: 'boomerang' },
+            'slow-extremo': { text: 'Slow Extremo', class: 'slow' },
+            'custom': { text: 'Customizado', class: 'custom' }
+        };
+        const info = labels[preset] || labels['normal'];
+        indicator.textContent = info.text;
+        indicator.className = 'preset-indicator ' + info.class;
+    }
+
     window.onload = () => {
         const editData = localStorage.getItem('evento_para_editar');
         if (editData) {
@@ -200,7 +277,10 @@
             document.getElementById('conf-nome').value = ev.nome || "";
             document.getElementById('conf-data').value = ev.data || "";
             
-            if(ev.preset) document.getElementById('conf-preset').value = ev.preset;
+            if(ev.preset) {
+                document.getElementById('conf-preset').value = ev.preset;
+                atualizarIndicadorPreset(ev.preset);
+            }
             if(ev.v1) document.getElementById('conf-v1').value = ev.v1;
             if(ev.v2) document.getElementById('conf-v2').value = ev.v2;
             if(ev.v3) document.getElementById('conf-v3').value = ev.v3;
@@ -217,8 +297,14 @@
                 const totalSec = parseInt(parts[0]) || 0;
                 document.getElementById('trim-min').value = Math.floor(totalSec / 60);
                 document.getElementById('trim-sec').value = totalSec % 60;
-                if(parts[1]) setTime(parseInt(parts[1]), document.getElementById('time-' + parts[1]));
-                if(parts[2]) document.getElementById('conf-preset').value = parts[2];
+                if(parts[1]) {
+                    const tempoVal = parseInt(parts[1]);
+                    setTime(tempoVal, document.getElementById('time-' + tempoVal));
+                }
+                if(parts[2]) {
+                    document.getElementById('conf-preset').value = parts[2];
+                    atualizarIndicadorPreset(parts[2]);
+                }
                 if(parts[3]) document.getElementById('conf-v1').value = parts[3];
                 if(parts[4]) document.getElementById('conf-v2').value = parts[4];
                 if(parts[5]) document.getElementById('conf-v3').value = parts[5];
@@ -247,6 +333,10 @@
             }
             document.getElementById('titulo-pagina').innerText = "EDITAR EVENTO";
         }
+
+        // Atualiza o indicador inicial
+        const presetInicial = document.getElementById('conf-preset').value;
+        atualizarIndicadorPreset(presetInicial);
     };
 
     function sincronizarPlayer() {
@@ -267,10 +357,38 @@
 
     function atualizarPresetUI() {
         const p = document.getElementById('conf-preset').value;
-        if (p === 'vizz-classic') { setV("2.0", "0.3", "2.0", false); }
-        else if (p === 'boomerang') { setV("1.0", "1.0", "1.0", true); }
-        else if (p === 'slow-extremo') { setV("0.5", "0.2", "0.5", false); }
-        else if (p === 'normal') { setV("1.0", "1.0", "1.0", false); }
+        atualizarIndicadorPreset(p);
+        
+        if (p === 'vizz-classic') { 
+            setV("2.0", "0.3", "2.0", false);
+            document.getElementById('info-efeito').innerHTML = '⚡ <strong>Vizz Classic:</strong> Início rápido (2.0x), meio lento (0.3x), fim rápido (2.0x) - efeito dramático profissional!';
+        }
+        else if (p === 'boomerang') { 
+            setV("1.0", "1.0", "1.0", true);
+            document.getElementById('info-efeito').innerHTML = '🔄 <strong>Boomerang:</strong> Velocidade normal com reverso no final - efeito loop!';
+        }
+        else if (p === 'slow-extremo') { 
+            setV("0.5", "0.2", "0.5", false);
+            document.getElementById('info-efeito').innerHTML = '🐌 <strong>Slow Extremo:</strong> Câmera lenta do início ao fim - efeito dramático!';
+        }
+        else if (p === 'normal') { 
+            setV("1.0", "1.0", "1.0", false);
+            document.getElementById('info-efeito').innerHTML = '📹 <strong>Normal:</strong> Velocidade constante 1.0x - sem efeitos especiais.';
+        }
+        else if (p === 'custom') { 
+            document.getElementById('info-efeito').innerHTML = '🎛️ <strong>Customizado:</strong> Configure manualmente as velocidades e o reverso abaixo!';
+        }
+    }
+
+    // Função chamada quando o usuário altera manualmente as velocidades
+    function atualizarPresetManual() {
+        // Se o usuário mudar manualmente, muda para custom
+        const presetSelect = document.getElementById('conf-preset');
+        if (presetSelect.value !== 'custom') {
+            presetSelect.value = 'custom';
+            atualizarIndicadorPreset('custom');
+            document.getElementById('info-efeito').innerHTML = '🎛️ <strong>Customizado:</strong> Configuração manual ativada!';
+        }
     }
     
     function setV(a,b,c,r){ 
@@ -280,7 +398,10 @@
         document.getElementById('conf-reverso').checked=r; 
     }
     
-    function toggleModal(id, show) { document.getElementById(id).style.display = show ? 'flex' : 'none'; if(!show) player.pause(); }
+    function toggleModal(id, show) { 
+        document.getElementById(id).style.display = show ? 'flex' : 'none'; 
+        if(!show) player.pause(); 
+    }
     function fecharModalMusica() { toggleModal('music-modal', false); }
     
     function setTime(val, btn) { 
@@ -325,7 +446,10 @@
                 label.innerText = "✅ " + file.name;
                 player.src = URL.createObjectURL(file);
             }
-        } catch (e) { alert("Erro no upload."); label.innerText = "ERRO"; }
+        } catch (e) { 
+            alert("Erro no upload."); 
+            label.innerText = "ERRO"; 
+        }
     }
 
     async function salvarConfig() {
