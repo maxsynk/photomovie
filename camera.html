@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PHOTO MOVIE - Câmera</title>
     <style>
-        :root { --bg: #001a1a; --dourado: #c5a059; --vermelho: #ff3b30; }
+        :root { --bg: #001a1a; --dourado: #c5a059; --vermelho-neon: #ff0033; }
         body { margin: 0; background: var(--bg); overflow: hidden; color: white; font-family: 'Segoe UI', sans-serif; }
         #app { position: relative; width: 100vw; height: 100vh; }
         video { width: 100%; height: 100%; object-fit: cover; background: #000; }
@@ -20,28 +20,28 @@
         }
         #event-name { color: var(--dourado); font-weight: bold; font-size: 16px; }
         
-        /* CONTAGEM REGRESSIVA MAIOR E NO TOPO */
         #timer-display { 
             font-size: 120px; font-weight: 900; margin-top: 30px; display: none; color: var(--dourado); 
             text-shadow: 0 0 30px rgba(197, 160, 89, 0.7);
         }
 
-        /* AVISO DE FINALIZAÇÃO (PISCA NO FIM) */
+        /* AVISO NEON PISCANTE (MAIS ESPESSO E CHAMATIVO) */
         #warning-flash {
             display: none;
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            border: 12px solid var(--vermelho);
+            border: 15px solid var(--vermelho-neon);
+            box-shadow: inset 0 0 30px var(--vermelho-neon), 0 0 30px var(--vermelho-neon);
             pointer-events: none;
             z-index: 6;
-            animation: piscar 0.4s infinite alternate;
+            animation: piscar 0.3s infinite alternate;
         }
         @keyframes piscar {
-            0% { opacity: 0; }
+            0% { opacity: 0.3; }
             100% { opacity: 1; }
         }
 
-        /* MICROFONE NO TOPO (SEM POLUIR OS BOTÕES DE BAIXO) */
+        /* MICROFONE NO TOPO */
         .top-controls {
             position: absolute;
             top: 20px;
@@ -55,7 +55,7 @@
             background: rgba(0,0,0,0.5); color: var(--dourado); display: flex; align-items: center; justify-content: center;
             cursor: pointer; font-size: 18px; backdrop-filter: blur(5px);
         }
-        .btn-top.muted { color: var(--vermelho); border-color: var(--vermelho); }
+        .btn-top.muted { color: var(--vermelho-neon); border-color: var(--vermelho-neon); }
         
         .controls { 
             position: absolute; bottom: 80px; width: 100%; display: flex; justify-content: space-around; align-items: center; z-index: 10; 
@@ -83,14 +83,12 @@
     <div id="app">
         <div class="header">
             <span id="event-name">PHOTO MOVIE</span>
-            <div id="timer-display">5</div>
+            <div id="timer-display">3</div>
         </div>
 
-        <!-- MOLDURA E ALERTA -->
         <img id="moldura-overlay">
         <div id="warning-flash"></div>
 
-        <!-- MICROFONE NO CANTO SUPERIOR DIREITO -->
         <div class="top-controls">
             <div class="btn-top muted" id="btn-mic" onclick="toggleMicrofone()">🔇</div>
         </div>
@@ -104,7 +102,6 @@
         </div>
     </div>
     
-    <!-- CANVAS OCULTO: ONDE A MOLDURA É APLICADA -->
     <canvas id="canvas" style="position: absolute; left: -9999px; visibility: hidden;"></canvas>
 
     <div id="loader">
@@ -123,7 +120,7 @@
     const molduraImg = new Image();
     let stream, recorder, chunks = [];
     let isFrontCamera = false, isRecording = false;
-    let isMicActive = false; // INICIA EM MUDO (False)
+    let isMicActive = false; // INICIA EM MUDO
     let animationId = null;
 
     async function initCamera() {
@@ -131,19 +128,17 @@
         try {
             stream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: isFrontCamera ? "user" : "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
-                audio: isMicActive // Só liga o áudio se o botão estiver ativo
+                audio: isMicActive
             });
             video.srcObject = stream;
             
-            // Ajusta o tamanho do canvas automaticamente conforme a câmera liga
             video.onloadedmetadata = () => {
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
             };
         } catch (err) { 
             if(err.name === 'NotAllowedError' && isMicActive) {
-                // Se o usuário tentou ligar o som mas o navegador barrou
-                alert("Permissão de microfone negada. Verifique as configurações do navegador.");
+                alert("Permissão de microfone negada.");
                 isMicActive = false;
                 document.getElementById('btn-mic').classList.add('muted');
                 document.getElementById('btn-mic').innerText = "🔇";
@@ -152,7 +147,7 @@
     }
 
     async function toggleMicrofone() {
-        if (isRecording) return; // Bloqueia alteração durante a gravação
+        if (isRecording) return;
         isMicActive = !isMicActive;
         const micBtn = document.getElementById('btn-mic');
         
@@ -163,7 +158,7 @@
             micBtn.classList.add('muted');
             micBtn.innerText = "🔇";
         }
-        await initCamera(); // Reinicia a câmera com a nova opção de áudio
+        await initCamera();
     }
 
     function switchCamera() { if (!isRecording) { isFrontCamera = !isFrontCamera; initCamera(); } }
@@ -188,7 +183,7 @@
         if (isRecording) return;
         isRecording = true;
         this.style.opacity = "0.2";
-        let count = 5; // CONTAGEM AUMENTADA PARA 5 SEGUNDOS
+        let count = 3; // ALTERADO PARA 3 SEGUNDOS
         const timer = document.getElementById('timer-display');
         timer.style.display = 'block';
         timer.innerText = count;
@@ -209,17 +204,21 @@
         const config = JSON.parse(localStorage.getItem('config_atual'));
         const duration = (config ? parseInt(config.tempo) : 10);
 
-        // 1. O LOOP DO CANVAS (Desenha o vídeo e a moldura infinitamente)
         function renderLoop() {
             if (!isRecording) return; 
+            
+            // Desenha o vídeo no tamanho correto
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // CORREÇÃO DO ENQUADRAMENTO DA MOLDURA:
+            // Redimensiona a moldura para o tamanho exato do Canvas (não mais 1080x1920 fixo)
             if (molduraImg.complete && molduraImg.naturalWidth > 0) {
                 ctx.drawImage(molduraImg, 0, 0, canvas.width, canvas.height);
             }
+            
             animationId = requestAnimationFrame(renderLoop);
         }
 
-        // 2. CRIAÇÃO DA STREAM DE VÍDEO E ÁUDIO
         const videoStream = canvas.captureStream(30);
         const audioTracks = stream.getAudioTracks();
         let finalStream = videoStream;
@@ -228,14 +227,12 @@
             finalStream = new MediaStream([...videoStream.getVideoTracks(), ...audioStream.getAudioTracks()]);
         }
 
-        // 3. INICIA A GRAVAÇÃO
         recorder = new MediaRecorder(finalStream, { mimeType: 'video/webm;codecs=vp8', videoBitsPerSecond: 5000000 });
         recorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
         recorder.onstop = uploadVideo;
         recorder.start(100);
         renderLoop();
 
-        // 4. GERENCIAMENTO DE TEMPO
         let timeLeft = duration;
         const timer = document.getElementById('timer-display');
         timer.style.display = 'block';
@@ -244,7 +241,6 @@
         let clock = setInterval(() => {
             timeLeft--;
             
-            // AVISO PISCANTE NOS ÚLTIMOS 3 SEGUNDOS
             if (timeLeft <= 3 && timeLeft > 0) {
                 warningFlash.style.display = 'block';
             } else {
@@ -255,7 +251,7 @@
                 timer.innerText = timeLeft + "s";
             } else {
                 clearInterval(clock);
-                warningFlash.style.display = 'none'; // Desliga o pisca
+                warningFlash.style.display = 'none';
                 timer.style.display = 'none';
                 isRecording = false; 
                 if(recorder.state === "recording") recorder.stop(); 
