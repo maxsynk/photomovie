@@ -61,7 +61,6 @@
     </div>
 
 <script>
-    // URL DO SEU WORKER PHOTO MOVIE
     const WORKER_URL = "https://photomovie.maxprimefotovideo.workers.dev"; 
     const video = document.getElementById('preview');
     const molduraImg = new Image();
@@ -73,7 +72,7 @@
         try {
             stream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: isFrontCamera ? "user" : "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
-                audio: true // ÁUDIO ATIVO para não gerar vídeo mudo
+                audio: true 
             });
             video.srcObject = stream;
         } catch (err) { alert("Erro ao acessar a câmera."); }
@@ -121,7 +120,6 @@
         const config = JSON.parse(localStorage.getItem('config_atual'));
         const duration = (config ? parseInt(config.tempo) : 10);
 
-        // GRAVAÇÃO DIRETA DA STREAM (EVITA O ERRO DE 0 SEGUNDOS DO CANVAS)
         recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8', videoBitsPerSecond: 5000000 });
         recorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
         recorder.onstop = uploadVideo;
@@ -143,11 +141,11 @@
     async function uploadVideo() {
         document.getElementById('loader').style.display = 'flex';
         const config = JSON.parse(localStorage.getItem('config_atual'));
+        // CAMINHO CORRETO: Usa o nome do evento sem caracteres especiais
         const eventFolder = (config?.nome || "Geral").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '_');
         const blob = new Blob(chunks, { type: 'video/webm' });
         
         const formData = new FormData();
-        // Nome do arquivo e UUID corretos para o Worker
         const fileName = `vid_${Date.now()}.webm`;
         formData.append("file", blob, fileName); 
         formData.append("uuid", fileName);
