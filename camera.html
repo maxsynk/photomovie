@@ -84,6 +84,7 @@
             <div id="timer-display">3</div>
         </div>
 
+        <!-- A moldura é mostrada apenas visualmente para o usuário, sem ser "queimada" no vídeo original aqui -->
         <img id="moldura-overlay">
         <div id="warning-flash"></div>
 
@@ -205,9 +206,8 @@
         function renderLoop() {
             if (!isRecording) return; 
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            if (molduraImg.complete && molduraImg.naturalWidth > 0) {
-                ctx.drawImage(molduraImg, 0, 0, canvas.width, canvas.height);
-            }
+            // Removido: O canvas não desenha mais a moldura para não duplicar.
+            // O Python aplicará a moldura com qualidade máxima via FFmpeg.
             animationId = requestAnimationFrame(renderLoop);
         }
 
@@ -219,10 +219,10 @@
             finalStream = new MediaStream([...videoStream.getVideoTracks(), ...audioStream.getAudioTracks()]);
         }
 
-        // 🔥 CORREÇÃO DEFINITIVA: Usar MP4 (codec H264) em vez de WebM
-        // O FFmpeg lê MP4 perfeitamente. Isso acaba com o erro 3199971767!
+        // MimeType alterado de volta para webm.
+        // O Python já está preparado para ler este WebM e transformar em MP4 perfeitamente sem erros.
         recorder = new MediaRecorder(finalStream, { 
-            mimeType: 'video/mp4;codecs=h264', 
+            mimeType: 'video/webm', 
             videoBitsPerSecond: 4000000,
             audioBitsPerSecond: 128000
         });
@@ -264,10 +264,12 @@
 
         const config = JSON.parse(localStorage.getItem('config_atual'));
         const eventFolder = config.id || "Geral"; 
-        const blob = new Blob(chunks, { type: 'video/mp4' });
+        
+        // Retornamos ao blob WebM para entrega segura e compatível
+        const blob = new Blob(chunks, { type: 'video/webm' });
         
         const formData = new FormData();
-        const fileName = `vid_${Date.now()}.mp4`; // Extensão .mp4 agora!
+        const fileName = `vid_${Date.now()}.webm`; 
         formData.append("file", blob, fileName); 
         formData.append("uuid", fileName);
         formData.append("evento", String(eventFolder));
