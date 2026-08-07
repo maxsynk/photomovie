@@ -25,7 +25,6 @@
             text-shadow: 0 0 30px rgba(197, 160, 89, 0.7);
         }
 
-        /* AVISO NEON PISCANTE (MAIS ESPESSO E CHAMATIVO) */
         #warning-flash {
             display: none;
             position: absolute;
@@ -41,7 +40,6 @@
             100% { opacity: 1; }
         }
 
-        /* MICROFONE NO TOPO */
         .top-controls {
             position: absolute;
             top: 20px;
@@ -120,7 +118,7 @@
     const molduraImg = new Image();
     let stream, recorder, chunks = [];
     let isFrontCamera = false, isRecording = false;
-    let isMicActive = false; // INICIA EM MUDO
+    let isMicActive = false;
     let animationId = null;
 
     async function initCamera() {
@@ -183,7 +181,7 @@
         if (isRecording) return;
         isRecording = true;
         this.style.opacity = "0.2";
-        let count = 3; // ALTERADO PARA 3 SEGUNDOS
+        let count = 3;
         const timer = document.getElementById('timer-display');
         timer.style.display = 'block';
         timer.innerText = count;
@@ -206,16 +204,10 @@
 
         function renderLoop() {
             if (!isRecording) return; 
-            
-            // Desenha o vídeo no tamanho correto
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
-            // CORREÇÃO DO ENQUADRAMENTO DA MOLDURA:
-            // Redimensiona a moldura para o tamanho exato do Canvas (não mais 1080x1920 fixo)
             if (molduraImg.complete && molduraImg.naturalWidth > 0) {
                 ctx.drawImage(molduraImg, 0, 0, canvas.width, canvas.height);
             }
-            
             animationId = requestAnimationFrame(renderLoop);
         }
 
@@ -227,10 +219,16 @@
             finalStream = new MediaStream([...videoStream.getVideoTracks(), ...audioStream.getAudioTracks()]);
         }
 
-        recorder = new MediaRecorder(finalStream, { mimeType: 'video/webm;codecs=vp8', videoBitsPerSecond: 5000000 });
+        // CORREÇÃO DO ERRO 3199971767: Força a gravação com Keyframes a cada 1s
+        recorder = new MediaRecorder(finalStream, { 
+            mimeType: 'video/webm;codecs=vp8', 
+            videoBitsPerSecond: 5000000,
+            audioBitsPerSecond: 128000
+        });
         recorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
         recorder.onstop = uploadVideo;
-        recorder.start(100);
+        // O timeslice de 1000ms força o navegador a criar um "keyframe" a cada segundo
+        recorder.start(1000); 
         renderLoop();
 
         let timeLeft = duration;
