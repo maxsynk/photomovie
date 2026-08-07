@@ -2,11 +2,12 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PHOTO MOVIE - GALERIA</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #001a1a; color: white; font-family: Arial, sans-serif; }
+        body { background: #001a1a; color: white; font-family: 'Segoe UI', Arial, sans-serif; }
         
         .header {
             background: #000;
@@ -17,7 +18,14 @@
             top: 0;
             z-index: 100;
         }
-        .header h1 { color: #c5a059; font-size: 24px; cursor: pointer; }
+        .header h1 { 
+            color: #c5a059; 
+            font-size: 24px; 
+            cursor: pointer; 
+            letter-spacing: 3px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
         
         .evento-nome {
             text-align: center;
@@ -25,6 +33,8 @@
             background: #002222;
             color: #c5a059;
             font-size: 14px;
+            font-weight: bold;
+            letter-spacing: 1px;
         }
         
         .search {
@@ -33,20 +43,24 @@
             gap: 10px;
             justify-content: center;
             background: #000;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
         }
         .search input {
             padding: 12px;
-            width: 150px;
+            width: 160px;
             border: 1px solid #c5a059;
             background: #000;
             color: #c5a059;
             border-radius: 8px;
             text-align: center;
             font-size: 18px;
+            font-weight: bold;
+            outline: none;
         }
         .search button {
             padding: 12px 20px;
             background: #c5a059;
+            color: black;
             border: none;
             border-radius: 8px;
             font-weight: bold;
@@ -55,48 +69,47 @@
         
         .gallery {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
             padding: 15px;
             padding-bottom: 100px;
         }
         
         .video-card {
             background: #000;
-            border: 2px solid #c5a05930;
+            border: 1px solid rgba(197, 160, 89, 0.3);
             border-radius: 12px;
             overflow: hidden;
             aspect-ratio: 9/16;
             position: relative;
             cursor: pointer;
         }
+        .video-card:hover { border-color: #c5a059; }
         
         .video-card video {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            pointer-events: none;
         }
         
         .video-number {
             position: absolute;
-            bottom: 8px;
-            right: 8px;
-            background: rgba(0,0,0,0.7);
-            color: #c5a059;
-            padding: 4px 10px;
-            border-radius: 20px;
+            top: 8px;
+            left: 8px;
+            background: #c5a059;
+            color: black;
+            padding: 2px 8px;
+            border-radius: 4px;
             font-size: 12px;
-            font-weight: bold;
+            font-weight: 900;
             z-index: 10;
         }
         
         .modal {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.95);
+            inset: 0;
+            background: rgba(0,0,0,0.98);
             display: none;
             flex-direction: column;
             align-items: center;
@@ -107,7 +120,7 @@
         .modal video {
             width: 90%;
             max-height: 70vh;
-            border: 3px solid #c5a059;
+            border: 2px solid #c5a059;
             border-radius: 15px;
             background: #000;
         }
@@ -124,6 +137,7 @@
             border-radius: 10px;
             font-weight: bold;
             cursor: pointer;
+            text-transform: uppercase;
         }
         
         .btn-fechar { background: #333; color: white; }
@@ -145,12 +159,14 @@
             text-align: center;
             background: #000;
             border-top: 1px solid #c5a059;
+            z-index: 50;
         }
         
         .loading {
             text-align: center;
             padding: 50px;
             color: #c5a059;
+            grid-column: 1/-1;
         }
     </style>
 </head>
@@ -160,6 +176,7 @@
     <h1 id="logo-exit">PHOTO MOVIE</h1>
 </div>
 <div class="evento-nome" id="evento-nome">CARREGANDO...</div>
+
 <div class="search">
     <input type="number" id="busca" placeholder="Nº VÍDEO">
     <button onclick="buscarVideo()">🔍 BUSCAR</button>
@@ -170,118 +187,148 @@
 </div>
 
 <div class="footer">
-    <div style="color:#c5a059;">📸 PHOTO MOVIE 360º</div>
+    <div style="color:#c5a059; font-weight: bold; font-size: 13px; letter-spacing: 1px;">📸 PHOTO MOVIE</div>
 </div>
 
 <div class="modal" id="modal">
-    <video id="modal-video" controls playsinline webkit-playsinline preload="metadata"></video>
+    <video id="modal-video" controls playsinline webkit-playsinline crossorigin="anonymous" preload="metadata"></video>
     <div class="modal-buttons">
         <button class="btn-fechar" onclick="fecharModal()">FECHAR</button>
-        <button class="btn-baixar" id="btn-baixar">📥 BAIXAR</button>
+        <button class="btn-baixar" id="btn-baixar">📥 BAIXAR MP4</button>
     </div>
 </div>
 
 <script>
 const WORKER_URL = "https://photomovie.maxprimefotovideo.workers.dev";
 let videos = [];
-let eventoAtual = "";
+let idPastaFixo = "";
+let carregando = false;
 
+// ==========================================
+// 🔒 TRAVA DEFINITIVA DO BOTÃO VOLTAR (SISTEMA DE KIOSK)
+// ==========================================
+function travarBotaoVoltar() {
+    history.pushState(null, null, location.href);
+    window.onpopstate = function () {
+        history.pushState(null, null, location.href);
+    };
+}
+travarBotaoVoltar();
+
+// ==========================================
+// 🔐 CÓDIGO DE SAÍDA SECRETA (7 CLIQUES NO TÍTULO)
+// ==========================================
 let cliquesSaida = 0;
 document.getElementById('logo-exit').onclick = () => {
-    if(++cliquesSaida >= 7) {
+    cliquesSaida++;
+    if (cliquesSaida >= 7) {
         window.location.href = 'index.html';
     }
 };
 
+window.onload = () => {
+    carregar();
+    setInterval(carregar, 5000);
+};
+
 async function carregar() {
-    const gallery = document.getElementById('gallery');
+    if (carregando) return;
     
     const modal = document.getElementById('modal');
-    if (modal.style.display === 'flex') return;
+    if (modal.style.display === 'flex') return; // Pausa atualização com modal aberto
 
-    if (videos.length === 0) gallery.innerHTML = '<div class="loading">⏳ CARREGANDO VÍDEOS...</div>';
-    
+    carregando = true;
+
     try {
-        const params = new URLSearchParams(location.search);
-        let evento = params.get('evento');
-        
-        if (!evento) {
-            const config = localStorage.getItem('config_atual');
-            if (config) {
-                try {
-                    evento = JSON.parse(config).nome;
-                } catch(e) {}
+        if (!idPastaFixo) {
+            const params = new URLSearchParams(location.search);
+            let evento = params.get('evento');
+            
+            if (!evento) {
+                const config = localStorage.getItem('config_atual');
+                if (config) {
+                    try {
+                        const parsed = JSON.parse(config);
+                        evento = parsed.id || parsed.nome || parsed.id_fixo;
+                    } catch(e) {}
+                }
             }
-        }
-        
-        if (!evento) {
-            const res = await fetch(`${WORKER_URL}/listar-eventos?t=${Date.now()}`);
-            const eventos = await res.json();
-            if (eventos.length > 0) {
-                evento = eventos[0].nome;
+            
+            if (!evento) {
+                const res = await fetch(`${WORKER_URL}/listar-eventos?t=${Date.now()}`);
+                const eventos = await res.json();
+                if (eventos && eventos.length > 0) {
+                    evento = eventos[0].id;
+                }
             }
+            
+            if (!evento) {
+                document.getElementById('gallery').innerHTML = '<div class="empty"><p>❌ NENHUM EVENTO ENCONTRADO</p></div>';
+                document.getElementById('evento-nome').innerHTML = "⚠️ NENHUM EVENTO SELECIONADO";
+                return;
+            }
+
+            idPastaFixo = String(evento);
+            document.getElementById('evento-nome').innerHTML = "EVENTO: " + idPastaFixo.replace(/_/g, ' ');
         }
         
-        if (!evento) {
-            gallery.innerHTML = '<div class="empty">❌ NENHUM EVENTO ENCONTRADO</div>';
-            document.getElementById('evento-nome').innerHTML = "⚠️ NENHUM EVENTO";
-            return;
-        }
-        
-        eventoAtual = evento;
-        document.getElementById('evento-nome').innerHTML = evento.replace(/_/g, ' ');
-        
-        const res = await fetch(`${WORKER_URL}/listar-galeria?evento=${encodeURIComponent(evento)}&t=${Date.now()}`);
+        const res = await fetch(`${WORKER_URL}/listar-galeria?evento=${encodeURIComponent(idPastaFixo)}&t=${Date.now()}`);
         const arquivos = await res.json();
         
         const novosVideos = arquivos.filter(f => {
-            const nome = f.path.split('/').pop();
+            const path = f.path || "";
+            const nome = path.split('/').pop();
             return nome.startsWith('final_') && nome.endsWith('.mp4');
-        }).reverse();
+        });
         
-        if (novosVideos.length !== videos.length) {
+        if (JSON.stringify(novosVideos) !== JSON.stringify(videos)) {
             videos = novosVideos;
-            if (videos.length === 0) {
-                gallery.innerHTML = '<div class="empty">📹 NENHUM VÍDEO ENCONTRADO<br><small>Grave um vídeo na câmera</small></div>';
-            } else {
-                renderizar();
-            }
+            renderizar();
         }
         
     } catch (error) {
-        console.error("Erro:", error);
+        console.error("Erro ao carregar galeria:", error);
+    } finally {
+        carregando = false;
     }
 }
 
 function renderizar() {
     const gallery = document.getElementById('gallery');
+    if (!videos || videos.length === 0) {
+        gallery.innerHTML = '<div class="empty"><p>📹 NENHUM VÍDEO DISPONÍVEL</p><small>Grave um vídeo na câmera para aparecer aqui</small></div>';
+        return;
+    }
+
     gallery.innerHTML = '';
     
     videos.forEach((video, index) => {
-        const numero = videos.length - index;
+        const numero = index + 1;
         const videoUrl = `${WORKER_URL}/stream?id=${encodeURIComponent(video.path)}`;
         
         const card = document.createElement('div');
         card.className = 'video-card';
         
-        const videoElem = document.createElement('video');
-        videoElem.src = videoUrl;
-        videoElem.muted = true;
-        videoElem.setAttribute('playsinline', '');
-        videoElem.setAttribute('webkit-playsinline', '');
-        videoElem.preload = "metadata";
+        card.innerHTML = `
+            <div class="video-number">#${numero}</div>
+            <video muted playsinline webkit-playsinline preload="metadata" style="background: #000;"></video>
+        `;
         
-        // Linha removida para evitar o travamento em 0 segundos no mobile
+        const videoElem = card.querySelector('video');
         
-        const numberDiv = document.createElement('div');
-        numberDiv.className = 'video-number';
-        numberDiv.textContent = `#${numero}`;
-        
-        card.appendChild(videoElem);
-        card.appendChild(numberDiv);
+        // LÓGICA DE CARREGAMENTO VIA BLOB (IGUAL AO ADMIN)
+        fetch(videoUrl)
+            .then(response => response.blob())
+            .then(blob => {
+                const blobUrl = URL.createObjectURL(blob);
+                videoElem.src = blobUrl;
+                videoElem.load();
+            })
+            .catch(err => {
+                console.error("Erro ao carregar o blob do vídeo:", err);
+            });
         
         card.onclick = () => abrirVideo(videoUrl, video.path);
-        
         gallery.appendChild(card);
     });
 }
@@ -291,21 +338,32 @@ function abrirVideo(url, path) {
     const video = document.getElementById('modal-video');
     
     video.pause();
+    video.src = "";
     modal.style.display = 'flex';
-    video.src = url;
-    video.load();
     
-    setTimeout(() => {
-        video.play().catch(e => {
-            console.log("Auto-play bloqueado:", e);
+    // CARREGAMENTO VIA BLOB NO MODAL
+    fetch(url)
+        .then(response => response.blob())
+        .then(blob => {
+            const blobUrl = URL.createObjectURL(blob);
+            video.src = blobUrl;
+            video.load();
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => { video.controls = true; });
+            }
+        })
+        .catch(err => {
+            alert("Erro ao carregar vídeo para exibição.");
         });
-    }, 100);
     
     document.getElementById('btn-baixar').onclick = () => {
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = path.split('/').pop();
-        a.click();
+        fetch(url)
+            .then(res => res.blob())
+            .then(blob => {
+                saveAs(blob, path.split('/').pop());
+            })
+            .catch(e => alert("Erro no download."));
     };
 }
 
@@ -324,17 +382,15 @@ function buscarVideo() {
         return;
     }
     
-    const index = videos.length - num;
+    const index = num - 1;
     if (videos[index]) {
         const videoUrl = `${WORKER_URL}/stream?id=${encodeURIComponent(videos[index].path)}`;
         abrirVideo(videoUrl, videos[index].path);
+        document.getElementById('busca').value = '';
     } else {
-        alert(`Vídeo #${num} não encontrado. Total: ${videos.length}`);
+        alert(`❌ Vídeo #${num} não encontrado!\nTotal disponível: ${videos.length}`);
     }
 }
-
-carregar();
-setInterval(carregar, 10000);
 </script>
 </body>
 </html>
