@@ -141,15 +141,17 @@
     async function uploadVideo() {
         document.getElementById('loader').style.display = 'flex';
         const config = JSON.parse(localStorage.getItem('config_atual'));
-        // CAMINHO CORRETO: Usa o nome do evento sem caracteres especiais
-        const eventFolder = (config?.nome || "Geral").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '_');
+        
+        // CORREÇÃO MESTRE: Usa o ID numérico do banco de dados como nome da pasta!
+        const eventFolder = config.id || "Geral"; 
+        
         const blob = new Blob(chunks, { type: 'video/webm' });
         
         const formData = new FormData();
         const fileName = `vid_${Date.now()}.webm`;
         formData.append("file", blob, fileName); 
         formData.append("uuid", fileName);
-        formData.append("evento", eventFolder);
+        formData.append("evento", String(eventFolder)); // Força ser string
 
         try {
             const res = await fetch(`${WORKER_URL}/upload`, { method: "POST", body: formData });
