@@ -206,13 +206,29 @@
             if(ev.v3) document.getElementById('conf-v3').value = ev.v3;
             if(ev.reverso) document.getElementById('conf-reverso').checked = (ev.reverso === true || ev.reverso === "true");
             
-            // CORREÇÃO: Carrega e marca o botão do tempo de gravação selecionado
             if(ev.tempo) {
                 const tempoVal = parseInt(ev.tempo);
-                const btnTempo = document.getElementById('time-' + tempoVal);
-                setTime(tempoVal, btnTempo);
+                setTime(tempoVal, document.getElementById('time-' + tempoVal));
             }
             
+            // DESEMPACOTA EFEITOS SE VIEREM DO WORKER
+            if(ev.musicaTrim && String(ev.musicaTrim).includes('|')) {
+                const parts = String(ev.musicaTrim).split('|');
+                const totalSec = parseInt(parts[0]) || 0;
+                document.getElementById('trim-min').value = Math.floor(totalSec / 60);
+                document.getElementById('trim-sec').value = totalSec % 60;
+                if(parts[1]) setTime(parseInt(parts[1]), document.getElementById('time-' + parts[1]));
+                if(parts[2]) document.getElementById('conf-preset').value = parts[2];
+                if(parts[3]) document.getElementById('conf-v1').value = parts[3];
+                if(parts[4]) document.getElementById('conf-v2').value = parts[4];
+                if(parts[5]) document.getElementById('conf-v3').value = parts[5];
+                if(parts[6]) document.getElementById('conf-reverso').checked = (parts[6] === 'true');
+            } else if(ev.musicaTrim) {
+                const totalSeconds = parseInt(ev.musicaTrim) || 0;
+                document.getElementById('trim-min').value = Math.floor(totalSeconds / 60);
+                document.getElementById('trim-sec').value = totalSeconds % 60;
+            }
+
             if(ev.musicaUrl) {
                 document.getElementById('conf-musica-url').value = ev.musicaUrl;
                 document.getElementById('conf-musica-name').value = ev.musicaName || "";
@@ -220,9 +236,6 @@
                 document.getElementById('music-status-text').innerText = "🎵 MÚSICA CONFIGURADA";
                 player.src = `${WORKER_URL}/stream?id=${ev.musicaUrl}`;
                 player.style.display = "block";
-                const totalSeconds = parseInt(ev.musicaTrim) || 0;
-                document.getElementById('trim-min').value = Math.floor(totalSeconds / 60);
-                document.getElementById('trim-sec').value = totalSeconds % 60;
                 document.getElementById('conf-musica-loop-vol').checked = ev.musicaLoopVol !== false;
             }
 
@@ -322,40 +335,42 @@
         let idEventoValido = document.getElementById('conf-id').value.trim();
         if(!idEventoValido) { idEventoValido = sanitizarPasta(nomeVisual); }
 
+        const trimSecs = (parseInt(document.getElementById('trim-min').value)||0)*60 + (parseInt(document.getElementById('trim-sec').value)||0);
+        const tempoVal = document.getElementById('conf-tempo').value || "10";
+        const presetVal = document.getElementById('conf-preset').value || "normal";
+        const v1Val = document.getElementById('conf-v1').value || "1.0";
+        const v2Val = document.getElementById('conf-v2').value || "1.0";
+        const v3Val = document.getElementById('conf-v3').value || "1.0";
+        const reversoVal = document.getElementById('conf-reverso').checked ? "true" : "false";
+
+        // EMPACOTA TODOS OS EFEITOS DENTRO DO CAMPO musicaTrim (SUPORTADO PELO WORKER)
+        const packedEffects = `${trimSecs}|${tempoVal}|${presetVal}|${v1Val}|${v2Val}|${v3Val}|${reversoVal}`;
+
         const configLocal = {
             id: idEventoValido,
             id_fixo: idEventoValido,
             nome: nomeVisual, 
             data: document.getElementById('conf-data').value,
-            tempo: String(document.getElementById('conf-tempo').value),
-            preset: document.getElementById('conf-preset').value,
-            v1: document.getElementById('conf-v1').value,
-            v2: document.getElementById('conf-v2').value,
-            v3: document.getElementById('conf-v3').value,
+            tempo: tempoVal,
+            preset: presetVal,
+            v1: v1Val,
+            v2: v2Val,
+            v3: v3Val,
             reverso: document.getElementById('conf-reverso').checked,
             molduraUrl: document.getElementById('conf-moldura-url').value,
             musicaUrl: document.getElementById('conf-musica-url').value,
             musicaName: document.getElementById('conf-musica-name').value,
-            musicaTrim: String((parseInt(document.getElementById('trim-min').value)||0)*60 + (parseInt(document.getElementById('trim-sec').value)||0)),
+            musicaTrim: packedEffects,
             musicaLoopVol: document.getElementById('conf-musica-loop-vol').checked
         };
 
-        // CORREÇÃO CRÍTICA: Envia TODOS os parâmetros no payload para o Worker/Python
         const payloadWorker = {
             id: configLocal.id,
             nome: configLocal.nome,
             data: configLocal.data || "",
-            tempo: configLocal.tempo || "10",
-            preset: configLocal.preset || "normal",
-            v1: configLocal.v1 || "1.0",
-            v2: configLocal.v2 || "1.0",
-            v3: configLocal.v3 || "1.0",
-            reverso: configLocal.reverso ? "true" : "false",
             molduraUrl: configLocal.molduraUrl || "",
             musicaUrl: configLocal.musicaUrl || "",
-            musicaName: configLocal.musicaName || "",
-            musicaTrim: configLocal.musicaTrim || "0",
-            musicaLoopVol: configLocal.musicaLoopVol ? "true" : "false"
+            musicaTrim: packedEffects
         };
 
         try {
