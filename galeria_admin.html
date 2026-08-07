@@ -10,69 +10,24 @@
         :root { --turquesa: #00d1d1; --dourado: #c5a059; --bg: #001a1a; --danger: #ff4d4d; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; min-height: 100vh; }
         
-        .sticky-top {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background: var(--bg);
-        }
-
-        .header { 
-            padding: 20px; 
-            border-bottom: 2px solid var(--dourado); 
-            background: rgba(0,0,0,0.8); 
-            backdrop-filter: blur(15px);
-        }
-
+        .sticky-top { position: sticky; top: 0; z-index: 100; background: var(--bg); }
+        .header { padding: 20px; border-bottom: 2px solid var(--dourado); background: rgba(0,0,0,0.8); backdrop-filter: blur(15px); }
         .header h1 { color: var(--dourado); letter-spacing: 5px; margin: 0; text-transform: uppercase; font-size: 1.8rem; font-weight: 900; }
         .subtitle { font-size: 11px; letter-spacing: 4px; opacity: 0.9; margin-top: 2px; text-transform: uppercase; color: var(--dourado); }
-        .version-tag { font-size: 9px; color: rgba(197, 160, 89, 0.4); font-family: monospace; display: block; margin-top: 2px; letter-spacing: 1px; }
         .admin-label { font-size: 14px; color: var(--dourado); letter-spacing: 2px; margin-top: 5px; font-weight: bold; }
 
-        .event-info-container {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            width: 100%;
-            margin-top: 15px;
-            padding-left: 10px;
-            cursor: pointer;
-        }
+        .event-info-container { display: flex; align-items: center; justify-content: flex-start; width: 100%; margin-top: 15px; padding-left: 10px; cursor: pointer; }
         .v-line { width: 2px; height: 30px; background: var(--dourado); border-radius: 2px; margin-right: 10px; }
-        #nome-evento-titulo { 
-            color: var(--dourado); 
-            font-size: 13px; 
-            margin: 0; 
-            letter-spacing: 1px; 
-            text-transform: uppercase; 
-            font-weight: bold;
-            text-align: left;
-        }
+        #nome-evento-titulo { color: var(--dourado); font-size: 13px; margin: 0; letter-spacing: 1px; text-transform: uppercase; font-weight: bold; text-align: left; }
 
-        .search-area { 
-            padding: 15px; 
-            background: rgba(0,0,0,0.9); 
-            display: flex; 
-            justify-content: center; 
-            gap: 10px; 
-            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
-            backdrop-filter: blur(10px);
-        }
-        .search-area input { 
-            width: 180px; 
-            padding: 12px; border-radius: 8px; 
-            border: 1px solid var(--dourado); background: #000; color: var(--dourado); 
-            text-align: center; font-weight: bold; outline: none; font-size: 18px;
-        }
+        .search-area { padding: 15px; background: rgba(0,0,0,0.9); display: flex; justify-content: center; gap: 10px; border-bottom: 1px solid rgba(197, 160, 89, 0.2); backdrop-filter: blur(10px); }
+        .search-area input { width: 180px; padding: 12px; border-radius: 8px; border: 1px solid var(--dourado); background: #000; color: var(--dourado); text-align: center; font-weight: bold; outline: none; font-size: 18px; }
         .btn-busca { background: var(--dourado); color: black; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; }
 
         .admin-tools { display: flex; gap: 10px; justify-content: center; padding: 15px; flex-wrap: wrap; }
         .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; padding: 15px; padding-bottom: 120px; }
 
-        .video-card { 
-            background: #000; border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 12px; 
-            overflow: hidden; aspect-ratio: 9/16; position: relative; cursor: pointer;
-        }
+        .video-card { background: #000; border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 12px; overflow: hidden; aspect-ratio: 9/16; position: relative; cursor: pointer; }
         .video-card:hover { border-color: var(--dourado); }
         .video-card video { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
         .video-id-badge { position: absolute; top: 8px; left: 8px; background: var(--dourado); color: black; padding: 2px 8px; border-radius: 4px; font-weight: 900; font-size: 12px; z-index: 10; }
@@ -100,9 +55,7 @@
         <div class="header">
             <h1>PHOTO MOVIE</h1>
             <p class="subtitle">COLECIONANDO MOMENTOS</p>
-            <span class="version-tag">v1.0.3</span>
             <div class="admin-label">👑 GALERIA ADMIN</div>
-            
             <div class="event-info-container" onclick="copiarLinkAdmin()">
                 <div class="v-line"></div>
                 <p id="nome-evento-titulo">CARREGANDO...</p>
@@ -146,21 +99,14 @@
     let carregando = false;
 
     function copiarLinkAdmin() {
-        if(!idPastaFixo) {
-            alert("Aguardando carregamento do evento...");
-            return;
-        }
+        if(!idPastaFixo) { alert("Aguardando carregamento do evento..."); return; }
         const link = `${window.location.origin}${window.location.pathname}?evento=${encodeURIComponent(idPastaFixo)}`;
         navigator.clipboard.writeText(link).then(() => {
             alert("✅ Link da Galeria Admin Copiado!\n" + link);
-        }).catch(() => {
-            alert("Link: " + link);
-        });
+        }).catch(() => { alert("Link: " + link); });
     }
 
-    window.onload = () => {
-        carregarEvento();
-    };
+    window.onload = () => { carregarEvento(); };
 
     async function carregarEvento() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -182,9 +128,7 @@
                     eventoEncontrado = eventos[0].nome;
                     document.getElementById('nome-evento-titulo').innerText = eventoEncontrado.replace(/_/g, ' ');
                 }
-            } catch(e) {
-                console.log("Erro ao buscar eventos:", e);
-            }
+            } catch(e) { console.log("Erro ao buscar eventos:", e); }
         }
 
         if(!eventoEncontrado) {
@@ -195,7 +139,6 @@
         
         idPastaFixo = eventoEncontrado;
         document.getElementById('nome-evento-titulo').innerHTML = eventoEncontrado.replace(/_/g, ' ');
-        
         carregarArquivos();
         setInterval(carregarArquivos, 5000);
     }
@@ -203,23 +146,16 @@
     async function carregarArquivos() {
         if(carregando) return;
         carregando = true;
-        
         try {
             const url = `${WORKER_URL}/listar-galeria?evento=${encodeURIComponent(idPastaFixo)}&t=${Date.now()}`;
-            console.log("🔍 Buscando admin:", url);
-            
             const res = await fetch(url);
             const dados = await res.json();
-            
-            console.log("📦 Arquivos brutos:", dados);
             
             const novosFinais = dados.filter(f => {
                 const path = f.path || "";
                 const filename = path.split('/').pop();
                 return filename.startsWith('final_') && filename.endsWith('.mp4');
             });
-            
-            console.log("🎬 Vídeos finais encontrados:", novosFinais.length);
             
             if (JSON.stringify(novosFinais) !== JSON.stringify(listaFinais)) {
                 listaFinais = novosFinais;
@@ -228,43 +164,29 @@
         } catch (e) { 
             console.error("Erro ao carregar arquivos:", e);
             document.getElementById('gallery-container').innerHTML = '<div class="empty-gallery"><p>⚠️ Erro ao conectar com o servidor</p><small>Verifique sua conexão</small></div>';
-        } finally {
-            carregando = false;
-        }
+        } finally { carregando = false; }
     }
 
     function renderizarGaleria() {
         const container = document.getElementById('gallery-container');
-        
         if (!listaFinais || listaFinais.length === 0) {
             container.innerHTML = '<div class="empty-gallery"><p>📹 Nenhum vídeo encontrado</p><small>Grave um vídeo na câmera para aparecer aqui</small></div>';
             return;
         }
-        
         container.innerHTML = "";
-        
         listaFinais.forEach((file, index) => {
             const url = `${WORKER_URL}/stream?id=${encodeURIComponent(file.path)}`;
             const numeroVideo = index + 1;
-            
             const card = document.createElement('div');
             card.className = 'video-card';
-            
             card.innerHTML = `
                 <div class="video-id-badge">#${numeroVideo}</div>
                 <button class="btn-del-mini" onclick="event.stopPropagation(); excluirArquivo('${file.path}')">✕</button>
                 <video muted playsinline webkit-playsinline preload="metadata"></video>
             `;
-            
             const videoElement = card.querySelector('video');
             videoElement.src = url;
             videoElement.load();
-            
-            videoElement.onerror = () => {
-                console.error(`Erro ao carregar vídeo admin: ${url}`);
-                videoElement.poster = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23c5a059"><path d="M8 5v14l11-7z"/></svg>';
-            };
-            
             card.onclick = () => abrirZoom(url, file.path);
             container.appendChild(card);
         });
@@ -272,133 +194,79 @@
 
     function executarBusca() {
         const num = document.getElementById('input-busca').value;
-        if (!num) {
-            alert("Digite um número de vídeo");
-            return;
-        }
-        
+        if (!num) { alert("Digite um número de vídeo"); return; }
         const index = parseInt(num) - 1;
-        
         if (listaFinais[index]) {
             const file = listaFinais[index];
             const url = `${WORKER_URL}/stream?id=${encodeURIComponent(file.path)}`;
             abrirZoom(url, file.path);
             document.getElementById('input-busca').value = '';
-        } else { 
-            alert(`❌ Vídeo #${num} não encontrado!\nTotal de vídeos: ${listaFinais.length}`);
-        }
+        } else { alert(`❌ Vídeo #${num} não encontrado!\nTotal de vídeos: ${listaFinais.length}`); }
     }
 
     function abrirZoom(url, path) {
         const modal = document.getElementById('modal-zoom');
         const video = document.getElementById('media-full');
-        
-        video.pause();
-        video.src = "";
-        
+        video.pause(); video.src = "";
         modal.style.display = 'flex';
         video.src = url;
         video.load();
-        
         const playPromise = video.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                console.log("Auto-play bloqueado:", error);
-                video.controls = true;
-            });
-        }
-        
+        if (playPromise !== undefined) { playPromise.catch(error => { video.controls = true; }); }
         document.getElementById('btn-download-force').onclick = () => forcarDownload(url, path.split('/').pop());
-        document.getElementById('btn-delete-modal').onclick = () => { 
-            excluirArquivo(path); 
-            fecharZoom(); 
-        };
+        document.getElementById('btn-delete-modal').onclick = () => { excluirArquivo(path); fecharZoom(); };
     }
 
     async function excluirArquivo(path) {
         if(!confirm("🗑️ Tem certeza que deseja excluir este vídeo permanentemente?")) return;
-        
         try {
             const response = await fetch(`${WORKER_URL}/deletar`, { 
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: path, evento: idPastaFixo }) 
+                body: JSON.stringify({ path: path }) 
             });
-            
-            if(response.ok) {
-                alert("✅ Vídeo excluído com sucesso!");
-                carregarArquivos();
-            } else {
-                alert("❌ Erro ao excluir vídeo");
-            }
-        } catch(e) {
-            alert("❌ Erro de conexão ao excluir");
-        }
+            if(response.ok) { alert("✅ Vídeo excluído!"); carregarArquivos(); } 
+            else { alert("❌ Erro ao excluir vídeo"); }
+        } catch(e) { alert("❌ Erro de conexão ao excluir"); }
     }
 
     async function excluirTudo() {
-        if(prompt("⚠️ Digite 'APAGAR TUDO' para confirmar a exclusão de TODOS os vídeos:") !== 'APAGAR TUDO') {
-            alert("Exclusão cancelada");
-            return;
-        }
-        
+        if(prompt("⚠️ Digite 'APAGAR TUDO' para confirmar a exclusão de TODOS os vídeos:") !== 'APAGAR TUDO') { return; }
         let excluidos = 0;
         for(let f of listaFinais) {
             try {
-                await fetch(`${WORKER_URL}/deletar`, { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ path: f.path, evento: idPastaFixo }) 
-                });
+                await fetch(`${WORKER_URL}/deletar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: f.path }) });
                 excluidos++;
-            } catch(e) {
-                console.error("Erro ao excluir:", f.path);
-            }
+            } catch(e) { console.error("Erro ao excluir:", f.path); }
         }
         alert(`✅ ${excluidos} vídeo(s) excluído(s)!`);
         carregarArquivos();
     }
 
     async function baixarTudoZip() {
-        if(listaFinais.length === 0) {
-            alert("Nenhum vídeo para baixar");
-            return;
-        }
-        
+        if(listaFinais.length === 0) { alert("Nenhum vídeo para baixar"); return; }
         const btn = document.querySelector('.btn-zip');
         const originalText = btn.innerText;
         btn.innerText = "⏳ EMPACOTANDO...";
         btn.disabled = true;
-        
         try {
             const zip = new JSZip();
-            
             for(let i = 0; i < listaFinais.length; i++) {
                 const res = await fetch(`${WORKER_URL}/stream?id=${encodeURIComponent(listaFinais[i].path)}`);
                 const blob = await res.blob();
                 zip.file(`video_${i+1}.mp4`, blob);
                 btn.innerText = `📦 ${i+1}/${listaFinais.length}`;
             }
-            
             const content = await zip.generateAsync({type:"blob"});
             saveAs(content, `Galeria_Admin_${idPastaFixo.replace(/\//g, '_')}.zip`);
             alert(`✅ ZIP criado com ${listaFinais.length} vídeo(s)!`);
-        } catch(e) {
-            alert("❌ Erro ao criar ZIP: " + e.message);
-        } finally {
-            btn.innerText = originalText;
-            btn.disabled = false;
-        }
+        } catch(e) { alert("❌ Erro ao criar ZIP: " + e.message); } 
+        finally { btn.innerText = originalText; btn.disabled = false; }
     }
 
     async function forcarDownload(url, filename) {
-        try {
-            const res = await fetch(url);
-            const blob = await res.blob();
-            saveAs(blob, filename);
-        } catch(e) {
-            alert("❌ Erro ao baixar: " + e.message);
-        }
+        try { const res = await fetch(url); const blob = await res.blob(); saveAs(blob, filename); } 
+        catch(e) { alert("❌ Erro ao baixar: " + e.message); }
     }
 
     function fecharZoom() {
