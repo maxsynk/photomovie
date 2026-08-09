@@ -142,4 +142,411 @@ CHANGELOG v1.1.0:
         }
         .preset-indicator.custom { background: #333; color: #888; }
         .preset-indicator.normal { background: #1a3a1a; color: #4caf50; }
-        .preset-indicator.vizz { background: #3a1a1a;
+        .preset-indicator.vizz { background: #3a1a1a; color: #ff6b6b; }
+        .preset-indicator.boomerang { background: #1a1a3a; color: #6b6bff; }
+        .preset-indicator.slow { background: #1a2a3a; color: #4fc3f7; }
+        
+        .version-badge {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            color: #666;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1 id="titulo-pagina">PHOTO MOVIE</h1>
+        <p>colecionando momentos</p>
+    </div>
+
+    <div class="container">
+        <input type="hidden" id="conf-id">
+
+        <div class="section">
+            <h3>1. O Evento</h3>
+            <label>NOME DO EVENTO (Visual)</label>
+            <input type="text" id="conf-nome" placeholder="Ex: Casamento João e Maria">
+            <label>DATA</label>
+            <input type="date" id="conf-data">
+        </div>
+
+        <div class="section">
+            <h3>2. Tempo de Gravação</h3>
+            <div class="time-selector">
+                <button class="time-btn" id="time-8" onclick="setTime(8, this)">8s</button>
+                <button class="time-btn active" id="time-10" onclick="setTime(10, this)">10s</button>
+                <button class="time-btn" id="time-12" onclick="setTime(12, this)">12s</button>
+            </div>
+            <input type="hidden" id="conf-tempo" value="10">
+        </div>
+
+        <div class="section">
+            <h3>3. Velocidade (Efeitos)</h3>
+            <label>Escolher Preset</label>
+            <select id="conf-preset" onchange="atualizarPresetUI()">
+                <option value="normal">Normal (1x Constante)</option>
+                <option value="vizz-classic">Vizz Classic (Fast > Slow > Fast)</option>
+                <option value="boomerang">Boomerang (Normal + Reverso)</option>
+                <option value="slow-extremo">Slow Motion Extremo</option>
+                <option value="custom">Configuração Manual</option>
+            </select>
+
+            <div id="preset-indicator" class="preset-indicator normal">Normal</div>
+
+            <div class="speed-grid">
+                <div class="speed-box"><label>Início</label><select id="conf-v1" onchange="atualizarPresetManual()"><option value="0.2">0.2x</option><option value="0.5">0.5x</option><option value="1.0" selected>1.0x</option><option value="2.0">2.0x</option><option value="4.0">4.0x</option></select></div>
+                <div class="speed-box"><label>Meio</label><select id="conf-v2" onchange="atualizarPresetManual()"><option value="0.2">0.2x</option><option value="0.5">0.5x</option><option value="1.0" selected>1.0x</option><option value="2.0">2.0x</option><option value="4.0">4.0x</option></select></div>
+                <div class="speed-box"><label>Fim</label><select id="conf-v3" onchange="atualizarPresetManual()"><option value="0.2">0.2x</option><option value="0.5">0.5x</option><option value="1.0" selected>1.0x</option><option value="2.0">2.0x</option><option value="4.0">4.0x</option></select></div>
+            </div>
+
+            <div class="reverso-container">
+                <input type="checkbox" id="conf-reverso" onchange="atualizarPresetManual()">
+                <label for="conf-reverso">🔄 Ativar Efeito Reverso (vídeo toca ao contrário)</label>
+            </div>
+
+            <div class="info-efeito" id="info-efeito">
+                💡 <strong>Dica:</strong> Velocidades diferentes criam efeitos dinâmicos. 
+                Experimente "Vizz Classic" para um efeito profissional!
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>4. Estética</h3>
+            <div class="action-box" onclick="toggleModal('music-modal', true)" style="margin-bottom: 10px; border-style: solid; border-color: #333;">
+                <span id="music-status-text" style="color: var(--dourado);">🎵 CONFIGURAR MÚSICA</span>
+                <small id="music-filename-display" style="color: #666; font-size: 10px; margin-top: 5px; display: block;"></small>
+            </div>
+            
+            <div class="action-box" id="btn-moldura-box" onclick="document.getElementById('file-moldura').click()">
+                <span id="upload-label">📸 UPAR MOLDURA (PNG)</span>
+                <input type="file" id="file-moldura" accept="image/png" style="display:none" onchange="subirArquivo(this, 'MOLDURA')">
+            </div>
+            <input type="hidden" id="conf-moldura-url">
+            <input type="hidden" id="conf-musica-url">
+            <input type="hidden" id="conf-musica-name">
+            <center><img id="frame-preview"></center>
+        </div>
+
+        <button class="btn-save-main" onclick="salvarConfig()">SALVAR EVENTO</button>
+        <p onclick="window.location.href='index.html'" style="text-align:center; color:#555; font-size:12px; margin-top:20px; cursor:pointer; font-weight:bold;">VOLTAR</p>
+    </div>
+
+    <div id="music-modal" class="modal">
+        <div class="modal-content">
+            <h4 style="color:var(--dourado); text-align:center; margin-bottom: 5px;">STUDIO MUSICAL</h4>
+            <div class="action-box" onclick="document.getElementById('file-musica').click()" style="padding: 15px;">
+                <span id="music-file-label">📤 UPAR MP3</span>
+                <input type="file" id="file-musica" accept="audio/mpeg, audio/mp3" style="display:none" onchange="subirArquivo(this, 'MUSICA')">
+            </div>
+            <div id="music-controls" style="margin-top: 10px;">
+                <audio id="audio-player" controls style="display: none;"></audio>
+                <label>INICIAR MÚSICA EM (MM:SS):</label>
+                <div class="trim-container">
+                    <input type="number" id="trim-min" class="trim-input" placeholder="00" min="0" value="0" oninput="sincronizarPlayer()">
+                    <span style="font-weight:bold;">:</span>
+                    <input type="number" id="trim-sec" class="trim-input" placeholder="00" min="0" max="59" value="0" oninput="sincronizarPlayer()">
+                    <button type="button" onclick="marcarTempoAtual()" style="background: var(--turquesa-dark); border: 1px solid var(--turquesa); color: var(--turquesa); border-radius: 10px; padding: 12px; cursor: pointer; font-weight: bold; flex-shrink: 0;">MARCAR</button>
+                </div>
+                <div style="background: rgba(197, 160, 89, 0.1); padding: 12px; border-radius: 12px; margin-top: 15px; border: 1px solid rgba(197, 160, 89, 0.2);">
+                    <label style="margin: 0; color: var(--dourado);"><input type="checkbox" id="conf-musica-loop-vol" checked> VOLUME DINÂMICO (Fade)</label>
+                </div>
+            </div>
+            <button class="btn-save-main" onclick="fecharModalMusica()">CONCLUIR</button>
+        </div>
+    </div>
+
+    <div class="version-badge">v1.1.0</div>
+
+<script>
+    const WORKER_URL = "https://photomovie.maxprimefotovideo.workers.dev";
+    const player = document.getElementById('audio-player');
+
+    function sanitizarPasta(texto) {
+        if (!texto) return "";
+        return texto.normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "")
+                    .replace(/[^\w\s]/gi, '')
+                    .replace(/\s+/g, '_')
+                    .toLowerCase();
+    }
+
+    function atualizarIndicadorPreset(preset) {
+        const indicator = document.getElementById('preset-indicator');
+        const labels = {
+            'normal': { text: 'Normal', class: 'normal' },
+            'vizz-classic': { text: 'Vizz Classic', class: 'vizz' },
+            'boomerang': { text: 'Boomerang', class: 'boomerang' },
+            'slow-extremo': { text: 'Slow Extremo', class: 'slow' },
+            'custom': { text: 'Customizado', class: 'custom' }
+        };
+        const info = labels[preset] || labels['normal'];
+        indicator.textContent = info.text;
+        indicator.className = 'preset-indicator ' + info.class;
+    }
+
+    window.onload = () => {
+        const editData = localStorage.getItem('evento_para_editar');
+        if (editData) {
+            const ev = JSON.parse(editData);
+            
+            document.getElementById('conf-id').value = ev.id || sanitizarPasta(ev.nome);
+            document.getElementById('conf-nome').value = ev.nome || "";
+            document.getElementById('conf-data').value = ev.data || "";
+            
+            if(ev.preset) {
+                document.getElementById('conf-preset').value = ev.preset;
+                atualizarIndicadorPreset(ev.preset);
+            }
+            if(ev.v1) document.getElementById('conf-v1').value = ev.v1;
+            if(ev.v2) document.getElementById('conf-v2').value = ev.v2;
+            if(ev.v3) document.getElementById('conf-v3').value = ev.v3;
+            if(ev.reverso) document.getElementById('conf-reverso').checked = (ev.reverso === true || ev.reverso === "true");
+            
+            if(ev.tempo) {
+                const tempoVal = parseInt(ev.tempo);
+                setTime(tempoVal, document.getElementById('time-' + tempoVal));
+            }
+            
+            // DESEMPACOTA EFEITOS SE VIEREM DO WORKER
+            if(ev.musicaTrim && String(ev.musicaTrim).includes('|')) {
+                const parts = String(ev.musicaTrim).split('|');
+                const totalSec = parseInt(parts[0]) || 0;
+                document.getElementById('trim-min').value = Math.floor(totalSec / 60);
+                document.getElementById('trim-sec').value = totalSec % 60;
+                if(parts[1]) {
+                    const tempoVal = parseInt(parts[1]);
+                    setTime(tempoVal, document.getElementById('time-' + tempoVal));
+                }
+                if(parts[2]) {
+                    document.getElementById('conf-preset').value = parts[2];
+                    atualizarIndicadorPreset(parts[2]);
+                }
+                if(parts[3]) document.getElementById('conf-v1').value = parts[3];
+                if(parts[4]) document.getElementById('conf-v2').value = parts[4];
+                if(parts[5]) document.getElementById('conf-v3').value = parts[5];
+                if(parts[6]) document.getElementById('conf-reverso').checked = (parts[6] === 'true');
+            } else if(ev.musicaTrim) {
+                const totalSeconds = parseInt(ev.musicaTrim) || 0;
+                document.getElementById('trim-min').value = Math.floor(totalSeconds / 60);
+                document.getElementById('trim-sec').value = totalSeconds % 60;
+            }
+
+            if(ev.musicaUrl) {
+                document.getElementById('conf-musica-url').value = ev.musicaUrl;
+                document.getElementById('conf-musica-name').value = ev.musicaName || "";
+                document.getElementById('music-filename-display').innerText = ev.musicaName || "Arquivo carregado";
+                document.getElementById('music-status-text').innerText = "🎵 MÚSICA CONFIGURADA";
+                player.src = `${WORKER_URL}/stream?id=${ev.musicaUrl}`;
+                player.style.display = "block";
+                document.getElementById('conf-musica-loop-vol').checked = ev.musicaLoopVol !== false;
+            }
+
+            if(ev.molduraUrl) {
+                document.getElementById('conf-moldura-url').value = ev.molduraUrl;
+                document.getElementById('frame-preview').src = `${WORKER_URL}/stream?id=${ev.molduraUrl}`; 
+                document.getElementById('frame-preview').style.display = "block";
+                document.getElementById('upload-label').innerText = "📸 MOLDURA OK";
+            }
+            document.getElementById('titulo-pagina').innerText = "EDITAR EVENTO";
+        }
+
+        const presetInicial = document.getElementById('conf-preset').value;
+        atualizarIndicadorPreset(presetInicial);
+    };
+
+    function sincronizarPlayer() {
+        if(player && player.src) {
+            const m = parseInt(document.getElementById('trim-min').value) || 0;
+            const s = parseInt(document.getElementById('trim-sec').value) || 0;
+            player.currentTime = (m * 60) + s;
+        }
+    }
+
+    function marcarTempoAtual() {
+        if(player && player.src) {
+            const total = Math.floor(player.currentTime);
+            document.getElementById('trim-min').value = Math.floor(total / 60);
+            document.getElementById('trim-sec').value = total % 60;
+        }
+    }
+
+    function atualizarPresetUI() {
+        const p = document.getElementById('conf-preset').value;
+        atualizarIndicadorPreset(p);
+        
+        if (p === 'vizz-classic') { 
+            setV("2.0", "0.3", "2.0", false);
+            document.getElementById('info-efeito').innerHTML = '⚡ <strong>Vizz Classic:</strong> Início rápido (2.0x), meio lento (0.3x), fim rápido (2.0x) - efeito dramático profissional!';
+        }
+        else if (p === 'boomerang') { 
+            setV("1.0", "1.0", "1.0", true);
+            document.getElementById('info-efeito').innerHTML = '🔄 <strong>Boomerang:</strong> Velocidade normal com reverso no final - efeito loop!';
+        }
+        else if (p === 'slow-extremo') { 
+            setV("0.5", "0.2", "0.5", false);
+            document.getElementById('info-efeito').innerHTML = '🐌 <strong>Slow Extremo:</strong> Câmera lenta do início ao fim - efeito dramático!';
+        }
+        else if (p === 'normal') { 
+            setV("1.0", "1.0", "1.0", false);
+            document.getElementById('info-efeito').innerHTML = '📹 <strong>Normal:</strong> Velocidade constante 1.0x - sem efeitos especiais.';
+        }
+        else if (p === 'custom') { 
+            document.getElementById('info-efeito').innerHTML = '🎛️ <strong>Customizado:</strong> Configure manualmente as velocidades e o reverso abaixo!';
+        }
+    }
+
+    function atualizarPresetManual() {
+        const presetSelect = document.getElementById('conf-preset');
+        if (presetSelect.value !== 'custom') {
+            presetSelect.value = 'custom';
+            atualizarIndicadorPreset('custom');
+            document.getElementById('info-efeito').innerHTML = '🎛️ <strong>Customizado:</strong> Configuração manual ativada!';
+        }
+    }
+    
+    function setV(a,b,c,r){ 
+        document.getElementById('conf-v1').value=a; 
+        document.getElementById('conf-v2').value=b; 
+        document.getElementById('conf-v3').value=c; 
+        document.getElementById('conf-reverso').checked=r; 
+    }
+    
+    function toggleModal(id, show) { 
+        document.getElementById(id).style.display = show ? 'flex' : 'none'; 
+        if(!show) player.pause(); 
+    }
+    function fecharModalMusica() { toggleModal('music-modal', false); }
+    
+    function setTime(val, btn) { 
+        document.getElementById('conf-tempo').value = String(val); 
+        document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active')); 
+        if(btn) {
+            btn.classList.add('active');
+        } else {
+            const targetBtn = document.getElementById('time-' + val);
+            if(targetBtn) targetBtn.classList.add('active');
+        }
+    }
+
+    async function subirArquivo(input, tipo) {
+        const nomeVisual = document.getElementById('conf-nome').value.trim();
+        const idPasta = document.getElementById('conf-id').value.trim() || sanitizarPasta(nomeVisual);
+        if(!idPasta) { alert("Dê um nome ao evento primeiro!"); return; }
+        if(!input.files[0]) return;
+        
+        const file = input.files[0];
+        const label = tipo === 'MOLDURA' ? document.getElementById('upload-label') : document.getElementById('music-file-label');
+        label.innerText = "⏳ ENVIANDO...";
+
+        const formData = new FormData();
+        formData.append("file", file);
+        const fileName = tipo === 'MOLDURA' ? `moldura_principal.png` : `musica_evento.mp3`;
+        formData.append("uuid", fileName); 
+        formData.append("evento", idPasta);
+
+        try {
+            await fetch(`${WORKER_URL}/upload`, { method: 'POST', body: formData });
+            const pathRelativo = `${idPasta}/${fileName}`;
+            if(tipo === 'MOLDURA') {
+                document.getElementById('conf-moldura-url').value = pathRelativo;
+                document.getElementById('frame-preview').src = `${WORKER_URL}/stream?id=${pathRelativo}&t=${Date.now()}`;
+                document.getElementById('frame-preview').style.display = "block";
+                label.innerText = "📸 MOLDURA OK";
+            } else {
+                document.getElementById('conf-musica-url').value = pathRelativo;
+                document.getElementById('conf-musica-name').value = file.name;
+                document.getElementById('music-filename-display').innerText = file.name;
+                label.innerText = "✅ " + file.name;
+                player.src = URL.createObjectURL(file);
+            }
+        } catch (e) { 
+            alert("Erro no upload."); 
+            label.innerText = "ERRO"; 
+        }
+    }
+
+    async function salvarConfig() {
+        const nomeVisual = document.getElementById('conf-nome').value.trim();
+        if(!nomeVisual) return alert("Digite o nome do evento.");
+        
+        let idEventoValido = document.getElementById('conf-id').value.trim();
+        if(!idEventoValido) { idEventoValido = sanitizarPasta(nomeVisual); }
+
+        const trimSecs = (parseInt(document.getElementById('trim-min').value)||0)*60 + (parseInt(document.getElementById('trim-sec').value)||0);
+        const tempoVal = document.getElementById('conf-tempo').value || "10";
+        const presetVal = document.getElementById('conf-preset').value || "normal";
+        const v1Val = document.getElementById('conf-v1').value || "1.0";
+        const v2Val = document.getElementById('conf-v2').value || "1.0";
+        const v3Val = document.getElementById('conf-v3').value || "1.0";
+        const reversoVal = document.getElementById('conf-reverso').checked ? "true" : "false";
+
+        // EMPACOTA TODOS OS EFEITOS NO FORMATO CORRETO
+        // Formato: trimStart|tempoTotal|preset|speedStart|speedMiddle|speedEnd|reverso
+        const packedEffects = `${trimSecs}|${tempoVal}|${presetVal}|${v1Val}|${v2Val}|${v3Val}|${reversoVal}`;
+
+        const configLocal = {
+            id: idEventoValido,
+            id_fixo: idEventoValido,
+            nome: nomeVisual, 
+            data: document.getElementById('conf-data').value,
+            tempo: tempoVal,
+            preset: presetVal,
+            v1: v1Val,
+            v2: v2Val,
+            v3: v3Val,
+            reverso: document.getElementById('conf-reverso').checked,
+            molduraUrl: document.getElementById('conf-moldura-url').value,
+            musicaUrl: document.getElementById('conf-musica-url').value,
+            musicaName: document.getElementById('conf-musica-name').value,
+            musicaTrim: packedEffects,  // CAMPO CRÍTICO COM TODOS OS EFEITOS
+            musicaLoopVol: document.getElementById('conf-musica-loop-vol').checked
+        };
+
+        // DEBUG: Verificar o que está sendo salvo
+        console.log("📦 Salvando configuração:", configLocal);
+        console.log("🎬 musicaTrim:", packedEffects);
+        
+        localStorage.setItem('config_atual', JSON.stringify(configLocal));
+
+        const payloadWorker = {
+            id: configLocal.id,
+            nome: configLocal.nome,
+            data: configLocal.data || "",
+            molduraUrl: configLocal.molduraUrl || "",
+            musicaUrl: configLocal.musicaUrl || "",
+            musicaTrim: packedEffects  // ENVIAR PARA O WORKER
+        };
+
+        console.log("📤 Enviando para worker:", payloadWorker);
+
+        try {
+            const res = await fetch(`${WORKER_URL}/salvar-evento`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payloadWorker)
+            });
+            
+            const responseData = await res.json().catch(() => ({}));
+            console.log("📥 Resposta do worker:", responseData);
+            
+            if(res.ok) { 
+                localStorage.removeItem('evento_para_editar');
+                alert("Evento salvo com sucesso!"); 
+                window.location.href = 'index.html'; 
+            } else {
+                alert("Erro retornado pelo servidor: " + (responseData.error || res.statusText));
+            }
+        } catch (e) { 
+            console.error("❌ Erro ao salvar:", e);
+            alert("Erro de conexão ao tentar salvar."); 
+        }
+    }
+</script>
+</body>
+</html>
