@@ -81,7 +81,6 @@
         .trim-container { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
         .trim-input { text-align: center; color: var(--turquesa); font-family: monospace; font-size: 18px; width: 60px; }
 
-        /* Estilo para o checkbox de reverso */
         .reverso-container {
             display: flex;
             align-items: center;
@@ -120,7 +119,6 @@
             color: var(--dourado);
         }
 
-        /* Indicador de preset ativo */
         .preset-indicator {
             display: inline-block;
             padding: 4px 12px;
@@ -253,7 +251,6 @@
                     .toLowerCase();
     }
 
-    // Função para atualizar o indicador de preset
     function atualizarIndicadorPreset(preset) {
         const indicator = document.getElementById('preset-indicator');
         const labels = {
@@ -334,7 +331,6 @@
             document.getElementById('titulo-pagina').innerText = "EDITAR EVENTO";
         }
 
-        // Atualiza o indicador inicial
         const presetInicial = document.getElementById('conf-preset').value;
         atualizarIndicadorPreset(presetInicial);
     };
@@ -380,9 +376,7 @@
         }
     }
 
-    // Função chamada quando o usuário altera manualmente as velocidades
     function atualizarPresetManual() {
-        // Se o usuário mudar manualmente, muda para custom
         const presetSelect = document.getElementById('conf-preset');
         if (presetSelect.value !== 'custom') {
             presetSelect.value = 'custom';
@@ -467,7 +461,8 @@
         const v3Val = document.getElementById('conf-v3').value || "1.0";
         const reversoVal = document.getElementById('conf-reverso').checked ? "true" : "false";
 
-        // EMPACOTA TODOS OS EFEITOS DENTRO DO CAMPO musicaTrim (SUPORTADO PELO WORKER)
+        // EMPACOTA TODOS OS EFEITOS NO FORMATO CORRETO
+        // Formato: trimStart|tempoTotal|preset|speedStart|speedMiddle|speedEnd|reverso
         const packedEffects = `${trimSecs}|${tempoVal}|${presetVal}|${v1Val}|${v2Val}|${v3Val}|${reversoVal}`;
 
         const configLocal = {
@@ -484,9 +479,15 @@
             molduraUrl: document.getElementById('conf-moldura-url').value,
             musicaUrl: document.getElementById('conf-musica-url').value,
             musicaName: document.getElementById('conf-musica-name').value,
-            musicaTrim: packedEffects,
+            musicaTrim: packedEffects,  // CAMPO CRÍTICO COM TODOS OS EFEITOS
             musicaLoopVol: document.getElementById('conf-musica-loop-vol').checked
         };
+
+        // DEBUG: Verificar o que está sendo salvo
+        console.log("📦 Salvando configuração:", configLocal);
+        console.log("🎬 musicaTrim:", packedEffects);
+        
+        localStorage.setItem('config_atual', JSON.stringify(configLocal));
 
         const payloadWorker = {
             id: configLocal.id,
@@ -494,8 +495,10 @@
             data: configLocal.data || "",
             molduraUrl: configLocal.molduraUrl || "",
             musicaUrl: configLocal.musicaUrl || "",
-            musicaTrim: packedEffects
+            musicaTrim: packedEffects  // ENVIAR PARA O WORKER
         };
+
+        console.log("📤 Enviando para worker:", payloadWorker);
 
         try {
             const res = await fetch(`${WORKER_URL}/salvar-evento`, {
@@ -504,16 +507,18 @@
                 body: JSON.stringify(payloadWorker)
             });
             
+            const responseData = await res.json().catch(() => ({}));
+            console.log("📥 Resposta do worker:", responseData);
+            
             if(res.ok) { 
-                localStorage.setItem('config_atual', JSON.stringify(configLocal));
                 localStorage.removeItem('evento_para_editar');
                 alert("Evento salvo com sucesso!"); 
                 window.location.href = 'index.html'; 
             } else {
-                const errData = await res.json().catch(() => ({}));
-                alert("Erro retornado pelo servidor: " + (errData.error || res.statusText));
+                alert("Erro retornado pelo servidor: " + (responseData.error || res.statusText));
             }
         } catch (e) { 
+            console.error("❌ Erro ao salvar:", e);
             alert("Erro de conexão ao tentar salvar."); 
         }
     }
