@@ -350,4 +350,136 @@ async function atualizarGaleriaIncremental() {
         }
         
         listaCronologica = novosPaths;
-       
+        reordenarCards();
+        renumerarCards();
+        
+    } catch (e) {
+        console.error("Erro ao atualizar galeria:", e);
+    } finally {
+        carregando = false;
+    }
+}
+
+function getThumbPath(videoPath) {
+    const partes = videoPath.split('/');
+    const filename = partes.pop();
+    const baseName = filename.replace('final_', '').replace('.mp4', '');
+    return `${partes.join('/')}/thumb_${baseName}.jpg`;
+}
+
+function adicionarCard(file, thumbsDisponiveis) {
+    const container = document.getElementById('gallery');
+    const videoUrl = `${WORKER_URL}/stream?id=${encodeURIComponent(file.path)}`;
+    const thumbPath = getThumbPath(file.path);
+    const thumbUrl = `${WORKER_URL}/stream?id=${encodeURIComponent(thumbPath)}`;
+    
+    const card = document.createElement('div');
+    card.className = 'video-card';
+    card.dataset.path = file.path;
+    
+    // 🔥 Thumbnail como capa
+    card.innerHTML = `
+        <div class="video-number">#?</div>
+        <img class="thumb-img" src="${thumbUrl}" 
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+             onload="this.style.display='block';"
+             alt="Capa do vídeo" 
+             loading="lazy">
+        <video muted playsinline webkit-playsinline preload="none" loop 
+               style="background: #000; display: none; width: 100%; height: 100%; object-fit: cover;"></video>
+        <div class="play-icon"></div>
+    `;
+    
+    const videoEl = card.querySelector('video');
+    videoEl.src = videoUrl;
+    
+    card.onclick = () => abrirVideo(videoUrl, file.path);
+    container.appendChild(card);
+    
+    videosMap.set(file.path, card);
+}
+
+function reordenarCards() {
+    const container = document.getElementById('gallery');
+    for (const card of videosMap.values()) {
+        card.remove();
+    }
+    for (let i = listaCronologica.length - 1; i >= 0; i--) {
+        const path = listaCronologica[i];
+        const card = videosMap.get(path);
+        if (card) {
+            container.appendChild(card);
+        }
+    }
+}
+
+function renumerarCards() {
+    listaCronologica.forEach((path, index) => {
+        const card = videosMap.get(path);
+        if (card) {
+            const badge = card.querySelector('.video-number');
+            if (badge) badge.textContent = `#${index + 1}`;
+        }
+    });
+}
+
+function abrirVideo(url, path) {
+    const modal = document.getElementById('modal');
+    const video = document.getElementById('modal-video');
+    
+    video.pause();
+    video.src = "";
+    modal.style.display = 'flex';
+    
+    fetch(url)
+        .then(response => response.blob())
+        .then(blob => {
+            const blobUrl = URL.createObjectURL(blob);
+            video.src = blobUrl;
+            video.load();
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => { video.controls = true; });
+            }
+        })
+        .catch(err => {
+            alert("Erro ao carregar vídeo para exibição.");
+        });
+    
+    document.getElementById('btn-baixar').onclick = () => {
+        fetch(url)
+            .then(res => res.blob())
+            .then(blob => {
+                saveAs(blob, path.split('/').pop());
+            })
+            .catch(e => alert("Erro no download."));
+    };
+}
+
+function fecharModal() {
+    const modal = document.getElementById('modal');
+    const video = document.getElementById('modal-video');
+    modal.style.display = 'none';
+    video.pause();
+    video.src = "";
+}
+
+function buscarVideo() {
+    const num = parseInt(document.getElementById('busca').value);
+    if (isNaN(num)) {
+        alert("Digite um número válido");
+        return;
+    }
+    
+    const index = num - 1;
+    if (listaCronologica[index]) {
+        const url = `${WORKER_URL}/stream?id=${encodeURIComponent(listaCronologica[index])}`;
+        abrirVideo(url, listaCronologica[index]);
+        document.getElementById('busca').value = '';
+    } else {
+        alert(`❌ Vídeo #${num} não encontrado!\nTotal disponível: ${listaCronologica.length}`);
+    }
+}
+</script>
+</body>
+</html>
