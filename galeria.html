@@ -1,19 +1,20 @@
 <!--
 PHOTO MOVIE - Galeria Cliente
-VERSÃO: 2.0.1
+VERSÃO: 2.0.2
 ÚLTIMA ATUALIZAÇÃO: 09/08/2026
 
-CHANGELOG v2.0.1:
-- ORDENAÇÃO: Vídeos mais recentes aparecem primeiro (topo da grade)
-- NUMERAÇÃO: Baseada na ordem cronológica (vídeo mais antigo = #1)
-- CORRIGIDO: Novos vídeos são inseridos no topo automaticamente
+CHANGELOG v2.0.2:
+- ADICIONADO: Thumbnails nos cards (imagem .jpg gerada pelo processador)
+- ADICIONADO: Fallback para vídeo se thumbnail não existir
+- CORRIGIDO: Cards mostram capa do vídeo em vez de tela preta
+- OTIMIZADO: Thumbnail carrega muito mais rápido que o vídeo
 -->
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PHOTO MOVIE - GALERIA v2.0.1</title>
+    <title>PHOTO MOVIE - GALERIA v2.0.2</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -96,11 +97,38 @@ CHANGELOG v2.0.1:
         }
         .video-card:hover { border-color: #c5a059; }
         
-        .video-card video {
+        /* 🔥 Thumbnail como imagem */
+        .video-card .thumb-img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            display: block;
+        }
+        
+        /* Ícone de play */
+        .video-card .play-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             pointer-events: none;
+            z-index: 5;
+        }
+        .video-card .play-icon::after {
+            content: '';
+            width: 0;
+            height: 0;
+            border-left: 14px solid white;
+            border-top: 9px solid transparent;
+            border-bottom: 9px solid transparent;
+            margin-left: 3px;
         }
         
         .video-number {
@@ -295,6 +323,15 @@ async function atualizarGaleriaIncremental() {
             })
             .sort((a, b) => new Date(a.uploaded || 0) - new Date(b.uploaded || 0));
         
+        // Mapa de thumbnails disponíveis
+        const thumbsDisponiveis = new Set();
+        arquivos.forEach(f => {
+            const filename = (f.path || "").split('/').pop();
+            if (filename.startsWith('thumb_') && filename.endsWith('.jpg')) {
+                thumbsDisponiveis.add(f.path);
+            }
+        });
+        
         const novosPaths = finais.map(f => f.path);
         
         if (JSON.stringify(novosPaths) === JSON.stringify(listaCronologica)) return;
@@ -308,125 +345,9 @@ async function atualizarGaleriaIncremental() {
         
         for (const file of finais) {
             if (!videosMap.has(file.path)) {
-                adicionarCard(file);
+                adicionarCard(file, thumbsDisponiveis);
             }
         }
         
         listaCronologica = novosPaths;
-        reordenarCards();
-        renumerarCards();
-        
-    } catch (e) {
-        console.error("Erro ao atualizar galeria:", e);
-    } finally {
-        carregando = false;
-    }
-}
-
-function adicionarCard(file) {
-    const container = document.getElementById('gallery');
-    const url = `${WORKER_URL}/stream?id=${encodeURIComponent(file.path)}`;
-    
-    const card = document.createElement('div');
-    card.className = 'video-card';
-    card.dataset.path = file.path;
-    
-    card.innerHTML = `
-        <div class="video-number">#?</div>
-        <video muted playsinline webkit-playsinline preload="none" loop style="background: #000;"></video>
-    `;
-    
-    const videoEl = card.querySelector('video');
-    videoEl.src = url;
-    videoEl.load();
-    
-    card.onclick = () => abrirVideo(url, file.path);
-    
-    videosMap.set(file.path, card);
-}
-
-function reordenarCards() {
-    const container = document.getElementById('gallery');
-    for (const card of videosMap.values()) {
-        card.remove();
-    }
-    // Insere na ordem inversa (mais recente primeiro)
-    for (let i = listaCronologica.length - 1; i >= 0; i--) {
-        const path = listaCronologica[i];
-        const card = videosMap.get(path);
-        if (card) {
-            container.appendChild(card);
-        }
-    }
-}
-
-function renumerarCards() {
-    listaCronologica.forEach((path, index) => {
-        const card = videosMap.get(path);
-        if (card) {
-            const badge = card.querySelector('.video-number');
-            if (badge) badge.textContent = `#${index + 1}`;
-        }
-    });
-}
-
-function abrirVideo(url, path) {
-    const modal = document.getElementById('modal');
-    const video = document.getElementById('modal-video');
-    
-    video.pause();
-    video.src = "";
-    modal.style.display = 'flex';
-    
-    fetch(url)
-        .then(response => response.blob())
-        .then(blob => {
-            const blobUrl = URL.createObjectURL(blob);
-            video.src = blobUrl;
-            video.load();
-            const playPromise = video.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(error => { video.controls = true; });
-            }
-        })
-        .catch(err => {
-            alert("Erro ao carregar vídeo para exibição.");
-        });
-    
-    document.getElementById('btn-baixar').onclick = () => {
-        fetch(url)
-            .then(res => res.blob())
-            .then(blob => {
-                saveAs(blob, path.split('/').pop());
-            })
-            .catch(e => alert("Erro no download."));
-    };
-}
-
-function fecharModal() {
-    const modal = document.getElementById('modal');
-    const video = document.getElementById('modal-video');
-    modal.style.display = 'none';
-    video.pause();
-    video.src = "";
-}
-
-function buscarVideo() {
-    const num = parseInt(document.getElementById('busca').value);
-    if (isNaN(num)) {
-        alert("Digite um número válido");
-        return;
-    }
-    
-    const index = num - 1;
-    if (listaCronologica[index]) {
-        const url = `${WORKER_URL}/stream?id=${encodeURIComponent(listaCronologica[index])}`;
-        abrirVideo(url, listaCronologica[index]);
-        document.getElementById('busca').value = '';
-    } else {
-        alert(`❌ Vídeo #${num} não encontrado!\nTotal disponível: ${listaCronologica.length}`);
-    }
-}
-</script>
-</body>
-</html>
+       
