@@ -1,9 +1,19 @@
+<!--
+PHOTO MOVIE - Galeria Admin
+VERSÃO: 2.0.1
+ÚLTIMA ATUALIZAÇÃO: 09/08/2026
+
+CHANGELOG v2.0.1:
+- ORDENAÇÃO: Vídeos mais recentes aparecem primeiro (topo da grade)
+- NUMERAÇÃO: Baseada na ordem cronológica (vídeo mais antigo = #1)
+- CORRIGIDO: Novos vídeos são inseridos no topo automaticamente
+-->
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PHOTO MOVIE - ADMIN</title>
+    <title>PHOTO MOVIE - ADMIN v2.0.1</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
@@ -45,7 +55,6 @@
         .nav-footer { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 500; width: 90%; }
         
         .empty-gallery { text-align: center; padding: 50px; color: #666; grid-column: 1/-1; }
-        .empty-gallery p { font-size: 16px; margin-top: 20px; }
         .loading { text-align: center; padding: 50px; color: var(--dourado); grid-column: 1/-1; }
     </style>
 </head>
@@ -55,7 +64,7 @@
         <div class="header">
             <h1>PHOTO MOVIE</h1>
             <p class="subtitle">COLECIONANDO MOMENTOS</p>
-            <div class="admin-label">👑 GALERIA ADMIN</div>
+            <div class="admin-label">👑 GALERIA ADMIN v2.0.1</div>
             <div class="event-info-container" onclick="copiarLinkAdmin()">
                 <div class="v-line"></div>
                 <p id="nome-evento-titulo">CARREGANDO...</p>
@@ -94,9 +103,14 @@
 
 <script>
     const WORKER_URL = "https://photomovie.maxprimefotovideo.workers.dev";
-    let listaFinais = [];
-    let idPastaFixo = ""; 
+    let idPastaFixo = "";
     let carregando = false;
+    
+    // Mapa de vídeos: path -> elemento card
+    const videosMap = new Map();
+    
+    // Lista cronológica (mais antigo primeiro)
+    let listaCronologica = [];
 
     function copiarLinkAdmin() {
         if(!idPastaFixo) { alert("Aguardando carregamento do evento..."); return; }
@@ -139,72 +153,120 @@
         
         idPastaFixo = String(eventoEncontrado);
         document.getElementById('nome-evento-titulo').innerHTML = "ID: " + idPastaFixo;
-        carregarArquivos();
-        setInterval(carregarArquivos, 5000);
+        
+        // Limpa estado anterior
+        videosMap.clear();
+        listaCronologica = [];
+        document.getElementById('gallery-container').innerHTML = '';
+        
+        await atualizarGaleriaIncremental();
+        setInterval(atualizarGaleriaIncremental, 5000);
     }
 
-    async function carregarArquivos() {
+    async function atualizarGaleriaIncremental() {
         if(carregando) return;
+        const modal = document.getElementById('modal-zoom');
+        if (modal.style.display === 'flex') return;
+        
         carregando = true;
         try {
             const url = `${WORKER_URL}/listar-galeria?evento=${encodeURIComponent(idPastaFixo)}&t=${Date.now()}`;
             const res = await fetch(url);
             const dados = await res.json();
             
-            const novosFinais = dados.filter(f => {
-                const path = f.path || "";
-                const filename = path.split('/').pop();
-                return filename.startsWith('final_') && filename.endsWith('.mp4');
-            });
+            // Filtra apenas finais e ordena por uploaded (mais antigo primeiro)
+            const finais = dados
+                .filter(f => {
+                    const path = f.path || "";
+                    const filename = path.split('/').pop();
+                    return filename.startsWith('final_') && filename.endsWith('.mp4');
+                })
+                .sort((a, b) => new Date(a.uploaded || 0) - new Date(b.uploaded || 0));
             
-            if (JSON.stringify(novosFinais) !== JSON.stringify(listaFinais)) {
-                listaFinais = novosFinais;
-                renderizarGaleria();
+            const novosPaths = finais.map(f => f.path);
+            
+            // Se nada mudou, sai
+            if (JSON.stringify(novosPaths) === JSON.stringify(listaCronologica)) {
+                return;
             }
-        } catch (e) { 
-            console.error("Erro ao carregar arquivos:", e);
-            document.getElementById('gallery-container').innerHTML = '<div class="empty-gallery"><p>⚠️ Erro ao conectar com o servidor</p><small>Verifique sua conexão</small></div>';
-        } finally { carregando = false; }
+            
+            // Remove vídeos excluídos
+            for (const [path, card] of videosMap.entries()) {
+                if (!novosPaths.includes(path)) {
+                    card.remove();
+                    videosMap.delete(path);
+                }
+            }
+            
+            // Adiciona novos vídeos (ainda não presentes no mapa)
+            for (const file of finais) {
+                if (!videosMap.has(file.path)) {
+                    adicionarCard(file);
+                }
+            }
+            
+            // Atualiza lista cronológica
+            listaCronologica = novosPaths;
+            
+            // Reordena os cards no DOM (mais recente primeiro)
+            reordenarCards();
+            // Renumera com base na ordem cronológica
+            renumerarCards();
+            
+        } catch (e) {
+            console.error("Erro ao atualizar galeria:", e);
+        } finally {
+            carregando = false;
+        }
     }
 
-    function renderizarGaleria() {
+    function adicionarCard(file) {
         const container = document.getElementById('gallery-container');
-        if (!listaFinais || listaFinais.length === 0) {
-            container.innerHTML = '<div class="empty-gallery"><p>📹 Nenhum vídeo encontrado</p><small>Grave um vídeo na câmera para aparecer aqui</small></div>';
-            return;
-        }
-        container.innerHTML = "";
+        const url = `${WORKER_URL}/stream?id=${encodeURIComponent(file.path)}`;
+        const card = document.createElement('div');
+        card.className = 'video-card';
+        card.dataset.path = file.path;
         
-        // CRIA UM MAPA DE PROMESSAS PARA CARREGAR OS VÍDEOS
-        listaFinais.forEach((file, index) => {
-            const url = `${WORKER_URL}/stream?id=${encodeURIComponent(file.path)}`;
-            const numeroVideo = index + 1;
-            const card = document.createElement('div');
-            card.className = 'video-card';
-            
-            card.innerHTML = `
-                <div class="video-id-badge">#${numeroVideo}</div>
-                <button class="btn-del-mini" onclick="event.stopPropagation(); excluirArquivo('${file.path}')">✕</button>
-                <video muted playsinline webkit-playsinline preload="metadata" style="background: #000;"></video>
-            `;
-            
-            const videoElement = card.querySelector('video');
-            
-            // LÓGICA MILAGROSA DE CARREGAMENTO
-            fetch(url)
-            .then(response => response.blob())
-            .then(blob => {
-                const blobUrl = URL.createObjectURL(blob);
-                videoElement.src = blobUrl;
-                videoElement.load();
-            })
-            .catch(err => {
-                console.error("Erro ao carregar o blob do vídeo:", err);
-                videoElement.poster = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23c5a059"><path d="M8 5v14l11-7z"/></svg>';
-            });
-            
-            card.onclick = () => abrirZoom(url, file.path);
-            container.appendChild(card);
+        card.innerHTML = `
+            <div class="video-id-badge">#?</div>
+            <button class="btn-del-mini" onclick="event.stopPropagation(); excluirArquivo('${file.path}')">✕</button>
+            <video muted playsinline webkit-playsinline preload="none" loop style="background: #000;"></video>
+        `;
+        
+        const videoEl = card.querySelector('video');
+        videoEl.src = url;
+        videoEl.load();
+        
+        card.onclick = () => abrirZoom(url, file.path);
+        
+        // Não insere ainda; será posicionado na reordenação
+        videosMap.set(file.path, card);
+    }
+
+    function reordenarCards() {
+        const container = document.getElementById('gallery-container');
+        // Remove todos os cards do DOM (mas mantém no Map)
+        for (const card of videosMap.values()) {
+            card.remove();
+        }
+        // Reinsere na ordem inversa da cronológica (mais recente primeiro)
+        for (let i = listaCronologica.length - 1; i >= 0; i--) {
+            const path = listaCronologica[i];
+            const card = videosMap.get(path);
+            if (card) {
+                container.appendChild(card);
+            }
+        }
+    }
+
+    function renumerarCards() {
+        // Numeração baseada na posição na lista cronológica (+1)
+        listaCronologica.forEach((path, index) => {
+            const card = videosMap.get(path);
+            if (card) {
+                const badge = card.querySelector('.video-id-badge');
+                if (badge) badge.textContent = `#${index + 1}`;
+            }
         });
     }
 
@@ -212,23 +274,24 @@
         const num = document.getElementById('input-busca').value;
         if (!num) { alert("Digite um número de vídeo"); return; }
         const index = parseInt(num) - 1;
-        if (listaFinais[index]) {
-            const file = listaFinais[index];
-            const url = `${WORKER_URL}/stream?id=${encodeURIComponent(file.path)}`;
-            abrirZoom(url, file.path);
+        if (listaCronologica[index]) {
+            const path = listaCronologica[index];
+            const url = `${WORKER_URL}/stream?id=${encodeURIComponent(path)}`;
+            abrirZoom(url, path);
             document.getElementById('input-busca').value = '';
-        } else { alert(`❌ Vídeo #${num} não encontrado!\nTotal de vídeos: ${listaFinais.length}`); }
+        } else { 
+            alert(`❌ Vídeo #${num} não encontrado!\nTotal de vídeos: ${listaCronologica.length}`); 
+        }
     }
 
     function abrirZoom(url, path) {
         const modal = document.getElementById('modal-zoom');
         const video = document.getElementById('media-full');
-        video.pause(); 
+        video.pause();
         video.src = "";
         
         modal.style.display = 'flex';
         
-        // MESMA LÓGICA DE CARREGAMENTO NO MODAL
         fetch(url)
         .then(response => response.blob())
         .then(blob => {
@@ -256,41 +319,54 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ path: path }) 
             });
-            if(response.ok) { alert("✅ Vídeo excluído!"); carregarArquivos(); } 
-            else { alert("❌ Erro ao excluir vídeo"); }
+            if(response.ok) { 
+                alert("✅ Vídeo excluído!"); 
+                const card = videosMap.get(path);
+                if (card) {
+                    card.remove();
+                    videosMap.delete(path);
+                    listaCronologica = listaCronologica.filter(p => p !== path);
+                    reordenarCards();
+                    renumerarCards();
+                }
+            } else { 
+                alert("❌ Erro ao excluir vídeo"); 
+            }
         } catch(e) { alert("❌ Erro de conexão ao excluir"); }
     }
 
     async function excluirTudo() {
         if(prompt("⚠️ Digite 'APAGAR TUDO' para confirmar a exclusão de TODOS os vídeos:") !== 'APAGAR TUDO') { return; }
         let excluidos = 0;
-        for(let f of listaFinais) {
+        for(let path of listaCronologica) {
             try {
-                await fetch(`${WORKER_URL}/deletar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: f.path }) });
+                await fetch(`${WORKER_URL}/deletar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: path }) });
                 excluidos++;
-            } catch(e) { console.error("Erro ao excluir:", f.path); }
+            } catch(e) { console.error("Erro ao excluir:", path); }
         }
         alert(`✅ ${excluidos} vídeo(s) excluído(s)!`);
-        carregarArquivos();
+        videosMap.clear();
+        listaCronologica = [];
+        document.getElementById('gallery-container').innerHTML = '<div class="empty-gallery"><p>📹 Nenhum vídeo encontrado</p></div>';
     }
 
     async function baixarTudoZip() {
-        if(listaFinais.length === 0) { alert("Nenhum vídeo para baixar"); return; }
+        if(listaCronologica.length === 0) { alert("Nenhum vídeo para baixar"); return; }
         const btn = document.querySelector('.btn-zip');
         const originalText = btn.innerText;
         btn.innerText = "⏳ EMPACOTANDO...";
         btn.disabled = true;
         try {
             const zip = new JSZip();
-            for(let i = 0; i < listaFinais.length; i++) {
-                const res = await fetch(`${WORKER_URL}/stream?id=${encodeURIComponent(listaFinais[i].path)}`);
+            for(let i = 0; i < listaCronologica.length; i++) {
+                const res = await fetch(`${WORKER_URL}/stream?id=${encodeURIComponent(listaCronologica[i])}`);
                 const blob = await res.blob();
                 zip.file(`video_${i+1}.mp4`, blob);
-                btn.innerText = `📦 ${i+1}/${listaFinais.length}`;
+                btn.innerText = `📦 ${i+1}/${listaCronologica.length}`;
             }
             const content = await zip.generateAsync({type:"blob"});
             saveAs(content, `Galeria_Admin_${idPastaFixo}.zip`);
-            alert(`✅ ZIP criado com ${listaFinais.length} vídeo(s)!`);
+            alert(`✅ ZIP criado com ${listaCronologica.length} vídeo(s)!`);
         } catch(e) { alert("❌ Erro ao criar ZIP: " + e.message); } 
         finally { btn.innerText = originalText; btn.disabled = false; }
     }
