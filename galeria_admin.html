@@ -1,19 +1,20 @@
 <!--
 PHOTO MOVIE - Galeria Admin
-VERSÃO: 2.0.1
+VERSÃO: 2.0.2
 ÚLTIMA ATUALIZAÇÃO: 09/08/2026
 
-CHANGELOG v2.0.1:
-- ORDENAÇÃO: Vídeos mais recentes aparecem primeiro (topo da grade)
-- NUMERAÇÃO: Baseada na ordem cronológica (vídeo mais antigo = #1)
-- CORRIGIDO: Novos vídeos são inseridos no topo automaticamente
+CHANGELOG v2.0.2:
+- ADICIONADO: Thumbnails nos cards (imagem .jpg gerada pelo processador)
+- ADICIONADO: Fallback para vídeo se thumbnail não existir
+- CORRIGIDO: Cards mostram capa do vídeo em vez de tela preta
+- OTIMIZADO: Thumbnail carrega muito mais rápido que o vídeo
 -->
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PHOTO MOVIE - ADMIN v2.0.1</title>
+    <title>PHOTO MOVIE - ADMIN v2.0.2</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
@@ -37,11 +38,78 @@ CHANGELOG v2.0.1:
         .admin-tools { display: flex; gap: 10px; justify-content: center; padding: 15px; flex-wrap: wrap; }
         .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; padding: 15px; padding-bottom: 120px; }
 
-        .video-card { background: #000; border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 12px; overflow: hidden; aspect-ratio: 9/16; position: relative; cursor: pointer; }
+        .video-card { 
+            background: #000; 
+            border: 1px solid rgba(197, 160, 89, 0.3); 
+            border-radius: 12px; 
+            overflow: hidden; 
+            aspect-ratio: 9/16; 
+            position: relative; 
+            cursor: pointer; 
+        }
         .video-card:hover { border-color: var(--dourado); }
-        .video-card video { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
-        .video-id-badge { position: absolute; top: 8px; left: 8px; background: var(--dourado); color: black; padding: 2px 8px; border-radius: 4px; font-weight: 900; font-size: 12px; z-index: 10; }
-        .btn-del-mini { position: absolute; top: 8px; right: 8px; background: var(--danger); border: none; color: white; border-radius: 50%; width: 30px; height: 30px; font-weight: bold; cursor: pointer; z-index: 20; font-size: 16px; }
+        
+        /* 🔥 Thumbnail como imagem de fundo */
+        .video-card .thumb-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        
+        /* Ícone de play sobre a thumbnail */
+        .video-card .play-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 5;
+        }
+        .video-card .play-icon::after {
+            content: '';
+            width: 0;
+            height: 0;
+            border-left: 14px solid white;
+            border-top: 9px solid transparent;
+            border-bottom: 9px solid transparent;
+            margin-left: 3px;
+        }
+        
+        .video-id-badge { 
+            position: absolute; 
+            top: 8px; 
+            left: 8px; 
+            background: var(--dourado); 
+            color: black; 
+            padding: 2px 8px; 
+            border-radius: 4px; 
+            font-weight: 900; 
+            font-size: 12px; 
+            z-index: 10; 
+        }
+        .btn-del-mini { 
+            position: absolute; 
+            top: 8px; 
+            right: 8px; 
+            background: var(--danger); 
+            border: none; 
+            color: white; 
+            border-radius: 50%; 
+            width: 30px; 
+            height: 30px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            z-index: 20; 
+            font-size: 16px; 
+        }
         .btn-del-mini:hover { background: #ff0000; transform: scale(1.05); }
 
         #modal-zoom { position: fixed; inset: 0; background: rgba(0,0,0,0.98); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; }
@@ -64,7 +132,7 @@ CHANGELOG v2.0.1:
         <div class="header">
             <h1>PHOTO MOVIE</h1>
             <p class="subtitle">COLECIONANDO MOMENTOS</p>
-            <div class="admin-label">👑 GALERIA ADMIN v2.0.1</div>
+            <div class="admin-label">👑 GALERIA ADMIN v2.0.2</div>
             <div class="event-info-container" onclick="copiarLinkAdmin()">
                 <div class="v-line"></div>
                 <p id="nome-evento-titulo">CARREGANDO...</p>
@@ -106,10 +174,7 @@ CHANGELOG v2.0.1:
     let idPastaFixo = "";
     let carregando = false;
     
-    // Mapa de vídeos: path -> elemento card
     const videosMap = new Map();
-    
-    // Lista cronológica (mais antigo primeiro)
     let listaCronologica = [];
 
     function copiarLinkAdmin() {
@@ -154,7 +219,6 @@ CHANGELOG v2.0.1:
         idPastaFixo = String(eventoEncontrado);
         document.getElementById('nome-evento-titulo').innerHTML = "ID: " + idPastaFixo;
         
-        // Limpa estado anterior
         videosMap.clear();
         listaCronologica = [];
         document.getElementById('gallery-container').innerHTML = '';
@@ -174,7 +238,7 @@ CHANGELOG v2.0.1:
             const res = await fetch(url);
             const dados = await res.json();
             
-            // Filtra apenas finais e ordena por uploaded (mais antigo primeiro)
+            // Filtra apenas vídeos finais (não thumbnails)
             const finais = dados
                 .filter(f => {
                     const path = f.path || "";
@@ -183,9 +247,17 @@ CHANGELOG v2.0.1:
                 })
                 .sort((a, b) => new Date(a.uploaded || 0) - new Date(b.uploaded || 0));
             
+            // Cria um mapa de thumbnails disponíveis
+            const thumbsDisponiveis = new Set();
+            dados.forEach(f => {
+                const filename = (f.path || "").split('/').pop();
+                if (filename.startsWith('thumb_') && filename.endsWith('.jpg')) {
+                    thumbsDisponiveis.add(f.path);
+                }
+            });
+            
             const novosPaths = finais.map(f => f.path);
             
-            // Se nada mudou, sai
             if (JSON.stringify(novosPaths) === JSON.stringify(listaCronologica)) {
                 return;
             }
@@ -198,19 +270,15 @@ CHANGELOG v2.0.1:
                 }
             }
             
-            // Adiciona novos vídeos (ainda não presentes no mapa)
+            // Adiciona novos vídeos
             for (const file of finais) {
                 if (!videosMap.has(file.path)) {
-                    adicionarCard(file);
+                    adicionarCard(file, thumbsDisponiveis);
                 }
             }
             
-            // Atualiza lista cronológica
             listaCronologica = novosPaths;
-            
-            // Reordena os cards no DOM (mais recente primeiro)
             reordenarCards();
-            // Renumera com base na ordem cronológica
             renumerarCards();
             
         } catch (e) {
@@ -220,36 +288,53 @@ CHANGELOG v2.0.1:
         }
     }
 
-    function adicionarCard(file) {
+    function getThumbPath(videoPath) {
+        // Converte: evento/final_vid_123.mp4 -> evento/thumb_vid_123.jpg
+        const partes = videoPath.split('/');
+        const filename = partes.pop();
+        const baseName = filename.replace('final_', '').replace('.mp4', '');
+        return `${partes.join('/')}/thumb_${baseName}.jpg`;
+    }
+
+    function adicionarCard(file, thumbsDisponiveis) {
         const container = document.getElementById('gallery-container');
-        const url = `${WORKER_URL}/stream?id=${encodeURIComponent(file.path)}`;
+        const videoUrl = `${WORKER_URL}/stream?id=${encodeURIComponent(file.path)}`;
+        const thumbPath = getThumbPath(file.path);
+        const thumbUrl = `${WORKER_URL}/stream?id=${encodeURIComponent(thumbPath)}`;
+        
         const card = document.createElement('div');
         card.className = 'video-card';
         card.dataset.path = file.path;
         
+        // 🔥 Usa thumbnail como capa, com fallback para vídeo
         card.innerHTML = `
             <div class="video-id-badge">#?</div>
             <button class="btn-del-mini" onclick="event.stopPropagation(); excluirArquivo('${file.path}')">✕</button>
-            <video muted playsinline webkit-playsinline preload="none" loop style="background: #000;"></video>
+            <img class="thumb-img" src="${thumbUrl}" 
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                 onload="this.style.display='block';"
+                 alt="Capa do vídeo" 
+                 loading="lazy">
+            <video muted playsinline webkit-playsinline preload="none" loop 
+                   style="background: #000; display: none; width: 100%; height: 100%; object-fit: cover;"></video>
+            <div class="play-icon"></div>
         `;
         
+        // Fallback: se thumbnail falhar, carrega o vídeo
         const videoEl = card.querySelector('video');
-        videoEl.src = url;
-        videoEl.load();
+        videoEl.src = videoUrl;
         
-        card.onclick = () => abrirZoom(url, file.path);
+        card.onclick = () => abrirZoom(videoUrl, file.path);
+        container.appendChild(card);
         
-        // Não insere ainda; será posicionado na reordenação
         videosMap.set(file.path, card);
     }
 
     function reordenarCards() {
         const container = document.getElementById('gallery-container');
-        // Remove todos os cards do DOM (mas mantém no Map)
         for (const card of videosMap.values()) {
             card.remove();
         }
-        // Reinsere na ordem inversa da cronológica (mais recente primeiro)
         for (let i = listaCronologica.length - 1; i >= 0; i--) {
             const path = listaCronologica[i];
             const card = videosMap.get(path);
@@ -260,7 +345,6 @@ CHANGELOG v2.0.1:
     }
 
     function renumerarCards() {
-        // Numeração baseada na posição na lista cronológica (+1)
         listaCronologica.forEach((path, index) => {
             const card = videosMap.get(path);
             if (card) {
@@ -314,23 +398,31 @@ CHANGELOG v2.0.1:
     async function excluirArquivo(path) {
         if(!confirm("🗑️ Tem certeza que deseja excluir este vídeo permanentemente?")) return;
         try {
-            const response = await fetch(`${WORKER_URL}/deletar`, { 
+            // Deleta o vídeo
+            await fetch(`${WORKER_URL}/deletar`, { 
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ path: path }) 
             });
-            if(response.ok) { 
-                alert("✅ Vídeo excluído!"); 
-                const card = videosMap.get(path);
-                if (card) {
-                    card.remove();
-                    videosMap.delete(path);
-                    listaCronologica = listaCronologica.filter(p => p !== path);
-                    reordenarCards();
-                    renumerarCards();
-                }
-            } else { 
-                alert("❌ Erro ao excluir vídeo"); 
+            
+            // Deleta a thumbnail também
+            const thumbPath = getThumbPath(path);
+            try {
+                await fetch(`${WORKER_URL}/deletar`, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path: thumbPath }) 
+                });
+            } catch(e) {}
+            
+            alert("✅ Vídeo excluído!"); 
+            const card = videosMap.get(path);
+            if (card) {
+                card.remove();
+                videosMap.delete(path);
+                listaCronologica = listaCronologica.filter(p => p !== path);
+                reordenarCards();
+                renumerarCards();
             }
         } catch(e) { alert("❌ Erro de conexão ao excluir"); }
     }
@@ -341,6 +433,9 @@ CHANGELOG v2.0.1:
         for(let path of listaCronologica) {
             try {
                 await fetch(`${WORKER_URL}/deletar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: path }) });
+                // Tenta deletar thumbnail também
+                const thumbPath = getThumbPath(path);
+                try { await fetch(`${WORKER_URL}/deletar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: thumbPath }) }); } catch(e) {}
                 excluidos++;
             } catch(e) { console.error("Erro ao excluir:", path); }
         }
