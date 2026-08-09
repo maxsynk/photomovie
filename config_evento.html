@@ -1,12 +1,13 @@
 <!--
 PHOTO MOVIE - Configurador de Eventos
-VERSÃO: 1.1.0
+VERSÃO: 1.2.0
 ÚLTIMA ATUALIZAÇÃO: 09/08/2026
 
-CHANGELOG v1.1.0:
-- CORRIGIDO: musicaTrim agora é salvo e enviado corretamente
-- ADICIONADO: Logs de debug para verificar o fluxo de dados
-- ADICIONADO: Indicador visual de preset ativo
+CHANGELOG v1.2.0:
+- CORRIGIDO: musicaTrim agora é enviado como string para o Worker
+- CORRIGIDO: Tempo de gravação agora é salvo e recuperado corretamente
+- CORRIGIDO: Campos musicaUrl e molduraUrl com fallback correto
+- ADICIONADO: Logs detalhados para debug do fluxo de dados
 - CORRIGIDO: Sincronização entre localStorage e Worker
 -->
 
@@ -15,7 +16,7 @@ CHANGELOG v1.1.0:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CONFIGURAR EVENTO - Photo Movie v1.1.0</title>
+    <title>CONFIGURAR EVENTO - Photo Movie v1.2.0</title>
     <style>
         :root { 
             --turquesa: #00d1d1; 
@@ -155,6 +156,7 @@ CHANGELOG v1.1.0:
             padding: 5px 10px;
             border-radius: 20px;
             font-size: 10px;
+            z-index: 100;
         }
     </style>
 </head>
@@ -261,7 +263,7 @@ CHANGELOG v1.1.0:
         </div>
     </div>
 
-    <div class="version-badge">v1.1.0</div>
+    <div class="version-badge">v1.2.0</div>
 
 <script>
     const WORKER_URL = "https://photomovie.maxprimefotovideo.workers.dev";
@@ -291,73 +293,110 @@ CHANGELOG v1.1.0:
     }
 
     window.onload = () => {
+        console.log("🚀 CONFIG_EVENTO v1.2.0 - Inicializando...");
+        
         const editData = localStorage.getItem('evento_para_editar');
         if (editData) {
             const ev = JSON.parse(editData);
+            console.log("📋 Dados carregados para edição:", ev);
             
             document.getElementById('conf-id').value = ev.id || sanitizarPasta(ev.nome);
             document.getElementById('conf-nome').value = ev.nome || "";
             document.getElementById('conf-data').value = ev.data || "";
             
-            if(ev.preset) {
-                document.getElementById('conf-preset').value = ev.preset;
-                atualizarIndicadorPreset(ev.preset);
-            }
-            if(ev.v1) document.getElementById('conf-v1').value = ev.v1;
-            if(ev.v2) document.getElementById('conf-v2').value = ev.v2;
-            if(ev.v3) document.getElementById('conf-v3').value = ev.v3;
-            if(ev.reverso) document.getElementById('conf-reverso').checked = (ev.reverso === true || ev.reverso === "true");
-            
-            if(ev.tempo) {
-                const tempoVal = parseInt(ev.tempo);
-                setTime(tempoVal, document.getElementById('time-' + tempoVal));
-            }
-            
-            // DESEMPACOTA EFEITOS SE VIEREM DO WORKER
+            // 🔥 CORREÇÃO: Priorizar musicaTrim para extrair TODOS os campos
             if(ev.musicaTrim && String(ev.musicaTrim).includes('|')) {
+                console.log("🎬 Desempacotando musicaTrim:", ev.musicaTrim);
                 const parts = String(ev.musicaTrim).split('|');
+                
+                // Posição 0: trimStart
                 const totalSec = parseInt(parts[0]) || 0;
                 document.getElementById('trim-min').value = Math.floor(totalSec / 60);
                 document.getElementById('trim-sec').value = totalSec % 60;
+                
+                // Posição 1: tempoTotal (IMPORTANTE!)
                 if(parts[1]) {
                     const tempoVal = parseInt(parts[1]);
+                    console.log("⏱️ Tempo recuperado do musicaTrim:", tempoVal);
                     setTime(tempoVal, document.getElementById('time-' + tempoVal));
                 }
+                
+                // Posição 2: preset
                 if(parts[2]) {
                     document.getElementById('conf-preset').value = parts[2];
                     atualizarIndicadorPreset(parts[2]);
                 }
+                
+                // Posições 3,4,5: velocidades
                 if(parts[3]) document.getElementById('conf-v1').value = parts[3];
                 if(parts[4]) document.getElementById('conf-v2').value = parts[4];
                 if(parts[5]) document.getElementById('conf-v3').value = parts[5];
+                
+                // Posição 6: reverso
                 if(parts[6]) document.getElementById('conf-reverso').checked = (parts[6] === 'true');
-            } else if(ev.musicaTrim) {
-                const totalSeconds = parseInt(ev.musicaTrim) || 0;
-                document.getElementById('trim-min').value = Math.floor(totalSeconds / 60);
-                document.getElementById('trim-sec').value = totalSeconds % 60;
+                
+            } else {
+                // Fallback: usar campos individuais (modo antigo)
+                console.log("⚠️ musicaTrim não encontrado, usando campos individuais");
+                
+                if(ev.preset) {
+                    document.getElementById('conf-preset').value = ev.preset;
+                    atualizarIndicadorPreset(ev.preset);
+                }
+                if(ev.v1) document.getElementById('conf-v1').value = ev.v1;
+                if(ev.v2) document.getElementById('conf-v2').value = ev.v2;
+                if(ev.v3) document.getElementById('conf-v3').value = ev.v3;
+                if(ev.reverso !== undefined) {
+                    document.getElementById('conf-reverso').checked = (ev.reverso === true || ev.reverso === "true");
+                }
+                
+                if(ev.tempo) {
+                    const tempoVal = parseInt(ev.tempo);
+                    setTime(tempoVal, document.getElementById('time-' + tempoVal));
+                }
+                
+                if(ev.musicaTrim && !String(ev.musicaTrim).includes('|')) {
+                    const totalSeconds = parseInt(ev.musicaTrim) || 0;
+                    document.getElementById('trim-min').value = Math.floor(totalSeconds / 60);
+                    document.getElementById('trim-sec').value = totalSeconds % 60;
+                }
             }
 
-            if(ev.musicaUrl) {
-                document.getElementById('conf-musica-url').value = ev.musicaUrl;
+            // Carregar música
+            if(ev.musicaUrl || ev.musica) {
+                const musicUrl = ev.musicaUrl || ev.musica;
+                document.getElementById('conf-musica-url').value = musicUrl;
                 document.getElementById('conf-musica-name').value = ev.musicaName || "";
                 document.getElementById('music-filename-display').innerText = ev.musicaName || "Arquivo carregado";
                 document.getElementById('music-status-text').innerText = "🎵 MÚSICA CONFIGURADA";
-                player.src = `${WORKER_URL}/stream?id=${ev.musicaUrl}`;
+                
+                const cleanId = musicUrl.includes('id=') ? musicUrl.split('id=')[1] : musicUrl;
+                const streamUrl = musicUrl.startsWith('http') ? musicUrl : `${WORKER_URL}/stream?id=${cleanId}`;
+                player.src = streamUrl;
                 player.style.display = "block";
                 document.getElementById('conf-musica-loop-vol').checked = ev.musicaLoopVol !== false;
             }
 
-            if(ev.molduraUrl) {
-                document.getElementById('conf-moldura-url').value = ev.molduraUrl;
-                document.getElementById('frame-preview').src = `${WORKER_URL}/stream?id=${ev.molduraUrl}`; 
+            // Carregar moldura
+            if(ev.molduraUrl || ev.moldura) {
+                const molduraUrl = ev.molduraUrl || ev.moldura;
+                document.getElementById('conf-moldura-url').value = molduraUrl;
+                
+                const cleanId = molduraUrl.includes('id=') ? molduraUrl.split('id=')[1] : molduraUrl;
+                const streamUrl = molduraUrl.startsWith('http') ? molduraUrl : `${WORKER_URL}/stream?id=${cleanId}`;
+                document.getElementById('frame-preview').src = streamUrl;
                 document.getElementById('frame-preview').style.display = "block";
                 document.getElementById('upload-label').innerText = "📸 MOLDURA OK";
             }
+            
             document.getElementById('titulo-pagina').innerText = "EDITAR EVENTO";
+            
+            console.log("✅ Dados carregados com sucesso!");
         }
 
         const presetInicial = document.getElementById('conf-preset').value;
         atualizarIndicadorPreset(presetInicial);
+        console.log("🎬 Preset inicial:", presetInicial);
     };
 
     function sincronizarPlayer() {
@@ -411,19 +450,23 @@ CHANGELOG v1.1.0:
     }
     
     function setV(a,b,c,r){ 
-        document.getElementById('conf-v1').value=a; 
-        document.getElementById('conf-v2').value=b; 
-        document.getElementById('conf-v3').value=c; 
-        document.getElementById('conf-reverso').checked=r; 
+        document.getElementById('conf-v1').value = a; 
+        document.getElementById('conf-v2').value = b; 
+        document.getElementById('conf-v3').value = c; 
+        document.getElementById('conf-reverso').checked = r; 
     }
     
     function toggleModal(id, show) { 
         document.getElementById(id).style.display = show ? 'flex' : 'none'; 
         if(!show) player.pause(); 
     }
-    function fecharModalMusica() { toggleModal('music-modal', false); }
+    
+    function fecharModalMusica() { 
+        toggleModal('music-modal', false); 
+    }
     
     function setTime(val, btn) { 
+        console.log("⏱️ setTime chamado com valor:", val);
         document.getElementById('conf-tempo').value = String(val); 
         document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active')); 
         if(btn) {
@@ -472,6 +515,8 @@ CHANGELOG v1.1.0:
     }
 
     async function salvarConfig() {
+        console.log("💾 INICIANDO SALVAMENTO v1.2.0...");
+        
         const nomeVisual = document.getElementById('conf-nome').value.trim();
         if(!nomeVisual) return alert("Digite o nome do evento.");
         
@@ -486,9 +531,14 @@ CHANGELOG v1.1.0:
         const v3Val = document.getElementById('conf-v3').value || "1.0";
         const reversoVal = document.getElementById('conf-reverso').checked ? "true" : "false";
 
-        // EMPACOTA TODOS OS EFEITOS NO FORMATO CORRETO
+        // 🔥 EMPACOTA TODOS OS EFEITOS NO FORMATO CORRETO
         // Formato: trimStart|tempoTotal|preset|speedStart|speedMiddle|speedEnd|reverso
         const packedEffects = `${trimSecs}|${tempoVal}|${presetVal}|${v1Val}|${v2Val}|${v3Val}|${reversoVal}`;
+        
+        console.log("🎬 musicaTrim gerado:", packedEffects);
+        console.log("⏱️ Tempo de gravação:", tempoVal, "segundos");
+        console.log("🎯 Preset:", presetVal);
+        console.log("🔄 Reverso:", reversoVal);
 
         const configLocal = {
             id: idEventoValido,
@@ -504,26 +554,28 @@ CHANGELOG v1.1.0:
             molduraUrl: document.getElementById('conf-moldura-url').value,
             musicaUrl: document.getElementById('conf-musica-url').value,
             musicaName: document.getElementById('conf-musica-name').value,
-            musicaTrim: packedEffects,  // CAMPO CRÍTICO COM TODOS OS EFEITOS
+            musicaTrim: packedEffects,  // 🔥 CAMPO PRINCIPAL COM TODOS OS EFEITOS
             musicaLoopVol: document.getElementById('conf-musica-loop-vol').checked
         };
 
-        // DEBUG: Verificar o que está sendo salvo
-        console.log("📦 Salvando configuração:", configLocal);
-        console.log("🎬 musicaTrim:", packedEffects);
+        console.log("📦 ConfigLocal completo:", JSON.stringify(configLocal, null, 2));
         
+        // Salvar no localStorage
         localStorage.setItem('config_atual', JSON.stringify(configLocal));
+        console.log("✅ Salvo no localStorage");
 
+        // 🔥 ENVIAR PARA O WORKER - TODOS OS CAMPOS NECESSÁRIOS
         const payloadWorker = {
             id: configLocal.id,
             nome: configLocal.nome,
             data: configLocal.data || "",
             molduraUrl: configLocal.molduraUrl || "",
             musicaUrl: configLocal.musicaUrl || "",
-            musicaTrim: packedEffects  // ENVIAR PARA O WORKER
+            musicaTrim: String(packedEffects),  // 🔥 GARANTIR QUE É STRING
+            tempo: String(tempoVal)  // 🔥 ENVIAR TEMPO TAMBÉM
         };
 
-        console.log("📤 Enviando para worker:", payloadWorker);
+        console.log("📤 Payload enviado ao Worker:", JSON.stringify(payloadWorker, null, 2));
 
         try {
             const res = await fetch(`${WORKER_URL}/salvar-evento`, {
@@ -533,17 +585,19 @@ CHANGELOG v1.1.0:
             });
             
             const responseData = await res.json().catch(() => ({}));
-            console.log("📥 Resposta do worker:", responseData);
+            console.log("📥 Resposta do Worker:", responseData);
             
             if(res.ok) { 
                 localStorage.removeItem('evento_para_editar');
+                console.log("🎉 Evento salvo com sucesso!");
                 alert("Evento salvo com sucesso!"); 
                 window.location.href = 'index.html'; 
             } else {
+                console.error("❌ Erro do Worker:", responseData);
                 alert("Erro retornado pelo servidor: " + (responseData.error || res.statusText));
             }
         } catch (e) { 
-            console.error("❌ Erro ao salvar:", e);
+            console.error("❌ Erro na requisição:", e);
             alert("Erro de conexão ao tentar salvar."); 
         }
     }
