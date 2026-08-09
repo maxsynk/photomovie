@@ -1,14 +1,14 @@
 <!--
 PHOTO MOVIE - Configurador de Eventos
-VERSÃO: 1.2.0
+VERSÃO: 2.0.0
 ÚLTIMA ATUALIZAÇÃO: 09/08/2026
 
-CHANGELOG v1.2.0:
-- CORRIGIDO: musicaTrim agora é enviado como string para o Worker
-- CORRIGIDO: Tempo de gravação agora é salvo e recuperado corretamente
-- CORRIGIDO: Campos musicaUrl e molduraUrl com fallback correto
-- ADICIONADO: Logs detalhados para debug do fluxo de dados
-- CORRIGIDO: Sincronização entre localStorage e Worker
+CHANGELOG v2.0.0:
+- SEPARADO: musicaTrim (só trim da música) e efeitosVideo (efeitos de velocidade)
+- CORRIGIDO: Envio correto dos campos separados para o Worker
+- CORRIGIDO: Recuperação dos campos separados ao editar
+- ADICIONADO: Campo 'efeitosVideo' no payload do Worker
+- ADICIONADO: Logs detalhados para debug
 -->
 
 <!DOCTYPE html>
@@ -16,7 +16,7 @@ CHANGELOG v1.2.0:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CONFIGURAR EVENTO - Photo Movie v1.2.0</title>
+    <title>CONFIGURAR EVENTO - Photo Movie v2.0.0</title>
     <style>
         :root { 
             --turquesa: #00d1d1; 
@@ -263,7 +263,7 @@ CHANGELOG v1.2.0:
         </div>
     </div>
 
-    <div class="version-badge">v1.2.0</div>
+    <div class="version-badge">v2.0.0</div>
 
 <script>
     const WORKER_URL = "https://photomovie.maxprimefotovideo.workers.dev";
@@ -293,7 +293,7 @@ CHANGELOG v1.2.0:
     }
 
     window.onload = () => {
-        console.log("🚀 CONFIG_EVENTO v1.2.0 - Inicializando...");
+        console.log("🚀 CONFIG_EVENTO v2.0.0 - Inicializando...");
         
         const editData = localStorage.getItem('evento_para_editar');
         if (editData) {
@@ -304,40 +304,28 @@ CHANGELOG v1.2.0:
             document.getElementById('conf-nome').value = ev.nome || "";
             document.getElementById('conf-data').value = ev.data || "";
             
-            // 🔥 CORREÇÃO: Priorizar musicaTrim para extrair TODOS os campos
-            if(ev.musicaTrim && String(ev.musicaTrim).includes('|')) {
-                console.log("🎬 Desempacotando musicaTrim:", ev.musicaTrim);
-                const parts = String(ev.musicaTrim).split('|');
+            // 🔥 NOVO: Recuperar efeitosVideo (campo separado)
+            if(ev.efeitosVideo && String(ev.efeitosVideo).includes('|')) {
+                console.log("🎬 Desempacotando efeitosVideo:", ev.efeitosVideo);
+                const parts = String(ev.efeitosVideo).split('|');
+                // Formato: tempoTotal|preset|v1|v2|v3|reverso
                 
-                // Posição 0: trimStart
-                const totalSec = parseInt(parts[0]) || 0;
-                document.getElementById('trim-min').value = Math.floor(totalSec / 60);
-                document.getElementById('trim-sec').value = totalSec % 60;
-                
-                // Posição 1: tempoTotal (IMPORTANTE!)
-                if(parts[1]) {
-                    const tempoVal = parseInt(parts[1]);
-                    console.log("⏱️ Tempo recuperado do musicaTrim:", tempoVal);
+                if(parts[0]) {
+                    const tempoVal = parseInt(parts[0]);
+                    console.log("⏱️ Tempo recuperado:", tempoVal);
                     setTime(tempoVal, document.getElementById('time-' + tempoVal));
                 }
-                
-                // Posição 2: preset
-                if(parts[2]) {
-                    document.getElementById('conf-preset').value = parts[2];
-                    atualizarIndicadorPreset(parts[2]);
+                if(parts[1]) {
+                    document.getElementById('conf-preset').value = parts[1];
+                    atualizarIndicadorPreset(parts[1]);
                 }
-                
-                // Posições 3,4,5: velocidades
-                if(parts[3]) document.getElementById('conf-v1').value = parts[3];
-                if(parts[4]) document.getElementById('conf-v2').value = parts[4];
-                if(parts[5]) document.getElementById('conf-v3').value = parts[5];
-                
-                // Posição 6: reverso
-                if(parts[6]) document.getElementById('conf-reverso').checked = (parts[6] === 'true');
-                
+                if(parts[2]) document.getElementById('conf-v1').value = parts[2];
+                if(parts[3]) document.getElementById('conf-v2').value = parts[3];
+                if(parts[4]) document.getElementById('conf-v3').value = parts[4];
+                if(parts[5]) document.getElementById('conf-reverso').checked = (parts[5] === 'true');
             } else {
-                // Fallback: usar campos individuais (modo antigo)
-                console.log("⚠️ musicaTrim não encontrado, usando campos individuais");
+                // Fallback: usar campos individuais
+                console.log("⚠️ efeitosVideo não encontrado, usando campos individuais");
                 
                 if(ev.preset) {
                     document.getElementById('conf-preset').value = ev.preset;
@@ -354,12 +342,14 @@ CHANGELOG v1.2.0:
                     const tempoVal = parseInt(ev.tempo);
                     setTime(tempoVal, document.getElementById('time-' + tempoVal));
                 }
-                
-                if(ev.musicaTrim && !String(ev.musicaTrim).includes('|')) {
-                    const totalSeconds = parseInt(ev.musicaTrim) || 0;
-                    document.getElementById('trim-min').value = Math.floor(totalSeconds / 60);
-                    document.getElementById('trim-sec').value = totalSeconds % 60;
-                }
+            }
+
+            // Recuperar musicaTrim (SÓ o trim da música)
+            if(ev.musicaTrim) {
+                const trimVal = parseInt(ev.musicaTrim) || 0;
+                document.getElementById('trim-min').value = Math.floor(trimVal / 60);
+                document.getElementById('trim-sec').value = trimVal % 60;
+                console.log("🎵 Trim da música:", trimVal, "s");
             }
 
             // Carregar música
@@ -515,7 +505,7 @@ CHANGELOG v1.2.0:
     }
 
     async function salvarConfig() {
-        console.log("💾 INICIANDO SALVAMENTO v1.2.0...");
+        console.log("💾 INICIANDO SALVAMENTO v2.0.0...");
         
         const nomeVisual = document.getElementById('conf-nome').value.trim();
         if(!nomeVisual) return alert("Digite o nome do evento.");
@@ -523,7 +513,10 @@ CHANGELOG v1.2.0:
         let idEventoValido = document.getElementById('conf-id').value.trim();
         if(!idEventoValido) { idEventoValido = sanitizarPasta(nomeVisual); }
 
-        const trimSecs = (parseInt(document.getElementById('trim-min').value)||0)*60 + (parseInt(document.getElementById('trim-sec').value)||0);
+        // 🔥 SEPARAÇÃO: musicaTrim = SÓ trim da música
+        const trimMusica = (parseInt(document.getElementById('trim-min').value)||0)*60 + (parseInt(document.getElementById('trim-sec').value)||0);
+        
+        // 🔥 SEPARAÇÃO: efeitosVideo = SÓ efeitos de velocidade
         const tempoVal = document.getElementById('conf-tempo').value || "10";
         const presetVal = document.getElementById('conf-preset').value || "normal";
         const v1Val = document.getElementById('conf-v1').value || "1.0";
@@ -531,11 +524,11 @@ CHANGELOG v1.2.0:
         const v3Val = document.getElementById('conf-v3').value || "1.0";
         const reversoVal = document.getElementById('conf-reverso').checked ? "true" : "false";
 
-        // 🔥 EMPACOTA TODOS OS EFEITOS NO FORMATO CORRETO
-        // Formato: trimStart|tempoTotal|preset|speedStart|speedMiddle|speedEnd|reverso
-        const packedEffects = `${trimSecs}|${tempoVal}|${presetVal}|${v1Val}|${v2Val}|${v3Val}|${reversoVal}`;
+        // Formato: tempoTotal|preset|speedStart|speedMiddle|speedEnd|reverso
+        const efeitosVideo = `${tempoVal}|${presetVal}|${v1Val}|${v2Val}|${v3Val}|${reversoVal}`;
         
-        console.log("🎬 musicaTrim gerado:", packedEffects);
+        console.log("🎵 musicaTrim (só trim):", trimMusica);
+        console.log("🎬 efeitosVideo:", efeitosVideo);
         console.log("⏱️ Tempo de gravação:", tempoVal, "segundos");
         console.log("🎯 Preset:", presetVal);
         console.log("🔄 Reverso:", reversoVal);
@@ -554,7 +547,8 @@ CHANGELOG v1.2.0:
             molduraUrl: document.getElementById('conf-moldura-url').value,
             musicaUrl: document.getElementById('conf-musica-url').value,
             musicaName: document.getElementById('conf-musica-name').value,
-            musicaTrim: packedEffects,  // 🔥 CAMPO PRINCIPAL COM TODOS OS EFEITOS
+            musicaTrim: String(trimMusica),      // 🔥 SÓ o trim da música
+            efeitosVideo: efeitosVideo,           // 🔥 NOVO: efeitos separados
             musicaLoopVol: document.getElementById('conf-musica-loop-vol').checked
         };
 
@@ -564,15 +558,16 @@ CHANGELOG v1.2.0:
         localStorage.setItem('config_atual', JSON.stringify(configLocal));
         console.log("✅ Salvo no localStorage");
 
-        // 🔥 ENVIAR PARA O WORKER - TODOS OS CAMPOS NECESSÁRIOS
+        // 🔥 ENVIAR PARA O WORKER - CAMPOS SEPARADOS
         const payloadWorker = {
             id: configLocal.id,
             nome: configLocal.nome,
             data: configLocal.data || "",
             molduraUrl: configLocal.molduraUrl || "",
             musicaUrl: configLocal.musicaUrl || "",
-            musicaTrim: String(packedEffects),  // 🔥 GARANTIR QUE É STRING
-            tempo: String(tempoVal)  // 🔥 ENVIAR TEMPO TAMBÉM
+            musicaTrim: String(trimMusica),     // SÓ trim da música
+            tempo: String(tempoVal),             // Tempo de gravação
+            efeitosVideo: efeitosVideo           // NOVO: efeitos separados
         };
 
         console.log("📤 Payload enviado ao Worker:", JSON.stringify(payloadWorker, null, 2));
