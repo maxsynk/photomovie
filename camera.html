@@ -8,16 +8,29 @@
         :root { --bg: #001a1a; --dourado: #c5a059; --vermelho-neon: #ff0033; }
         body { margin: 0; background: var(--bg); overflow: hidden; color: white; font-family: 'Segoe UI', sans-serif; }
         #app { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
-        video { width: 100%; height: 100%; object-fit: cover; background: #000; }
+        
+        video { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            background: #000;
+            /* Ajuste aqui para dar menos zoom - aumente o scale se necessário */
+            transform: scale(0.85); /* Reduz o zoom em 15% */
+        }
+        
+        /* Classe para espelhar câmera frontal */
+        video.front-camera {
+            transform: scale(0.85) scaleX(-1); /* Mantém o zoom reduzido E espelha */
+        }
         
         /* Moldura ajustada para não vazar da tela */
         #moldura-overlay { 
             position: absolute; 
-            inset: 0;
-            width: 100%; 
-            height: 100%; 
-            max-width: 100vw;
-            max-height: 100vh;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%; /* Reduzida para 90% da tela */
+            height: 90%; /* Reduzida para 90% da tela */
             pointer-events: none; 
             z-index: 5; 
             display: none; 
@@ -25,13 +38,28 @@
         }
         
         .header { 
-            position: absolute; top: 40px; width: 100%; text-align: center; z-index: 10; 
-            text-transform: uppercase; letter-spacing: 2px; text-shadow: 2px 2px 10px rgba(0,0,0,0.9); 
+            position: absolute; 
+            top: 20px; /* Reduzido para dar mais espaço */
+            width: 100%; 
+            text-align: center; 
+            z-index: 10; 
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.9);
+            pointer-events: none; /* Para não bloquear cliques */
         }
-        #event-name { color: var(--dourado); font-weight: bold; font-size: 16px; }
+        #event-name { 
+            color: var(--dourado); 
+            font-weight: bold; 
+            font-size: 14px; /* Reduzido para não competir com a moldura */
+        }
         
         #timer-display { 
-            font-size: 120px; font-weight: 900; margin-top: 30px; display: none; color: var(--dourado); 
+            font-size: 80px; /* Reduzido de 120px para 80px */
+            font-weight: 900; 
+            margin-top: 20px; 
+            display: none; 
+            color: var(--dourado); 
             text-shadow: 0 0 30px rgba(197, 160, 89, 0.7);
         }
 
@@ -66,7 +94,13 @@
         .btn-top.muted { color: var(--vermelho-neon); border-color: var(--vermelho-neon); }
         
         .controls { 
-            position: absolute; bottom: 80px; width: 100%; display: flex; justify-content: space-around; align-items: center; z-index: 10; 
+            position: absolute; 
+            bottom: 50px; /* Ajustado para não colidir com a moldura */
+            width: 100%; 
+            display: flex; 
+            justify-content: space-around; 
+            align-items: center; 
+            z-index: 10; 
         }
         .btn { 
             width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--dourado); 
@@ -135,10 +169,21 @@
         if (stream) stream.getTracks().forEach(t => t.stop());
         try {
             stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: isFrontCamera ? "user" : "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
+                video: { 
+                    facingMode: isFrontCamera ? "user" : "environment", 
+                    width: { ideal: 1920 }, // Aumentado para melhor qualidade
+                    height: { ideal: 1080 } // Aumentado para melhor qualidade
+                },
                 audio: isMicActive
             });
             video.srcObject = stream;
+            
+            // Aplica ou remove a classe de espelhamento
+            if (isFrontCamera) {
+                video.classList.add('front-camera');
+            } else {
+                video.classList.remove('front-camera');
+            }
             
             video.onloadedmetadata = () => {
                 canvas.width = video.videoWidth;
@@ -169,7 +214,12 @@
         await initCamera();
     }
 
-    function switchCamera() { if (!isRecording) { isFrontCamera = !isFrontCamera; initCamera(); } }
+    function switchCamera() { 
+        if (!isRecording) { 
+            isFrontCamera = !isFrontCamera; 
+            initCamera(); 
+        } 
+    }
 
     window.onload = () => {
         const config = JSON.parse(localStorage.getItem('config_atual'));
@@ -217,7 +267,18 @@
 
         function renderLoop() {
             if (!isRecording) return; 
+            
+            ctx.save();
+            
+            // Se for câmera frontal, espelha o canvas
+            if (isFrontCamera) {
+                ctx.translate(canvas.width, 0);
+                ctx.scale(-1, 1);
+            }
+            
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            ctx.restore();
+            
             animationId = requestAnimationFrame(renderLoop);
         }
 
