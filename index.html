@@ -13,7 +13,6 @@
             --bg-modal: rgba(0, 20, 20, 0.98);
             --cinza-minimal: #666666; 
             --ativo-ouro: linear-gradient(135deg, #c5a059, #8e6d2d);
-            --telao-color: #00d1d1;
         }
         
         body { 
@@ -46,18 +45,11 @@
         #btn-galeria { background: rgba(197, 160, 89, 0.1); color: var(--dourado); border: 1px solid var(--dourado); }
         #btn-copy-link { background: rgba(197, 160, 89, 0.1); color: var(--dourado); border: 1px solid var(--dourado); }
         
+        /* Botão TELÃO com mesmo estilo dos outros */
         #btn-telao { 
-            background: rgba(0, 209, 209, 0.1); 
-            color: var(--telao-color); 
-            border: 1px solid var(--telao-color); 
-            margin-bottom: 25px;
-            box-shadow: 0 0 20px rgba(0, 209, 209, 0.2);
-            animation: pulse-telao 2s infinite;
-        }
-        
-        @keyframes pulse-telao {
-            0%, 100% { box-shadow: 0 0 20px rgba(0, 209, 209, 0.2); }
-            50% { box-shadow: 0 0 35px rgba(0, 209, 209, 0.4); }
+            background: rgba(197, 160, 89, 0.1); 
+            color: var(--dourado); 
+            border: 1px solid var(--dourado); 
         }
         
         #btn-admin { background: rgba(197, 160, 89, 0.1); color: #c5a059; border: 1px solid #c5a059; }
@@ -122,7 +114,7 @@
         
         <button id="btn-copy-link" class="btn-protected btn-central" onclick="copiarLinkCliente()">🔗 COPIAR LINK CLIENTE</button>
         
-        <!-- NOVO BOTÃO TELÃO -->
+        <!-- Botão TELÃO -->
         <a href="telao.html" id="btn-telao" class="btn-protected btn-central">🎬 MODO TELÃO</a>
         
         <div id="container-eventos" class="event-list-container">
