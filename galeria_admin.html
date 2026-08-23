@@ -1,20 +1,19 @@
 <!--
 PHOTO MOVIE - Galeria Admin
-VERSÃO: 2.0.2
-ÚLTIMA ATUALIZAÇÃO: 09/08/2026
+VERSÃO: 2.0.3
+ÚLTIMA ATUALIZAÇÃO: 22/08/2026
 
-CHANGELOG v2.0.2:
-- ADICIONADO: Thumbnails nos cards (imagem .jpg gerada pelo processador)
-- ADICIONADO: Fallback para vídeo se thumbnail não existir
-- CORRIGIDO: Cards mostram capa do vídeo em vez de tela preta
-- OTIMIZADO: Thumbnail carrega muito mais rápido que o vídeo
+CHANGELOG v2.0.3:
+- ADICIONADO: Volta direto para câmera após sair da galeria
+- CORRIGIDO: Navegação inteligente entre câmera e galeria
+- MELHORADO: Fluxo de retorno otimizado para operador
 -->
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PHOTO MOVIE - ADMIN v2.0.2</title>
+    <title>PHOTO MOVIE - ADMIN v2.0.3</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
@@ -49,7 +48,6 @@ CHANGELOG v2.0.2:
         }
         .video-card:hover { border-color: var(--dourado); }
         
-        /* 🔥 Thumbnail como imagem de fundo */
         .video-card .thumb-img {
             width: 100%;
             height: 100%;
@@ -57,7 +55,6 @@ CHANGELOG v2.0.2:
             display: block;
         }
         
-        /* Ícone de play sobre a thumbnail */
         .video-card .play-icon {
             position: absolute;
             top: 50%;
@@ -132,7 +129,7 @@ CHANGELOG v2.0.2:
         <div class="header">
             <h1>PHOTO MOVIE</h1>
             <p class="subtitle">COLECIONANDO MOMENTOS</p>
-            <div class="admin-label">👑 GALERIA ADMIN v2.0.2</div>
+            <div class="admin-label">👑 GALERIA ADMIN v2.0.3</div>
             <div class="event-info-container" onclick="copiarLinkAdmin()">
                 <div class="v-line"></div>
                 <p id="nome-evento-titulo">CARREGANDO...</p>
@@ -157,7 +154,7 @@ CHANGELOG v2.0.2:
     </div>
 
     <div class="nav-footer">
-        <a href="index.html" class="btn-action btn-close" style="display: block; text-align: center; background: rgba(197, 160, 89, 0.1); color: var(--dourado); border: 1px solid var(--dourado);">← VOLTAR</a>
+        <a href="#" id="btn-voltar" class="btn-action btn-close" style="display: block; text-align: center; background: rgba(197, 160, 89, 0.1); color: var(--dourado); border: 1px solid var(--dourado);">← VOLTAR</a>
     </div>
 
     <div id="modal-zoom">
@@ -177,6 +174,17 @@ CHANGELOG v2.0.2:
     const videosMap = new Map();
     let listaCronologica = [];
 
+    // Função para voltar (inteligente)
+    function voltarParaOrigem() {
+        const voltarParaCamera = localStorage.getItem('voltar_para_camera');
+        if (voltarParaCamera === 'true') {
+            localStorage.removeItem('voltar_para_camera');
+            window.location.href = 'camera.html';
+        } else {
+            window.location.href = 'index.html';
+        }
+    }
+
     function copiarLinkAdmin() {
         if(!idPastaFixo) { alert("Aguardando carregamento do evento..."); return; }
         const link = `${window.location.origin}${window.location.pathname}?evento=${encodeURIComponent(idPastaFixo)}`;
@@ -185,7 +193,15 @@ CHANGELOG v2.0.2:
         }).catch(() => { alert("Link: " + link); });
     }
 
-    window.onload = () => { carregarEvento(); };
+    window.onload = () => { 
+        carregarEvento();
+        
+        // Configurar botão voltar
+        document.getElementById('btn-voltar').addEventListener('click', function(e) {
+            e.preventDefault();
+            voltarParaOrigem();
+        });
+    };
 
     async function carregarEvento() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -306,7 +322,7 @@ CHANGELOG v2.0.2:
         card.className = 'video-card';
         card.dataset.path = file.path;
         
-        // 🔥 Usa thumbnail como capa, com fallback para vídeo
+        // Usa thumbnail como capa, com fallback para vídeo
         card.innerHTML = `
             <div class="video-id-badge">#?</div>
             <button class="btn-del-mini" onclick="event.stopPropagation(); excluirArquivo('${file.path}')">✕</button>
