@@ -2,65 +2,85 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>PHOTO MOVIE - Câmera</title>
     <style>
         :root { --bg: #001a1a; --dourado: #c5a059; --vermelho-neon: #ff0033; }
-        body { margin: 0; background: var(--bg); overflow: hidden; color: white; font-family: 'Segoe UI', sans-serif; }
-        #app { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
+        
+        * {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body { 
+            margin: 0; 
+            background: var(--bg); 
+            overflow: hidden; 
+            color: white; 
+            font-family: 'Segoe UI', sans-serif;
+            touch-action: none;
+            -webkit-overflow-scrolling: none;
+            overscroll-behavior: none;
+        }
+        
+        #app { 
+            position: relative; 
+            width: 100vw; 
+            height: 100vh; 
+            height: 100dvh; /* Para dispositivos móveis */
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            overflow: hidden;
+        }
         
         video { 
             width: 100%; 
             height: 100%; 
             object-fit: cover; 
             background: #000;
-            /* Ajuste aqui para dar menos zoom - aumente o scale se necessário */
-            transform: scale(0.85); /* Reduz o zoom em 15% */
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform: scale(1); /* Zoom padrão - será ajustado pelo seletor */
+            transform-origin: center center;
         }
         
         /* Classe para espelhar câmera frontal */
         video.front-camera {
-            transform: scale(0.85) scaleX(-1); /* Mantém o zoom reduzido E espelha */
+            /* O scale será aplicado via JavaScript para manter o zoom consistente */
         }
         
-        /* Moldura ajustada para não vazar da tela */
+        /* Moldura FULLSCREEN */
         #moldura-overlay { 
             position: absolute; 
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 90%; /* Reduzida para 90% da tela */
-            height: 90%; /* Reduzida para 90% da tela */
+            top: 0;
+            left: 0;
+            width: 100%; 
+            height: 100%; 
             pointer-events: none; 
             z-index: 5; 
             display: none; 
-            object-fit: contain; /* Encaixa perfeitamente sem estourar bordas */
-        }
-        
-        .header { 
-            position: absolute; 
-            top: 20px; /* Reduzido para dar mais espaço */
-            width: 100%; 
-            text-align: center; 
-            z-index: 10; 
-            text-transform: uppercase; 
-            letter-spacing: 2px; 
-            text-shadow: 2px 2px 10px rgba(0,0,0,0.9);
-            pointer-events: none; /* Para não bloquear cliques */
-        }
-        #event-name { 
-            color: var(--dourado); 
-            font-weight: bold; 
-            font-size: 14px; /* Reduzido para não competir com a moldura */
+            object-fit: fill; /* Preenche toda a tela */
         }
         
         #timer-display { 
-            font-size: 80px; /* Reduzido de 120px para 80px */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 100px; 
             font-weight: 900; 
-            margin-top: 20px; 
             display: none; 
             color: var(--dourado); 
             text-shadow: 0 0 30px rgba(197, 160, 89, 0.7);
+            z-index: 15;
+            pointer-events: none;
         }
 
         #warning-flash {
@@ -85,62 +105,164 @@
             z-index: 20;
             display: flex;
             gap: 10px;
+            pointer-events: auto;
         }
+        
+        /* Seletor de zoom */
+        #zoom-control {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid var(--dourado);
+            pointer-events: auto;
+            backdrop-filter: blur(5px);
+        }
+        
+        #zoom-control label {
+            font-size: 12px;
+            color: var(--dourado);
+            letter-spacing: 1px;
+        }
+        
+        #zoom-slider {
+            width: 100px;
+            accent-color: var(--dourado);
+        }
+        
+        #zoom-value {
+            font-size: 12px;
+            color: white;
+            min-width: 35px;
+            text-align: center;
+        }
+        
         .btn-top {
-            width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--dourado);
-            background: rgba(0,0,0,0.5); color: var(--dourado); display: flex; align-items: center; justify-content: center;
-            cursor: pointer; font-size: 18px; backdrop-filter: blur(5px);
+            width: 44px; 
+            height: 44px; 
+            border-radius: 50%; 
+            border: 2px solid var(--dourado);
+            background: rgba(0,0,0,0.5); 
+            color: var(--dourado); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            cursor: pointer; 
+            font-size: 18px; 
+            backdrop-filter: blur(5px);
+            pointer-events: auto;
         }
         .btn-top.muted { color: var(--vermelho-neon); border-color: var(--vermelho-neon); }
         
         .controls { 
             position: absolute; 
-            bottom: 50px; /* Ajustado para não colidir com a moldura */
+            bottom: 30px; /* Posição original */
             width: 100%; 
             display: flex; 
             justify-content: space-around; 
             align-items: center; 
-            z-index: 10; 
+            z-index: 10;
+            pointer-events: auto;
+            padding: 0 20px;
+            box-sizing: border-box;
         }
+        
         .btn { 
-            width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--dourado); 
-            background: rgba(0,0,0,0.5); color: var(--dourado); display: flex; align-items: center; justify-content: center; cursor: pointer; 
-            font-size: 20px; backdrop-filter: blur(5px);
+            width: 60px; 
+            height: 60px; 
+            border-radius: 50%; 
+            border: 2px solid var(--dourado); 
+            background: rgba(0,0,0,0.7); 
+            color: var(--dourado); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            cursor: pointer; 
+            font-size: 20px; 
+            backdrop-filter: blur(5px);
+            pointer-events: auto;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
-        .shutter { width: 80px; height: 80px; border: 4px solid var(--dourado); }
+        
+        .shutter { 
+            width: 80px; 
+            height: 80px; 
+            border: 4px solid var(--dourado); 
+        }
         .shutter:active { transform: scale(0.9); }
         
         #loader { 
-            position: fixed; inset: 0; z-index: 100; display: none; align-items: center; justify-content: center; 
-            background: rgba(0, 0, 0, 0.85); flex-direction: column; color: var(--dourado);
+            position: fixed; 
+            inset: 0; 
+            z-index: 100; 
+            display: none; 
+            align-items: center; 
+            justify-content: center; 
+            background: rgba(0, 0, 0, 0.85); 
+            flex-direction: column; 
+            color: var(--dourado);
         }
+        
         .spin { 
-            width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.1); border-top-color: var(--dourado); 
-            border-radius: 50%; animation: rotate 1s linear infinite; 
+            width: 50px; 
+            height: 50px; 
+            border: 5px solid rgba(255,255,255,0.1); 
+            border-top-color: var(--dourado); 
+            border-radius: 50%; 
+            animation: rotate 1s linear infinite; 
         }
+        
         @keyframes rotate { to { transform: rotate(360deg); } }
+        
+        /* Bloquear gestos de navegação */
+        html, body {
+            overscroll-behavior: none;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
     </style>
 </head>
 <body>
     <div id="app">
-        <div class="header">
-            <span id="event-name">PHOTO MOVIE</span>
-            <div id="timer-display">3</div>
-        </div>
+        <!-- Removido o header com título -->
+        
+        <!-- Timer centralizado -->
+        <div id="timer-display">3</div>
 
+        <!-- Moldura fullscreen -->
         <img id="moldura-overlay" alt="Moldura do Evento">
+        
         <div id="warning-flash"></div>
 
+        <!-- Controles superiores -->
         <div class="top-controls">
             <div class="btn-top muted" id="btn-mic" onclick="toggleMicrofone()">🔇</div>
+        </div>
+        
+        <!-- Seletor de Zoom -->
+        <div id="zoom-control">
+            <label>ZOOM:</label>
+            <input type="range" id="zoom-slider" min="0.5" max="1.5" step="0.05" value="1.0">
+            <span id="zoom-value">1.0x</span>
         </div>
 
         <video id="preview" autoplay playsinline></video>
         
+        <!-- Botões de controle -->
         <div class="controls">
-            <div class="btn" onclick="window.location.href='index.html'">✕</div>
-            <div class="btn shutter" id="rec-btn"></div>
-            <div class="btn" onclick="switchCamera()">🔄</div>
+            <div class="btn" onclick="window.location.href='index.html'" ontouchstart="event.preventDefault(); window.location.href='index.html';">✕</div>
+            <div class="btn shutter" id="rec-btn" ontouchstart="event.preventDefault();"></div>
+            <div class="btn" onclick="switchCamera()" ontouchstart="event.preventDefault(); switchCamera();">🔄</div>
         </div>
     </div>
     
@@ -158,12 +280,49 @@
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
     const warningFlash = document.getElementById('warning-flash');
+    const zoomSlider = document.getElementById('zoom-slider');
+    const zoomValue = document.getElementById('zoom-value');
     
     const molduraImg = new Image();
     let stream, recorder, chunks = [];
     let isFrontCamera = false, isRecording = false;
     let isMicActive = false;
     let animationId = null;
+    let currentZoom = 1.0;
+
+    // Bloquear gestos de navegação
+    document.addEventListener('touchmove', function(e) {
+        if (e.target === zoomSlider) return; // Permite o slider funcionar
+        e.preventDefault();
+    }, { passive: false });
+    
+    document.addEventListener('gesturestart', function(e) {
+        e.preventDefault();
+    });
+    
+    document.addEventListener('dblclick', function(e) {
+        e.preventDefault();
+    });
+    
+    // Impedir menu de contexto (botão direito / long press)
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+    });
+
+    // Controle de zoom
+    zoomSlider.addEventListener('input', function() {
+        currentZoom = parseFloat(this.value);
+        zoomValue.textContent = currentZoom.toFixed(1) + 'x';
+        applyZoom();
+    });
+
+    function applyZoom() {
+        if (isFrontCamera) {
+            video.style.transform = `scale(${currentZoom}) scaleX(-1)`;
+        } else {
+            video.style.transform = `scale(${currentZoom})`;
+        }
+    }
 
     async function initCamera() {
         if (stream) stream.getTracks().forEach(t => t.stop());
@@ -171,19 +330,13 @@
             stream = await navigator.mediaDevices.getUserMedia({
                 video: { 
                     facingMode: isFrontCamera ? "user" : "environment", 
-                    width: { ideal: 1920 }, // Aumentado para melhor qualidade
-                    height: { ideal: 1080 } // Aumentado para melhor qualidade
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 }
                 },
                 audio: isMicActive
             });
             video.srcObject = stream;
-            
-            // Aplica ou remove a classe de espelhamento
-            if (isFrontCamera) {
-                video.classList.add('front-camera');
-            } else {
-                video.classList.remove('front-camera');
-            }
+            applyZoom();
             
             video.onloadedmetadata = () => {
                 canvas.width = video.videoWidth;
@@ -222,9 +375,24 @@
     }
 
     window.onload = () => {
+        // Prevenir gestos de zoom e navegação
+        window.addEventListener('touchstart', function(e) {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+        
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function(e) {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+        
         const config = JSON.parse(localStorage.getItem('config_atual'));
         if (config) {
-            document.getElementById('event-name').innerText = config.nome || "PHOTO MOVIE";
             let path = config.molduraUrl || config.moldura;
             if (path) {
                 const cleanId = path.includes('id=') ? path.split('id=')[1] : path;
@@ -234,7 +402,9 @@
                 const overlayElem = document.getElementById('moldura-overlay');
                 overlayElem.src = url;
                 
-                molduraImg.onload = () => overlayElem.style.display = 'block';
+                molduraImg.onload = () => {
+                    overlayElem.style.display = 'block';
+                };
             }
         }
         initCamera();
@@ -269,6 +439,11 @@
             if (!isRecording) return; 
             
             ctx.save();
+            
+            // Aplica o zoom no canvas
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.scale(currentZoom, currentZoom);
+            ctx.translate(-canvas.width / 2, -canvas.height / 2);
             
             // Se for câmera frontal, espelha o canvas
             if (isFrontCamera) {
