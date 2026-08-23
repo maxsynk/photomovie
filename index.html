@@ -45,7 +45,7 @@
         #btn-galeria { background: rgba(197, 160, 89, 0.1); color: var(--dourado); border: 1px solid var(--dourado); }
         #btn-copy-link { background: rgba(197, 160, 89, 0.1); color: var(--dourado); border: 1px solid var(--dourado); }
         
-        /* Botão TELÃO com mesmo estilo dos outros */
+        /* Botão TELÃO - mesmo estilo dos outros */
         #btn-telao { 
             background: rgba(197, 160, 89, 0.1); 
             color: var(--dourado); 
@@ -103,7 +103,7 @@
     <div class="header">
         <h1>PHOTO MOVIE</h1>
         <p>colecionando momentos</p>
-        <span class="version-tag">v1.0.2</span>
+        <span class="version-tag">v1.0.3</span>
     </div>
 
     <div class="main-container">
@@ -114,8 +114,8 @@
         
         <button id="btn-copy-link" class="btn-protected btn-central" onclick="copiarLinkCliente()">🔗 COPIAR LINK CLIENTE</button>
         
-        <!-- Botão TELÃO -->
-        <a href="telao.html" id="btn-telao" class="btn-protected btn-central">🎬 MODO TELÃO</a>
+        <!-- BOTÃO TELÃO -->
+        <button id="btn-telao" class="btn-protected btn-central" onclick="abrirTelao()">🎬 MODO TELÃO</button>
         
         <div id="container-eventos" class="event-list-container">
             <h3 style="font-size: 12px; color: var(--dourado); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; text-align: center;">Painel de Eventos</h3>
@@ -158,6 +158,20 @@
         renderEventos();
     }
 
+    // NOVA FUNÇÃO: Abrir Telão
+    function abrirTelao() {
+        const config = JSON.parse(localStorage.getItem('config_atual'));
+        
+        if (!config || !config.id) {
+            alert("⚠️ Ative um evento primeiro!");
+            return;
+        }
+        
+        // Abrir telão em nova aba com o ID do evento
+        const urlTelao = `${WORKER_URL}/telao?evento=${encodeURIComponent(config.id)}`;
+        window.open(urlTelao, '_blank');
+    }
+
     function copiarLinkCliente() {
         const config = JSON.parse(localStorage.getItem('config_atual'));
         if (!config) { alert("Ative um evento primeiro!"); return; }
@@ -183,7 +197,6 @@
             eventos.forEach((ev) => {
                 const estaAtivo = eventoAtivoConfig && eventoAtivoConfig.id === ev.id;
                 
-                // Fallback de segurança: Se o Worker retornar o campo tempo nulo ou vazio, assume 10s por padrão
                 const tempoExibicao = ev.tempo ? ev.tempo : "10";
 
                 const evData = JSON.stringify(ev).replace(/"/g, '&quot;');
@@ -218,24 +231,23 @@
     }
 
     function alternarAtivacao(evento) {
-    const atual = localStorage.getItem('config_atual');
-    if (atual && JSON.parse(atual).id === evento.id) {
-        localStorage.removeItem('config_atual');
-        alert(`Evento "${evento.nome}" DESATIVADO`);
-    } else {
-        // Garante que o evento tem todos os campos necessários
-        const eventoCompleto = {
-            id: evento.id,
-            nome: evento.nome,
-            tempo: evento.tempo || "10",
-            molduraUrl: evento.molduraUrl || "",
-            musicaUrl: evento.musicaUrl || ""
-        };
-        localStorage.setItem('config_atual', JSON.stringify(eventoCompleto));
-        alert(`✅ Evento "${evento.nome}" ATIVADO!`);
+        const atual = localStorage.getItem('config_atual');
+        if (atual && JSON.parse(atual).id === evento.id) {
+            localStorage.removeItem('config_atual');
+            alert(`Evento "${evento.nome}" DESATIVADO`);
+        } else {
+            const eventoCompleto = {
+                id: evento.id,
+                nome: evento.nome,
+                tempo: evento.tempo || "10",
+                molduraUrl: evento.molduraUrl || "",
+                musicaUrl: evento.musicaUrl || ""
+            };
+            localStorage.setItem('config_atual', JSON.stringify(eventoCompleto));
+            alert(`✅ Evento "${evento.nome}" ATIVADO!`);
+        }
+        renderEventos();
     }
-    renderEventos();
-}
 
     function irParaCamera(evento) {
         if (!evento.tempo) evento.tempo = "10";
