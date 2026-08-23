@@ -1,15 +1,12 @@
 <!--
 PHOTO MOVIE - MODO TELÃO
-VERSÃO: 1.0.0
+VERSÃO: 1.0.1
 ÚLTIMA ATUALIZAÇÃO: 22/08/2026
 
-FUNCIONALIDADES:
-- Reprodução automática em loop
-- Fade suave entre vídeos
-- Ordem cronológica
-- Botão de som on/off
-- Controles com auto-hide (3 segundos)
-- Modo fullscreen
+CORREÇÕES v1.0.1:
+- Removido referências a arquivos externos
+- Corrigido carregamento dos vídeos
+- Adicionado fallback para erro de carregamento
 -->
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -245,7 +242,6 @@ FUNCIONALIDADES:
     let videos = [];
     let videoAtual = 0;
     let comSom = true;
-    let controlesVisiveis = true;
     let timeoutControles;
     let isTransitioning = false;
     let eventoAtivo = null;
@@ -452,7 +448,7 @@ FUNCIONALIDADES:
             <button onclick="voltarParaIndex()" style="
                 margin-top: 30px;
                 padding: 15px 30px;
-                background: var(--dourado);
+                background: #c5a059;
                 color: #000;
                 border: none;
                 border-radius: 10px;
