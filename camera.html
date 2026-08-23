@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PHOTO MOVIE - Câmera v1.1</title>
+    <title>PHOTO MOVIE - Câmera v1.2</title>
     <style>
         :root { --bg: #001a1a; --dourado: #c5a059; --vermelho-neon: #ff0033; }
         
@@ -47,7 +47,6 @@
             position: absolute;
             top: 0;
             left: 0;
-            transform: scale(1);
             transform-origin: center center;
         }
         
@@ -71,7 +70,7 @@
             font-size: 100px; 
             font-weight: 900; 
             display: none; 
-            color: var(--vermelho-neon); /* Alterado para vermelho neon */
+            color: var(--vermelho-neon);
             text-shadow: 0 0 30px rgba(255, 0, 51, 0.9), 0 0 60px rgba(255, 0, 51, 0.7);
             z-index: 15;
             pointer-events: none;
@@ -102,42 +101,6 @@
             pointer-events: auto;
         }
         
-        #zoom-control {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 20;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(0,0,0,0.7);
-            padding: 8px 15px;
-            border-radius: 20px;
-            border: 1px solid var(--dourado);
-            pointer-events: auto;
-            backdrop-filter: blur(5px);
-        }
-        
-        #zoom-control label {
-            font-size: 12px;
-            color: var(--dourado);
-            letter-spacing: 1px;
-        }
-        
-        #zoom-slider {
-            width: 100px;
-            accent-color: var(--dourado);
-            pointer-events: auto;
-        }
-        
-        #zoom-value {
-            font-size: 12px;
-            color: white;
-            min-width: 35px;
-            text-align: center;
-        }
-        
         .btn-top {
             width: 44px; 
             height: 44px; 
@@ -152,6 +115,7 @@
             font-size: 18px; 
             backdrop-filter: blur(5px);
             pointer-events: auto;
+            touch-action: manipulation;
         }
         .btn-top.muted { color: var(--vermelho-neon); border-color: var(--vermelho-neon); }
         
@@ -185,14 +149,14 @@
             -webkit-touch-callout: none;
             -webkit-user-select: none;
             user-select: none;
-            touch-action: manipulation; /* Importante para permitir cliques */
+            touch-action: manipulation;
         }
         
         .shutter { 
             width: 80px; 
             height: 80px; 
             border: 4px solid var(--dourado); 
-            touch-action: manipulation; /* Importante para permitir cliques */
+            touch-action: manipulation;
             cursor: pointer;
         }
         .shutter:active { transform: scale(0.9); }
@@ -220,14 +184,12 @@
         
         @keyframes rotate { to { transform: rotate(360deg); } }
         
-        /* Bloquear gestos de navegação mas permitir interação com botões */
         html, body {
             overscroll-behavior: none;
             -webkit-user-select: none;
             user-select: none;
         }
         
-        /* Versão da câmera */
         #version-info {
             position: absolute;
             bottom: 5px;
@@ -251,14 +213,7 @@
 
         <!-- Controles superiores -->
         <div class="top-controls">
-            <div class="btn-top muted" id="btn-mic" onclick="toggleMicrofone()">🔇</div>
-        </div>
-        
-        <!-- Seletor de Zoom -->
-        <div id="zoom-control">
-            <label>ZOOM:</label>
-            <input type="range" id="zoom-slider" min="0.5" max="1.5" step="0.05" value="1.0">
-            <span id="zoom-value">1.0x</span>
+            <div class="btn-top muted" id="btn-mic">🔇</div>
         </div>
 
         <video id="preview" autoplay playsinline></video>
@@ -271,7 +226,7 @@
         </div>
         
         <!-- Versão da câmera -->
-        <div id="version-info">v1.1</div>
+        <div id="version-info">v1.2</div>
     </div>
     
     <canvas id="canvas" style="position: absolute; left: -9999px; visibility: hidden;"></canvas>
@@ -282,15 +237,13 @@
     </div>
 
 <script>
-    const CAMERA_VERSION = "v1.1";
+    const CAMERA_VERSION = "v1.2";
     const WORKER_URL = "https://photomovie.maxprimefotovideo.workers.dev"; 
     
     const video = document.getElementById('preview');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
     const warningFlash = document.getElementById('warning-flash');
-    const zoomSlider = document.getElementById('zoom-slider');
-    const zoomValue = document.getElementById('zoom-value');
     const recBtn = document.getElementById('rec-btn');
     
     const molduraImg = new Image();
@@ -298,7 +251,6 @@
     let isFrontCamera = false, isRecording = false;
     let isMicActive = false;
     let animationId = null;
-    let currentZoom = 1.0;
 
     // Função para iniciar gravação
     function startRecordingProcess() {
@@ -309,43 +261,19 @@
         const timer = document.getElementById('timer-display');
         timer.style.display = 'block';
         timer.innerText = count;
-        timer.style.color = '#ff0033'; // Vermelho neon
+        timer.style.color = '#ff0033';
         
         let countdown = setInterval(() => {
             count--;
             if (count > 0) {
                 timer.innerText = count;
-                timer.style.color = '#ff0033'; // Vermelho neon
+                timer.style.color = '#ff0033';
             } else { 
                 clearInterval(countdown); 
                 timer.style.display = 'none';
                 startRecording(); 
             }
         }, 1000);
-    }
-
-    // Controle de zoom (permitindo interação)
-    zoomSlider.addEventListener('input', function(e) {
-        e.stopPropagation();
-        currentZoom = parseFloat(this.value);
-        zoomValue.textContent = currentZoom.toFixed(1) + 'x';
-        applyZoom();
-    });
-    
-    zoomSlider.addEventListener('touchstart', function(e) {
-        e.stopPropagation();
-    });
-    
-    zoomSlider.addEventListener('touchmove', function(e) {
-        e.stopPropagation();
-    });
-
-    function applyZoom() {
-        if (isFrontCamera) {
-            video.style.transform = `scale(${currentZoom}) scaleX(-1)`;
-        } else {
-            video.style.transform = `scale(${currentZoom})`;
-        }
     }
 
     async function initCamera() {
@@ -360,7 +288,13 @@
                 audio: isMicActive
             });
             video.srcObject = stream;
-            applyZoom();
+            
+            // Aplica espelhamento apenas para câmera frontal
+            if (isFrontCamera) {
+                video.style.transform = 'scaleX(-1)';
+            } else {
+                video.style.transform = 'none';
+            }
             
             video.onloadedmetadata = () => {
                 canvas.width = video.videoWidth;
@@ -402,7 +336,7 @@
         window.location.href = 'index.html';
     }
 
-    // Adicionar event listeners corretos
+    // Adicionar event listeners
     function setupEventListeners() {
         // Botão de gravação (obturador)
         recBtn.addEventListener('click', function(e) {
@@ -464,16 +398,12 @@
         // Configurar event listeners
         setupEventListeners();
         
-        // Bloquear apenas gestos que não são em botões
+        // Bloquear gestos de navegação
         document.addEventListener('touchmove', function(e) {
-            // Permitir movimento no slider de zoom
-            if (e.target === zoomSlider) return;
-            
             // Verificar se o toque começou em um botão
             if (e.target.closest('.btn') || e.target.closest('.btn-top')) {
                 return;
             }
-            
             e.preventDefault();
         }, { passive: false });
         
@@ -526,11 +456,6 @@
             
             ctx.save();
             
-            // Aplica o zoom no canvas
-            ctx.translate(canvas.width / 2, canvas.height / 2);
-            ctx.scale(currentZoom, currentZoom);
-            ctx.translate(-canvas.width / 2, -canvas.height / 2);
-            
             // Se for câmera frontal, espelha o canvas
             if (isFrontCamera) {
                 ctx.translate(canvas.width, 0);
@@ -570,7 +495,7 @@
         const timer = document.getElementById('timer-display');
         timer.style.display = 'block';
         timer.innerText = timeLeft + "s";
-        timer.style.color = '#ff0033'; // Vermelho neon
+        timer.style.color = '#ff0033';
 
         let clock = setInterval(() => {
             timeLeft--;
@@ -583,7 +508,7 @@
 
             if (timeLeft > 0) {
                 timer.innerText = timeLeft + "s";
-                timer.style.color = '#ff0033'; // Vermelho neon
+                timer.style.color = '#ff0033';
             } else {
                 clearInterval(clock);
                 warningFlash.style.display = 'none';
@@ -617,6 +542,8 @@
         try {
             const res = await fetch(`${WORKER_URL}/upload`, { method: "POST", body: formData });
             if (res.ok) {
+                // Salvar flag para voltar direto para câmera
+                localStorage.setItem('voltar_para_camera', 'true');
                 window.location.href = 'galeria_admin.html';
             } else {
                 alert("Erro no envio do vídeo.");
