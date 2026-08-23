@@ -1,93 +1,63 @@
 <!--
 PHOTO MOVIE - MODO TELÃO
-VERSÃO: 1.0.1
-ÚLTIMA ATUALIZAÇÃO: 22/08/2026
-
-CORREÇÕES v1.0.1:
-- Removido referências a arquivos externos
-- Corrigido carregamento dos vídeos
-- Adicionado fallback para erro de carregamento
+VERSÃO: 2.0.0
+BASEADO NO SISTEMA ANTIGO v1.9
+ADAPTADO PARA PHOTO MOVIE
 -->
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🎬 MODO TELÃO - Photo Movie</title>
+    <title>TELÃO - Photo Movie</title>
     <style>
-        :root {
-            --dourado: #c5a059;
-            --turquesa: #00d1d1;
-            --bg: #000000;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            background: var(--bg);
-            width: 100vw;
+            margin: 0;
+            background: #000;
             height: 100vh;
             overflow: hidden;
-            font-family: 'Segoe UI', sans-serif;
-            cursor: none;
-            user-select: none;
-            -webkit-user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        /* Container principal do vídeo */
-        #video-container {
-            position: fixed;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            background: #000;
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 1;
+            font-family: sans-serif;
+            cursor: none;
         }
 
-        #main-video {
+        .slide-container {
+            position: absolute;
             width: 100%;
             height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
+            z-index: 1;
+            background: #000;
+        }
+
+        .active {
+            opacity: 1;
+            z-index: 10;
+        }
+
+        .main-media {
+            max-width: 98%;
+            max-height: 100%;
             object-fit: contain;
-            background: #000;
-            transition: opacity 0.8s ease-in-out;
-            opacity: 1;
+            z-index: 5;
+            box-shadow: 0 0 50px #000;
+            border-radius: 12px;
         }
 
-        #main-video.fade-out {
-            opacity: 0;
-        }
-
-        /* Overlay para fade */
-        #fade-overlay {
-            position: fixed;
-            inset: 0;
-            background: #000;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.8s ease-in-out;
-            z-index: 2;
-        }
-
-        #fade-overlay.active {
-            opacity: 1;
-        }
-
-        /* Barra de controles */
+        /* Controles */
         #controls-bar {
             position: fixed;
             bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(15px);
             border: 1px solid rgba(197, 160, 89, 0.3);
             border-radius: 50px;
             padding: 15px 25px;
@@ -107,8 +77,8 @@ CORREÇÕES v1.0.1:
 
         .control-btn {
             background: rgba(197, 160, 89, 0.2);
-            border: 1px solid var(--dourado);
-            color: var(--dourado);
+            border: 1px solid #c5a059;
+            color: #c5a059;
             width: 60px;
             height: 60px;
             border-radius: 50%;
@@ -122,41 +92,18 @@ CORREÇÕES v1.0.1:
         }
 
         .control-btn:hover {
-            background: var(--dourado);
+            background: #c5a059;
             color: #000;
             transform: scale(1.1);
         }
 
-        .control-btn:active {
-            transform: scale(0.9);
-        }
-
-        /* Indicador de status */
-        #status-indicator {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(197, 160, 89, 0.3);
-            border-radius: 25px;
-            padding: 10px 20px;
-            color: var(--dourado);
+        #video-counter {
+            color: rgba(255, 255, 255, 0.7);
             font-size: 14px;
-            letter-spacing: 2px;
-            z-index: 100;
-            transition: opacity 0.5s ease;
-            opacity: 1;
-            text-transform: uppercase;
-            font-weight: bold;
+            letter-spacing: 1px;
         }
 
-        #status-indicator.hidden {
-            opacity: 0;
-        }
-
-        /* Loading screen */
+        /* Loading */
         #loading-screen {
             position: fixed;
             inset: 0;
@@ -178,7 +125,7 @@ CORREÇÕES v1.0.1:
             width: 60px;
             height: 60px;
             border: 3px solid rgba(197, 160, 89, 0.1);
-            border-top: 3px solid var(--dourado);
+            border-top: 3px solid #c5a059;
             border-radius: 50%;
             animation: spin 1s linear infinite;
             margin-bottom: 20px;
@@ -190,60 +137,41 @@ CORREÇÕES v1.0.1:
         }
 
         .loading-text {
-            color: var(--dourado);
+            color: #c5a059;
             font-size: 18px;
             letter-spacing: 3px;
             text-transform: uppercase;
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
-        }
-
-        /* Contador de vídeos */
-        #video-counter {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 12px;
-            letter-spacing: 1px;
         }
     </style>
 </head>
 <body>
 
-    <!-- Tela de carregamento -->
+    <!-- Loading -->
     <div id="loading-screen">
         <div class="loading-spinner"></div>
         <div class="loading-text">Carregando Telão...</div>
     </div>
 
-    <!-- Container do vídeo -->
-    <div id="video-container">
-        <video id="main-video" playsinline webkit-playsinline preload="auto"></video>
-    </div>
+    <!-- Containers de slide (baseado no sistema antigo) -->
+    <div id="c1" class="slide-container"></div>
+    <div id="c2" class="slide-container"></div>
 
-    <!-- Overlay para fade -->
-    <div id="fade-overlay"></div>
-
-    <!-- Indicador de status -->
-    <div id="status-indicator">🎬 Modo Telão</div>
-
-    <!-- Barra de controles -->
+    <!-- Controles -->
     <div id="controls-bar">
-        <button class="control-btn" id="btn-prev" onclick="videoAnterior()">⏮</button>
-        <button class="control-btn" id="btn-sound" onclick="toggleSom()">🔊</button>
-        <button class="control-btn" id="btn-next" onclick="proximoVideo()">⏭</button>
+        <button class="control-btn" onclick="videoAnterior()">⏮</button>
+        <button class="control-btn" onclick="toggleSom()" id="btn-sound">🔊</button>
+        <button class="control-btn" onclick="proximoVideo()">⏭</button>
         <span id="video-counter">0/0</span>
     </div>
 
 <script>
     const WORKER_URL = "https://photomovie.maxprimefotovideo.workers.dev";
+    
     let videos = [];
     let videoAtual = 0;
+    let toggle = true;
     let comSom = true;
     let timeoutControles;
-    let isTransitioning = false;
     let eventoAtivo = null;
 
     // Inicialização
@@ -253,27 +181,24 @@ CORREÇÕES v1.0.1:
             await carregarVideos();
             
             if (videos.length > 0) {
-                // Esconder loading
                 setTimeout(() => {
                     document.getElementById('loading-screen').classList.add('hidden');
                 }, 500);
                 
-                // Iniciar reprodução
-                carregarVideo(0);
+                proximoVideo();
                 
-                // Tentar fullscreen automático
                 setTimeout(() => {
                     tentarFullscreen();
                 }, 1000);
             } else {
-                mostrarErro("Nenhum vídeo encontrado para este evento");
+                mostrarErro("Nenhum vídeo encontrado");
             }
         } catch (error) {
-            console.error("Erro ao carregar telão:", error);
+            console.error("Erro:", error);
             mostrarErro("Erro ao carregar vídeos");
         }
         
-        // Eventos de interação
+        // Eventos
         document.addEventListener('mousemove', mostrarControles);
         document.addEventListener('touchstart', mostrarControles);
         document.addEventListener('keydown', (e) => {
@@ -293,7 +218,7 @@ CORREÇÕES v1.0.1:
             return;
         }
         
-        // Tentar pegar da URL
+        // Tentar da URL
         const urlParams = new URLSearchParams(window.location.search);
         const eventoUrl = urlParams.get('evento');
         if (eventoUrl) {
@@ -301,7 +226,7 @@ CORREÇÕES v1.0.1:
             return;
         }
         
-        // Buscar primeiro evento disponível
+        // Buscar primeiro evento
         try {
             const res = await fetch(`${WORKER_URL}/listar-eventos?t=${Date.now()}`);
             const eventos = await res.json();
@@ -311,7 +236,6 @@ CORREÇÕES v1.0.1:
                 throw new Error("Nenhum evento encontrado");
             }
         } catch (error) {
-            console.error("Erro ao buscar eventos:", error);
             throw error;
         }
     }
@@ -338,67 +262,69 @@ CORREÇÕES v1.0.1:
                 path: f.path,
                 url: `${WORKER_URL}/stream?id=${encodeURIComponent(f.path)}`
             }));
-        
-        console.log(`✅ ${videos.length} vídeos carregados para o telão`);
     }
 
-    // Carregar vídeo específico
-    function carregarVideo(index) {
-        if (videos.length === 0 || isTransitioning) return;
+    // Próximo vídeo (baseado no sistema antigo)
+    function proximoVideo() {
+        if (!videos.length) {
+            setTimeout(proximoVideo, 3000);
+            return;
+        }
         
-        videoAtual = index;
-        const video = document.getElementById('main-video');
+        const item = videos[videoAtual];
+        const nIn = toggle ? document.getElementById('c1') : document.getElementById('c2');
+        const nOut = toggle ? document.getElementById('c2') : document.getElementById('c1');
         
-        // Efeito de fade out
-        isTransitioning = true;
-        document.getElementById('fade-overlay').classList.add('active');
+        // Criar elemento de vídeo
+        const el = document.createElement('video');
+        el.src = item.url;
+        el.className = 'main-media';
+        el.muted = !comSom;
+        el.autoplay = true;
+        el.playsinline = true;
+        el.onended = () => {
+            videoAtual = (videoAtual + 1) % videos.length;
+            proximoVideo();
+        };
+        el.onerror = () => {
+            videoAtual = (videoAtual + 1) % videos.length;
+            proximoVideo();
+        };
+        
+        nIn.innerHTML = '';
+        nIn.appendChild(el);
+        el.load();
         
         setTimeout(() => {
-            video.src = videos[index].url;
-            video.muted = !comSom;
-            video.load();
-            
-            video.oncanplay = () => {
-                video.play().catch(e => console.log("Autoplay bloqueado:", e));
-            };
-            
-            video.onended = () => {
-                proximoVideo();
-            };
-            
-            // Fade in
-            setTimeout(() => {
-                document.getElementById('fade-overlay').classList.remove('active');
-                isTransitioning = false;
-                atualizarContador();
-            }, 800);
-        }, 800);
-    }
-
-    // Próximo vídeo
-    function proximoVideo() {
-        if (videos.length === 0) return;
-        const proximo = (videoAtual + 1) % videos.length;
-        carregarVideo(proximo);
+            nIn.classList.add('active');
+            nOut.classList.remove('active');
+            toggle = !toggle;
+            atualizarContador();
+        }, 200);
+        
+        videoAtual = (videoAtual + 1) % videos.length;
         mostrarControles();
     }
 
     // Vídeo anterior
     function videoAnterior() {
-        if (videos.length === 0) return;
-        const anterior = (videoAtual - 1 + videos.length) % videos.length;
-        carregarVideo(anterior);
+        videoAtual = (videoAtual - 2 + videos.length) % videos.length;
+        if (videoAtual < 0) videoAtual = 0;
+        proximoVideo();
         mostrarControles();
     }
 
     // Toggle som
     function toggleSom() {
         comSom = !comSom;
-        const video = document.getElementById('main-video');
-        video.muted = !comSom;
-        
         const btnSom = document.getElementById('btn-sound');
         btnSom.textContent = comSom ? '🔊' : '🔇';
+        
+        // Atualizar vídeo atual
+        const videosAtivos = document.querySelectorAll('video');
+        videosAtivos.forEach(v => {
+            v.muted = !comSom;
+        });
         
         mostrarControles();
     }
@@ -406,21 +332,17 @@ CORREÇÕES v1.0.1:
     // Atualizar contador
     function atualizarContador() {
         const contador = document.getElementById('video-counter');
-        contador.textContent = `${videoAtual + 1}/${videos.length}`;
+        contador.textContent = `${(videoAtual - 1 + videos.length) % videos.length + 1}/${videos.length}`;
     }
 
     // Mostrar controles
     function mostrarControles() {
         const controls = document.getElementById('controls-bar');
-        const status = document.getElementById('status-indicator');
-        
         controls.classList.remove('hidden');
-        status.classList.remove('hidden');
         
         clearTimeout(timeoutControles);
         timeoutControles = setTimeout(() => {
             controls.classList.add('hidden');
-            status.classList.add('hidden');
         }, 3000);
     }
 
