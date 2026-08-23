@@ -1,392 +1,274 @@
-<!--
-PHOTO MOVIE - MODO TELÃO
-VERSÃO: 2.0.0
-BASEADO NO SISTEMA ANTIGO v1.9
-ADAPTADO PARA PHOTO MOVIE
--->
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TELÃO - Photo Movie</title>
+    <title>CENTRAL - Photo Movie</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
-        body {
-            margin: 0;
-            background: #000;
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: sans-serif;
-            cursor: none;
+        :root { 
+            --turquesa-dark: #003333; 
+            --dourado: #c5a059;      
+            --dourado-dark: #8e6d2d;
+            --bg-modal: rgba(0, 20, 20, 0.98);
+            --cinza-minimal: #666666; 
+            --ativo-ouro: linear-gradient(135deg, #c5a059, #8e6d2d);
+        }
+        
+        body { 
+            margin: 0; background: var(--turquesa-dark); color: white; 
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh; overflow-x: hidden;
         }
 
-        .slide-container {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: opacity 1.5s ease-in-out;
-            z-index: 1;
-            background: #000;
+        .header { margin-top: 1.8cm; text-align: center; margin-bottom: 40px; }
+        .header h1 { color: var(--dourado); font-size: 52px; font-weight: 900; letter-spacing: 3px; margin: 0; text-transform: uppercase; animation: pulse-gold 3s infinite ease-in-out; }
+        .header p { color: var(--dourado); font-size: 20px; margin: -5px 0 0 0; letter-spacing: 4px; font-weight: 300; text-transform: lowercase; opacity: 0.9; }
+        .version-tag { font-size: 10px; color: rgba(197, 160, 89, 0.4); font-family: monospace; margin-top: 5px; display: block; letter-spacing: 1px; }
+
+        @keyframes pulse-gold {
+            0%, 100% { text-shadow: 0 0 5px rgba(197, 160, 89, 0.2); transform: scale(1); }
+            50% { text-shadow: 0 0 25px rgba(197, 160, 89, 0.7); transform: scale(1.02); }
         }
 
-        .active {
-            opacity: 1;
-            z-index: 10;
+        .main-container { flex: 1; display: flex; flex-direction: column; align-items: center; width: 92%; max-width: 500px; }
+
+        .btn-central {
+            width: 100%; padding: 22px; margin: 10px 0; border-radius: 12px;
+            text-transform: uppercase; font-weight: 800; font-size: 16px;
+            cursor: pointer; text-decoration: none; text-align: center;
+            display: none; box-sizing: border-box; transition: all 0.3s ease;
         }
 
-        .main-media {
-            max-width: 98%;
-            max-height: 100%;
-            object-fit: contain;
-            z-index: 5;
-            box-shadow: 0 0 50px #000;
-            border-radius: 12px;
+        .btn-create { background: var(--ativo-ouro); color: #1a1a1a; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        #btn-galeria { background: rgba(197, 160, 89, 0.1); color: var(--dourado); border: 1px solid var(--dourado); }
+        #btn-copy-link { background: rgba(197, 160, 89, 0.1); color: var(--dourado); border: 1px solid var(--dourado); }
+        
+        /* Botão TELÃO - mesmo estilo dos outros */
+        #btn-telao { 
+            background: rgba(197, 160, 89, 0.1); 
+            color: var(--dourado); 
+            border: 1px solid var(--dourado); 
         }
+        
+        #btn-admin { background: rgba(197, 160, 89, 0.1); color: #c5a059; border: 1px solid #c5a059; }
+        #btn-login { display: block; background: transparent; color: var(--dourado); border: 2px solid var(--dourado); margin-top: 50px; }
 
-        /* Controles */
-        #controls-bar {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(197, 160, 89, 0.3);
-            border-radius: 50px;
-            padding: 15px 25px;
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            z-index: 100;
-            transition: opacity 0.5s ease, transform 0.5s ease;
-            opacity: 1;
-        }
+        .event-list-container { width: 100%; margin-top: 30px; display: none; }
 
-        #controls-bar.hidden {
-            opacity: 0;
-            transform: translateX(-50%) translateY(100px);
-            pointer-events: none;
+        .event-card {
+            background: rgba(0,0,0,0.5); border: 2px solid rgba(197, 160, 89, 0.2);
+            padding: 15px; border-radius: 20px; margin-bottom: 18px;
+            display: grid;
+            grid-template-columns: 1fr 100px; 
+            gap: 10px;
+            transition: 0.3s;
         }
+        
+        .event-card.active-border { border-color: var(--dourado); background: rgba(197, 160, 89, 0.08); }
+        .event-info-col { display: flex; flex-direction: column; gap: 12px; justify-content: center; }
+        .event-info h4 { margin: 0; color: var(--dourado); text-transform: uppercase; font-size: 18px; line-height: 1.2; }
+        .event-info span { font-size: 11px; color: #aaa; display: block; margin-top: 4px; }
 
-        .control-btn {
-            background: rgba(197, 160, 89, 0.2);
-            border: 1px solid #c5a059;
-            color: #c5a059;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            pointer-events: auto;
+        .btn-camera-main {
+            background: var(--ativo-ouro); color: #000;
+            border: none; border-radius: 15px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 40px; cursor: pointer; transition: 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            grid-row: span 2;
         }
+        .btn-camera-main:active { transform: scale(0.95); }
 
-        .control-btn:hover {
-            background: #c5a059;
-            color: #000;
-            transform: scale(1.1);
+        .group-actions-row { display: flex; gap: 8px; width: 100%; }
+        .status-btn {
+            flex: 2; padding: 12px; border-radius: 10px; font-size: 10px; font-weight: 900;
+            cursor: pointer; text-transform: uppercase; border: none;
         }
+        .btn-is-on { background: var(--ativo-ouro); color: #000; }
+        .btn-is-off { background: #222; color: #666; border: 1px solid #333; }
 
-        #video-counter {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 14px;
-            letter-spacing: 1px;
-        }
+        .btn-edit-big { flex: 1.5; background: #333; color: #fff; border: 1px solid #555; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 10px; }
+        .btn-del-big { flex: 0.8; background: rgba(255,59,48,0.1); color: #ff3b30; border: 1px solid #ff3b30; border-radius: 10px; cursor: pointer; font-size: 16px; }
 
-        /* Loading */
-        #loading-screen {
-            position: fixed;
-            inset: 0;
-            background: #000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            transition: opacity 0.5s ease;
-        }
-
-        #loading-screen.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .loading-spinner {
-            width: 60px;
-            height: 60px;
-            border: 3px solid rgba(197, 160, 89, 0.1);
-            border-top: 3px solid #c5a059;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .loading-text {
-            color: #c5a059;
-            font-size: 18px;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-        }
+        #modal-senha { position: fixed; inset: 0; background: var(--bg-modal); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(15px); }
+        .modal-content { background: #002222; padding: 35px; border-radius: 25px; border: 1px solid var(--dourado); text-align: center; width: 85%; max-width: 320px; }
+        .modal-content input { width: 100%; padding: 18px; background: #000; border: 1px solid var(--dourado); color: var(--dourado); border-radius: 12px; text-align: center; font-size: 28px; letter-spacing: 12px; margin-bottom: 25px; box-sizing: border-box; outline: none; }
+        .btn-confirm { background: var(--dourado); color: #000; border: none; padding: 15px; border-radius: 10px; font-weight: 900; width: 100%; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <!-- Loading -->
-    <div id="loading-screen">
-        <div class="loading-spinner"></div>
-        <div class="loading-text">Carregando Telão...</div>
+    <div class="header">
+        <h1>PHOTO MOVIE</h1>
+        <p>colecionando momentos</p>
+        <span class="version-tag">v1.0.3</span>
     </div>
 
-    <!-- Containers de slide (baseado no sistema antigo) -->
-    <div id="c1" class="slide-container"></div>
-    <div id="c2" class="slide-container"></div>
+    <div class="main-container">
+        <button id="btn-login" class="btn-central" onclick="abrirModal()">🔓 ACESSAR SISTEMA</button>
+        <a href="config_evento.html" id="btn-create" class="btn-protected btn-central btn-create" onclick="localStorage.removeItem('evento_para_editar')">➕ CRIAR NOVO EVENTO</a>
+        <a href="galeria_admin.html" id="btn-admin" class="btn-protected btn-central">👑 GALERIA ADMIN</a>
+        <a href="galeria.html" id="btn-galeria" class="btn-protected btn-central">🎞️ ABRIR GALERIA</a>
+        
+        <button id="btn-copy-link" class="btn-protected btn-central" onclick="copiarLinkCliente()">🔗 COPIAR LINK CLIENTE</button>
+        
+        <!-- BOTÃO TELÃO -->
+        <button id="btn-telao" class="btn-protected btn-central" onclick="abrirTelao()">🎬 MODO TELÃO</button>
+        
+        <div id="container-eventos" class="event-list-container">
+            <h3 style="font-size: 12px; color: var(--dourado); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; text-align: center;">Painel de Eventos</h3>
+            <div id="lista-eventos"></div>
+        </div>
 
-    <!-- Controles -->
-    <div id="controls-bar">
-        <button class="control-btn" onclick="videoAnterior()">⏮</button>
-        <button class="control-btn" onclick="toggleSom()" id="btn-sound">🔊</button>
-        <button class="control-btn" onclick="proximoVideo()">⏭</button>
-        <span id="video-counter">0/0</span>
+        <button id="btn-lock" class="btn-protected btn-central" onclick="bloquear()" style="background: transparent; color: #ff5555; border: 1px solid rgba(255,85,85,0.3); margin-top: 40px; font-size: 12px;">SAIR DO SISTEMA</button>
+    </div>
+
+    <div id="modal-senha">
+        <div class="modal-content">
+            <h3 style="color:var(--dourado); letter-spacing: 2px;">SENHA MESTRA</h3>
+            <input type="password" id="input-senha" inputmode="numeric" placeholder="••••">
+            <button class="btn-confirm" onclick="validarSenha()">ENTRAR</button>
+            <p onclick="fecharModal()" style="margin-top:20px; font-size:13px; color:#999; cursor:pointer">Voltar</p>
+        </div>
     </div>
 
 <script>
+    const SENHA_MESTRA = "1234"; 
     const WORKER_URL = "https://photomovie.maxprimefotovideo.workers.dev";
-    
-    let videos = [];
-    let videoAtual = 0;
-    let toggle = true;
-    let comSom = true;
-    let timeoutControles;
-    let eventoAtivo = null;
 
-    // Inicialização
-    window.onload = async () => {
-        try {
-            await carregarEventoAtivo();
-            await carregarVideos();
-            
-            if (videos.length > 0) {
-                setTimeout(() => {
-                    document.getElementById('loading-screen').classList.add('hidden');
-                }, 500);
-                
-                proximoVideo();
-                
-                setTimeout(() => {
-                    tentarFullscreen();
-                }, 1000);
-            } else {
-                mostrarErro("Nenhum vídeo encontrado");
-            }
-        } catch (error) {
-            console.error("Erro:", error);
-            mostrarErro("Erro ao carregar vídeos");
-        }
-        
-        // Eventos
-        document.addEventListener('mousemove', mostrarControles);
-        document.addEventListener('touchstart', mostrarControles);
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowRight') proximoVideo();
-            if (e.key === 'ArrowLeft') videoAnterior();
-            if (e.key === ' ') { e.preventDefault(); toggleSom(); }
-            if (e.key === 'Escape') sairFullscreen();
-        });
-    };
+    window.onload = () => { if(sessionStorage.getItem('logado') === 'true') liberarSistema(); }
 
-    // Carregar evento ativo
-    async function carregarEventoAtivo() {
+    function abrirModal() { document.getElementById('modal-senha').style.display = 'flex'; document.getElementById('input-senha').focus(); }
+    function fecharModal() { document.getElementById('modal-senha').style.display = 'none'; document.getElementById('input-senha').value = ''; }
+
+    function validarSenha() {
+        if (document.getElementById('input-senha').value === SENHA_MESTRA) {
+            sessionStorage.setItem('logado', 'true');
+            fecharModal();
+            liberarSistema();
+        } else { alert("Senha Incorreta"); }
+    }
+
+    function liberarSistema() {
+        document.getElementById('btn-login').style.display = 'none';
+        document.querySelectorAll('.btn-protected').forEach(b => b.style.display = 'block');
+        document.getElementById('container-eventos').style.display = 'block';
+        renderEventos();
+    }
+
+    // NOVA FUNÇÃO: Abrir Telão
+    function abrirTelao() {
         const config = JSON.parse(localStorage.getItem('config_atual'));
         
-        if (config && config.id) {
-            eventoAtivo = config;
+        if (!config || !config.id) {
+            alert("⚠️ Ative um evento primeiro!");
             return;
         }
         
-        // Tentar da URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const eventoUrl = urlParams.get('evento');
-        if (eventoUrl) {
-            eventoAtivo = { id: eventoUrl, nome: eventoUrl };
-            return;
-        }
-        
-        // Buscar primeiro evento
+        // Abrir telão em nova aba com o ID do evento
+        const urlTelao = `${WORKER_URL}/telao?evento=${encodeURIComponent(config.id)}`;
+        window.open(urlTelao, '_blank');
+    }
+
+    function copiarLinkCliente() {
+        const config = JSON.parse(localStorage.getItem('config_atual'));
+        if (!config) { alert("Ative um evento primeiro!"); return; }
+        const idEvento = config.id || config.id_fixo || config.nome;
+        const link = `https://maxsynk.github.io/photomovie/galeria.html?evento=${encodeURIComponent(idEvento)}`;
+        navigator.clipboard.writeText(link).then(() => { alert("Link copiado!"); });
+    }
+
+    async function renderEventos() {
+        const container = document.getElementById('lista-eventos');
+        const eventoAtivoConfig = JSON.parse(localStorage.getItem('config_atual'));
+
         try {
             const res = await fetch(`${WORKER_URL}/listar-eventos?t=${Date.now()}`);
             const eventos = await res.json();
-            if (eventos && eventos.length > 0) {
-                eventoAtivo = eventos[0];
-            } else {
-                throw new Error("Nenhum evento encontrado");
+            
+            if(!eventos || eventos.length === 0) { 
+                container.innerHTML = '<p style="text-align:center; opacity:0.5;">Sem eventos no momento.</p>'; 
+                return; 
             }
-        } catch (error) {
-            throw error;
+
+            container.innerHTML = '';
+            eventos.forEach((ev) => {
+                const estaAtivo = eventoAtivoConfig && eventoAtivoConfig.id === ev.id;
+                
+                const tempoExibicao = ev.tempo ? ev.tempo : "10";
+
+                const evData = JSON.stringify(ev).replace(/"/g, '&quot;');
+                const card = document.createElement('div');
+                card.className = `event-card ${estaAtivo ? 'active-border' : ''}`;
+                card.innerHTML = `
+                    <div class="event-info-col">
+                        <div class="event-info">
+                            <h4>${ev.nome ? ev.nome.replace(/_/g, ' ') : 'EVENTO SEM NOME'}</h4>
+                            <span>DATA: ${ev.data || '--/--/--'} | DURAÇÃO: ${tempoExibicao}s</span>
+                        </div>
+                        <div class="group-actions-row">
+                            <button class="status-btn ${estaAtivo ? 'btn-is-on' : 'btn-is-off'}" onclick='alternarAtivacao(${evData})'>
+                                ${estaAtivo ? '● ATIVO' : 'ATIVAR'}
+                            </button>
+                            <button class="btn-edit-big" onclick='irParaEditar(${evData})'>EDITAR</button>
+                            <button class="btn-del-big" onclick="excluirEvento('${ev.id}', '${ev.nome}')">×</button>
+                        </div>
+                    </div>
+                    <button class="btn-camera-main" onclick="irParaCamera(${evData})">📸</button>
+                `;
+                container.appendChild(card);
+            });
+        } catch (err) { 
+            container.innerHTML = `<p style="color: #ff5555; text-align:center;">Erro de conexão ao carregar lista.</p>`; 
         }
     }
 
-    // Carregar lista de vídeos
-    async function carregarVideos() {
-        if (!eventoAtivo || !eventoAtivo.id) {
-            throw new Error("Evento não definido");
+    function irParaEditar(evento) {
+        localStorage.setItem('evento_para_editar', JSON.stringify(evento));
+        window.location.href = `config_evento.html?id=${evento.id}`;
+    }
+
+    function alternarAtivacao(evento) {
+        const atual = localStorage.getItem('config_atual');
+        if (atual && JSON.parse(atual).id === evento.id) {
+            localStorage.removeItem('config_atual');
+            alert(`Evento "${evento.nome}" DESATIVADO`);
+        } else {
+            const eventoCompleto = {
+                id: evento.id,
+                nome: evento.nome,
+                tempo: evento.tempo || "10",
+                molduraUrl: evento.molduraUrl || "",
+                musicaUrl: evento.musicaUrl || ""
+            };
+            localStorage.setItem('config_atual', JSON.stringify(eventoCompleto));
+            alert(`✅ Evento "${evento.nome}" ATIVADO!`);
         }
-        
-        const url = `${WORKER_URL}/listar-galeria?evento=${encodeURIComponent(eventoAtivo.id)}&t=${Date.now()}`;
-        const res = await fetch(url);
-        const dados = await res.json();
-        
-        // Filtrar apenas vídeos finais
-        videos = dados
-            .filter(f => {
-                const path = f.path || "";
-                const filename = path.split('/').pop();
-                return filename.startsWith('final_') && filename.endsWith('.mp4');
-            })
-            .sort((a, b) => new Date(a.uploaded || 0) - new Date(b.uploaded || 0))
-            .map(f => ({
-                path: f.path,
-                url: `${WORKER_URL}/stream?id=${encodeURIComponent(f.path)}`
-            }));
+        renderEventos();
     }
 
-    // Próximo vídeo (baseado no sistema antigo)
-    function proximoVideo() {
-        if (!videos.length) {
-            setTimeout(proximoVideo, 3000);
-            return;
-        }
-        
-        const item = videos[videoAtual];
-        const nIn = toggle ? document.getElementById('c1') : document.getElementById('c2');
-        const nOut = toggle ? document.getElementById('c2') : document.getElementById('c1');
-        
-        // Criar elemento de vídeo
-        const el = document.createElement('video');
-        el.src = item.url;
-        el.className = 'main-media';
-        el.muted = !comSom;
-        el.autoplay = true;
-        el.playsinline = true;
-        el.onended = () => {
-            videoAtual = (videoAtual + 1) % videos.length;
-            proximoVideo();
-        };
-        el.onerror = () => {
-            videoAtual = (videoAtual + 1) % videos.length;
-            proximoVideo();
-        };
-        
-        nIn.innerHTML = '';
-        nIn.appendChild(el);
-        el.load();
-        
-        setTimeout(() => {
-            nIn.classList.add('active');
-            nOut.classList.remove('active');
-            toggle = !toggle;
-            atualizarContador();
-        }, 200);
-        
-        videoAtual = (videoAtual + 1) % videos.length;
-        mostrarControles();
+    function irParaCamera(evento) {
+        if (!evento.tempo) evento.tempo = "10";
+        localStorage.setItem('config_atual', JSON.stringify(evento));
+        window.location.href = 'camera.html';
     }
 
-    // Vídeo anterior
-    function videoAnterior() {
-        videoAtual = (videoAtual - 2 + videos.length) % videos.length;
-        if (videoAtual < 0) videoAtual = 0;
-        proximoVideo();
-        mostrarControles();
-    }
-
-    // Toggle som
-    function toggleSom() {
-        comSom = !comSom;
-        const btnSom = document.getElementById('btn-sound');
-        btnSom.textContent = comSom ? '🔊' : '🔇';
-        
-        // Atualizar vídeo atual
-        const videosAtivos = document.querySelectorAll('video');
-        videosAtivos.forEach(v => {
-            v.muted = !comSom;
-        });
-        
-        mostrarControles();
-    }
-
-    // Atualizar contador
-    function atualizarContador() {
-        const contador = document.getElementById('video-counter');
-        contador.textContent = `${(videoAtual - 1 + videos.length) % videos.length + 1}/${videos.length}`;
-    }
-
-    // Mostrar controles
-    function mostrarControles() {
-        const controls = document.getElementById('controls-bar');
-        controls.classList.remove('hidden');
-        
-        clearTimeout(timeoutControles);
-        timeoutControles = setTimeout(() => {
-            controls.classList.add('hidden');
-        }, 3000);
-    }
-
-    // Fullscreen
-    function tentarFullscreen() {
-        const elem = document.documentElement;
-        if (elem.requestFullscreen) {
-            elem.requestFullscreen().catch(() => {});
-        } else if (elem.webkitRequestFullscreen) {
-            elem.webkitRequestFullscreen();
+    async function excluirEvento(id, nome) {
+        if(confirm(`ATENÇÃO: Apagar evento ${nome} e arquivos?`)) {
+            try { 
+                await fetch(`${WORKER_URL}/deletar-evento-completo`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id, evento: nome })
+                });
+                renderEventos(); 
+            } catch (e) { alert("Erro de conexão."); }
         }
     }
 
-    function sairFullscreen() {
-        if (document.fullscreenElement) {
-            document.exitFullscreen().catch(() => {});
-        }
-    }
-
-    // Mostrar erro
-    function mostrarErro(mensagem) {
-        document.getElementById('loading-screen').innerHTML = `
-            <div style="color: #ff4d4d; font-size: 24px; margin-bottom: 20px;">❌</div>
-            <div class="loading-text">${mensagem}</div>
-            <button onclick="voltarParaIndex()" style="
-                margin-top: 30px;
-                padding: 15px 30px;
-                background: #c5a059;
-                color: #000;
-                border: none;
-                border-radius: 10px;
-                font-weight: bold;
-                cursor: pointer;
-                font-size: 16px;
-            ">VOLTAR</button>
-        `;
-    }
-
-    function voltarParaIndex() {
-        window.location.href = 'index.html';
-    }
-
-    // Prevenir contexto menu
-    document.addEventListener('contextmenu', (e) => e.preventDefault());
+    function bloquear() { sessionStorage.removeItem('logado'); location.reload(); }
 </script>
 </body>
 </html>
