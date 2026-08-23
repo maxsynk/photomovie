@@ -1,0 +1,474 @@
+<!--
+PHOTO MOVIE - MODO TELÃO
+VERSÃO: 1.0.0
+ÚLTIMA ATUALIZAÇÃO: 22/08/2026
+
+FUNCIONALIDADES:
+- Reprodução automática em loop
+- Fade suave entre vídeos
+- Ordem cronológica
+- Botão de som on/off
+- Controles com auto-hide (3 segundos)
+- Modo fullscreen
+-->
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🎬 MODO TELÃO - Photo Movie</title>
+    <style>
+        :root {
+            --dourado: #c5a059;
+            --turquesa: #00d1d1;
+            --bg: #000000;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Segoe UI', sans-serif;
+            cursor: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Container principal do vídeo */
+        #video-container {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+        }
+
+        #main-video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #000;
+            transition: opacity 0.8s ease-in-out;
+            opacity: 1;
+        }
+
+        #main-video.fade-out {
+            opacity: 0;
+        }
+
+        /* Overlay para fade */
+        #fade-overlay {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.8s ease-in-out;
+            z-index: 2;
+        }
+
+        #fade-overlay.active {
+            opacity: 1;
+        }
+
+        /* Barra de controles */
+        #controls-bar {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 50px;
+            padding: 15px 25px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            z-index: 100;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            opacity: 1;
+        }
+
+        #controls-bar.hidden {
+            opacity: 0;
+            transform: translateX(-50%) translateY(100px);
+            pointer-events: none;
+        }
+
+        .control-btn {
+            background: rgba(197, 160, 89, 0.2);
+            border: 1px solid var(--dourado);
+            color: var(--dourado);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            pointer-events: auto;
+        }
+
+        .control-btn:hover {
+            background: var(--dourado);
+            color: #000;
+            transform: scale(1.1);
+        }
+
+        .control-btn:active {
+            transform: scale(0.9);
+        }
+
+        /* Indicador de status */
+        #status-indicator {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 25px;
+            padding: 10px 20px;
+            color: var(--dourado);
+            font-size: 14px;
+            letter-spacing: 2px;
+            z-index: 100;
+            transition: opacity 0.5s ease;
+            opacity: 1;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        #status-indicator.hidden {
+            opacity: 0;
+        }
+
+        /* Loading screen */
+        #loading-screen {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease;
+        }
+
+        #loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(197, 160, 89, 0.1);
+            border-top: 3px solid var(--dourado);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: var(--dourado);
+            font-size: 18px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        /* Contador de vídeos */
+        #video-counter {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Tela de carregamento -->
+    <div id="loading-screen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Carregando Telão...</div>
+    </div>
+
+    <!-- Container do vídeo -->
+    <div id="video-container">
+        <video id="main-video" playsinline webkit-playsinline preload="auto"></video>
+    </div>
+
+    <!-- Overlay para fade -->
+    <div id="fade-overlay"></div>
+
+    <!-- Indicador de status -->
+    <div id="status-indicator">🎬 Modo Telão</div>
+
+    <!-- Barra de controles -->
+    <div id="controls-bar">
+        <button class="control-btn" id="btn-prev" onclick="videoAnterior()">⏮</button>
+        <button class="control-btn" id="btn-sound" onclick="toggleSom()">🔊</button>
+        <button class="control-btn" id="btn-next" onclick="proximoVideo()">⏭</button>
+        <span id="video-counter">0/0</span>
+    </div>
+
+<script>
+    const WORKER_URL = "https://photomovie.maxprimefotovideo.workers.dev";
+    let videos = [];
+    let videoAtual = 0;
+    let comSom = true;
+    let controlesVisiveis = true;
+    let timeoutControles;
+    let isTransitioning = false;
+    let eventoAtivo = null;
+
+    // Inicialização
+    window.onload = async () => {
+        try {
+            await carregarEventoAtivo();
+            await carregarVideos();
+            
+            if (videos.length > 0) {
+                // Esconder loading
+                setTimeout(() => {
+                    document.getElementById('loading-screen').classList.add('hidden');
+                }, 500);
+                
+                // Iniciar reprodução
+                carregarVideo(0);
+                
+                // Tentar fullscreen automático
+                setTimeout(() => {
+                    tentarFullscreen();
+                }, 1000);
+            } else {
+                mostrarErro("Nenhum vídeo encontrado para este evento");
+            }
+        } catch (error) {
+            console.error("Erro ao carregar telão:", error);
+            mostrarErro("Erro ao carregar vídeos");
+        }
+        
+        // Eventos de interação
+        document.addEventListener('mousemove', mostrarControles);
+        document.addEventListener('touchstart', mostrarControles);
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') proximoVideo();
+            if (e.key === 'ArrowLeft') videoAnterior();
+            if (e.key === ' ') { e.preventDefault(); toggleSom(); }
+            if (e.key === 'Escape') sairFullscreen();
+        });
+    };
+
+    // Carregar evento ativo
+    async function carregarEventoAtivo() {
+        const config = JSON.parse(localStorage.getItem('config_atual'));
+        
+        if (config && config.id) {
+            eventoAtivo = config;
+            return;
+        }
+        
+        // Tentar pegar da URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const eventoUrl = urlParams.get('evento');
+        if (eventoUrl) {
+            eventoAtivo = { id: eventoUrl, nome: eventoUrl };
+            return;
+        }
+        
+        // Buscar primeiro evento disponível
+        try {
+            const res = await fetch(`${WORKER_URL}/listar-eventos?t=${Date.now()}`);
+            const eventos = await res.json();
+            if (eventos && eventos.length > 0) {
+                eventoAtivo = eventos[0];
+            } else {
+                throw new Error("Nenhum evento encontrado");
+            }
+        } catch (error) {
+            console.error("Erro ao buscar eventos:", error);
+            throw error;
+        }
+    }
+
+    // Carregar lista de vídeos
+    async function carregarVideos() {
+        if (!eventoAtivo || !eventoAtivo.id) {
+            throw new Error("Evento não definido");
+        }
+        
+        const url = `${WORKER_URL}/listar-galeria?evento=${encodeURIComponent(eventoAtivo.id)}&t=${Date.now()}`;
+        const res = await fetch(url);
+        const dados = await res.json();
+        
+        // Filtrar apenas vídeos finais
+        videos = dados
+            .filter(f => {
+                const path = f.path || "";
+                const filename = path.split('/').pop();
+                return filename.startsWith('final_') && filename.endsWith('.mp4');
+            })
+            .sort((a, b) => new Date(a.uploaded || 0) - new Date(b.uploaded || 0))
+            .map(f => ({
+                path: f.path,
+                url: `${WORKER_URL}/stream?id=${encodeURIComponent(f.path)}`
+            }));
+        
+        console.log(`✅ ${videos.length} vídeos carregados para o telão`);
+    }
+
+    // Carregar vídeo específico
+    function carregarVideo(index) {
+        if (videos.length === 0 || isTransitioning) return;
+        
+        videoAtual = index;
+        const video = document.getElementById('main-video');
+        
+        // Efeito de fade out
+        isTransitioning = true;
+        document.getElementById('fade-overlay').classList.add('active');
+        
+        setTimeout(() => {
+            video.src = videos[index].url;
+            video.muted = !comSom;
+            video.load();
+            
+            video.oncanplay = () => {
+                video.play().catch(e => console.log("Autoplay bloqueado:", e));
+            };
+            
+            video.onended = () => {
+                proximoVideo();
+            };
+            
+            // Fade in
+            setTimeout(() => {
+                document.getElementById('fade-overlay').classList.remove('active');
+                isTransitioning = false;
+                atualizarContador();
+            }, 800);
+        }, 800);
+    }
+
+    // Próximo vídeo
+    function proximoVideo() {
+        if (videos.length === 0) return;
+        const proximo = (videoAtual + 1) % videos.length;
+        carregarVideo(proximo);
+        mostrarControles();
+    }
+
+    // Vídeo anterior
+    function videoAnterior() {
+        if (videos.length === 0) return;
+        const anterior = (videoAtual - 1 + videos.length) % videos.length;
+        carregarVideo(anterior);
+        mostrarControles();
+    }
+
+    // Toggle som
+    function toggleSom() {
+        comSom = !comSom;
+        const video = document.getElementById('main-video');
+        video.muted = !comSom;
+        
+        const btnSom = document.getElementById('btn-sound');
+        btnSom.textContent = comSom ? '🔊' : '🔇';
+        
+        mostrarControles();
+    }
+
+    // Atualizar contador
+    function atualizarContador() {
+        const contador = document.getElementById('video-counter');
+        contador.textContent = `${videoAtual + 1}/${videos.length}`;
+    }
+
+    // Mostrar controles
+    function mostrarControles() {
+        const controls = document.getElementById('controls-bar');
+        const status = document.getElementById('status-indicator');
+        
+        controls.classList.remove('hidden');
+        status.classList.remove('hidden');
+        
+        clearTimeout(timeoutControles);
+        timeoutControles = setTimeout(() => {
+            controls.classList.add('hidden');
+            status.classList.add('hidden');
+        }, 3000);
+    }
+
+    // Fullscreen
+    function tentarFullscreen() {
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen().catch(() => {});
+        } else if (elem.webkitRequestFullscreen) {
+            elem.webkitRequestFullscreen();
+        }
+    }
+
+    function sairFullscreen() {
+        if (document.fullscreenElement) {
+            document.exitFullscreen().catch(() => {});
+        }
+    }
+
+    // Mostrar erro
+    function mostrarErro(mensagem) {
+        document.getElementById('loading-screen').innerHTML = `
+            <div style="color: #ff4d4d; font-size: 24px; margin-bottom: 20px;">❌</div>
+            <div class="loading-text">${mensagem}</div>
+            <button onclick="voltarParaIndex()" style="
+                margin-top: 30px;
+                padding: 15px 30px;
+                background: var(--dourado);
+                color: #000;
+                border: none;
+                border-radius: 10px;
+                font-weight: bold;
+                cursor: pointer;
+                font-size: 16px;
+            ">VOLTAR</button>
+        `;
+    }
+
+    function voltarParaIndex() {
+        window.location.href = 'index.html';
+    }
+
+    // Prevenir contexto menu
+    document.addEventListener('contextmenu', (e) => e.preventDefault());
+</script>
+</body>
+</html>
