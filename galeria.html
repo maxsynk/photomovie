@@ -1,22 +1,15 @@
 <!--
 PHOTO MOVIE - Galeria Cliente
-VERSÃO: 2.0.2
-ÚLTIMA ATUALIZAÇÃO: 09/08/2026
-
-CHANGELOG v2.0.2:
-- ADICIONADO: Thumbnails nos cards (imagem .jpg gerada pelo processador)
-- ADICIONADO: Fallback para vídeo se thumbnail não existir
-- CORRIGIDO: Cards mostram capa do vídeo em vez de tela preta
-- OTIMIZADO: Thumbnail carrega muito mais rápido que o vídeo
+VERSÃO: 2.1.0 (layout novo)
 -->
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PHOTO MOVIE - GALERIA v2.0.2</title>
+    <title>PHOTO MOVIE - GALERIA</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    
+
 <meta name="theme-color" content="#000000">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon-192.png">
@@ -30,32 +23,43 @@ CHANGELOG v2.0.2:
 </head>
 <body class="pg-client">
 
+<!-- ▼▼▼ [INÍCIO] CABEÇALHO E NOME DO EVENTO ▼▼▼ -->
 <div class="header">
     <h1 id="logo-exit">PHOTO MOVIE</h1>
+    <p>seus momentos</p>
 </div>
 <div class="evento-nome" id="evento-nome">CARREGANDO...</div>
+<!-- ▲▲▲ [FIM] CABEÇALHO E NOME DO EVENTO ▲▲▲ -->
 
+<!-- ▼▼▼ [INÍCIO] BUSCA E CONTADOR ▼▼▼ -->
 <div class="search">
-    <input type="number" id="busca" placeholder="Nº VÍDEO">
-    <button onclick="buscarVideo()">🔍 BUSCAR</button>
+    <input type="number" id="busca" placeholder="Nº do vídeo" inputmode="numeric">
+    <button onclick="buscarVideo()">BUSCAR</button>
 </div>
+<div class="gal-meta"><b id="gal-count">0</b> vídeos</div>
+<!-- ▲▲▲ [FIM] BUSCA E CONTADOR ▲▲▲ -->
 
+<!-- ▼▼▼ [INÍCIO] GALERIA ▼▼▼ -->
 <div class="gallery" id="gallery">
-    <div class="loading">⏳ CARREGANDO VÍDEOS...</div>
+    <div class="loading">Carregando vídeos...</div>
 </div>
+<div class="empty" id="gal-empty" hidden style="max-width:520px;margin:0 auto 24px;">Os vídeos aparecem aqui assim que forem gravados.</div>
+<!-- ▲▲▲ [FIM] GALERIA ▲▲▲ -->
 
 <div class="footer">
-    <div style="color:#FFD000; font-weight: bold; font-size: 13px; letter-spacing: 1px;">📸 PHOTO MOVIE</div>
+    <div class="brand">PHOTO MOVIE</div>
 </div>
 
+<!-- ▼▼▼ [INÍCIO] MODAL DO VÍDEO ▼▼▼ -->
 <div class="modal" id="modal">
     <video id="modal-video" controls playsinline webkit-playsinline crossorigin="anonymous" preload="metadata"></video>
     <div class="modal-buttons">
         <button class="btn-fechar" onclick="fecharModal()">FECHAR</button>
-        <button class="btn-baixar" id="btn-share" style="display:none">📤 COMPARTILHAR</button>
-        <button class="btn-baixar" id="btn-baixar">📥 BAIXAR MP4</button>
+        <button class="btn-baixar" id="btn-share" style="display:none">COMPARTILHAR</button>
+        <button class="btn-baixar" id="btn-baixar">BAIXAR MP4</button>
     </div>
 </div>
+<!-- ▲▲▲ [FIM] MODAL DO VÍDEO ▲▲▲ -->
 
 <script>
 const WORKER_URL = "https://photomovie.maxprimefotovideo.workers.dev";
@@ -85,10 +89,19 @@ window.onload = () => {
     carregarEvento();
 };
 
+// ▼▼▼ [INÍCIO] NOVO: contador e estado vazio ▼▼▼
+function atualizarMeta(total) {
+    const l = document.querySelector('#gallery .loading');
+    if (l) l.remove();
+    document.getElementById('gal-count').textContent = total;
+    document.getElementById('gal-empty').hidden = total > 0;
+}
+// ▲▲▲ [FIM] NOVO: contador e estado vazio ▲▲▲
+
 async function carregarEvento() {
     const params = new URLSearchParams(location.search);
     let evento = params.get('evento');
-    
+
     if (!evento) {
         const config = localStorage.getItem('config_atual');
         if (config) {
@@ -98,7 +111,7 @@ async function carregarEvento() {
             } catch(e) {}
         }
     }
-    
+
     if (!evento) {
         try {
             const res = await fetch(`${WORKER_URL}/listar-eventos?t=${Date.now()}`);
@@ -108,20 +121,20 @@ async function carregarEvento() {
             }
         } catch(e) {}
     }
-    
+
     if (!evento) {
-        document.getElementById('gallery').innerHTML = '<div class="empty"><p>❌ NENHUM EVENTO ENCONTRADO</p></div>';
-        document.getElementById('evento-nome').innerHTML = "⚠️ NENHUM EVENTO SELECIONADO";
+        document.getElementById('gallery').innerHTML = '<div class="empty">Nenhum evento encontrado.</div>';
+        document.getElementById('evento-nome').innerHTML = "Nenhum evento selecionado";
         return;
     }
-    
+
     idPastaFixo = String(evento);
-    document.getElementById('evento-nome').innerHTML = "EVENTO: " + idPastaFixo.replace(/_/g, ' ');
-    
+    document.getElementById('evento-nome').textContent = idPastaFixo.replace(/_/g, ' ');
+
     videosMap.clear();
     listaCronologica = [];
-    document.getElementById('gallery').innerHTML = '';
-    
+    document.getElementById('gallery').innerHTML = '<div class="loading">Carregando vídeos...</div>';
+
     await atualizarGaleriaIncremental();
     setInterval(atualizarGaleriaIncremental, 5000);
 }
@@ -130,12 +143,12 @@ async function atualizarGaleriaIncremental() {
     if (carregando) return;
     const modal = document.getElementById('modal');
     if (modal.style.display === 'flex') return;
-    
+
     carregando = true;
     try {
         const res = await fetch(`${WORKER_URL}/listar-galeria?evento=${encodeURIComponent(idPastaFixo)}&t=${Date.now()}`);
         const arquivos = await res.json();
-        
+
         const finais = arquivos
             .filter(f => {
                 const path = f.path || "";
@@ -143,7 +156,7 @@ async function atualizarGaleriaIncremental() {
                 return nome.startsWith('final_') && nome.endsWith('.mp4');
             })
             .sort((a, b) => new Date(a.uploaded || 0) - new Date(b.uploaded || 0));
-        
+
         // Mapa de thumbnails disponíveis
         const thumbsDisponiveis = new Set();
         arquivos.forEach(f => {
@@ -152,28 +165,30 @@ async function atualizarGaleriaIncremental() {
                 thumbsDisponiveis.add(f.path);
             }
         });
-        
+
         const novosPaths = finais.map(f => f.path);
-        
+
+        atualizarMeta(novosPaths.length);   // NOVO: contador / estado vazio
+
         if (JSON.stringify(novosPaths) === JSON.stringify(listaCronologica)) return;
-        
+
         for (const [path, card] of videosMap.entries()) {
             if (!novosPaths.includes(path)) {
                 card.remove();
                 videosMap.delete(path);
             }
         }
-        
+
         for (const file of finais) {
             if (!videosMap.has(file.path)) {
                 adicionarCard(file, thumbsDisponiveis);
             }
         }
-        
+
         listaCronologica = novosPaths;
         reordenarCards();
         renumerarCards();
-        
+
     } catch (e) {
         console.error("Erro ao atualizar galeria:", e);
     } finally {
@@ -193,30 +208,30 @@ function adicionarCard(file, thumbsDisponiveis) {
     const videoUrl = `${WORKER_URL}/stream?id=${encodeURIComponent(file.path)}`;
     const thumbPath = getThumbPath(file.path);
     const thumbUrl = `${WORKER_URL}/stream?id=${encodeURIComponent(thumbPath)}`;
-    
+
     const card = document.createElement('div');
     card.className = 'video-card';
     card.dataset.path = file.path;
-    
-    // 🔥 Thumbnail como capa
+
+    // Thumbnail como capa
     card.innerHTML = `
         <div class="video-number">#?</div>
-        <img class="thumb-img" src="${thumbUrl}" 
+        <img class="thumb-img" src="${thumbUrl}"
              onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
              onload="this.style.display='block';"
-             alt="Capa do vídeo" 
+             alt="Capa do vídeo"
              loading="lazy">
-        <video muted playsinline webkit-playsinline preload="none" loop 
+        <video muted playsinline webkit-playsinline preload="none" loop
                style="background: #000; display: none; width: 100%; height: 100%; object-fit: cover;"></video>
         <div class="play-icon"></div>
     `;
-    
+
     const videoEl = card.querySelector('video');
     videoEl.src = videoUrl;
-    
+
     card.onclick = () => abrirVideo(videoUrl, file.path);
     container.appendChild(card);
-    
+
     videosMap.set(file.path, card);
 }
 
@@ -247,18 +262,18 @@ function renumerarCards() {
 function abrirVideo(url, path) {
     const modal = document.getElementById('modal');
     const video = document.getElementById('modal-video');
-    
+
     video.pause();
     video.src = "";
     modal.style.display = 'flex';
-    
+
     video.src = url;
     video.load();
     const pp = video.play();
     if (pp !== undefined) pp.catch(() => { video.controls = true; });
-    
+
     const sb = document.getElementById('btn-share');
-    if (navigator.canShare) sb.style.display = 'inline-block';
+    if (navigator.canShare) sb.style.display = 'inline-flex';
     sb.onclick = () => compartilharVideo(url, path);
     document.getElementById('btn-baixar').onclick = () => {
         fetch(url)
@@ -293,14 +308,14 @@ function buscarVideo() {
         alert("Digite um número válido");
         return;
     }
-    
+
     const index = num - 1;
     if (listaCronologica[index]) {
         const url = `${WORKER_URL}/stream?id=${encodeURIComponent(listaCronologica[index])}`;
         abrirVideo(url, listaCronologica[index]);
         document.getElementById('busca').value = '';
     } else {
-        alert(`❌ Vídeo #${num} não encontrado!\nTotal disponível: ${listaCronologica.length}`);
+        alert(`Vídeo #${num} não encontrado!\nTotal disponível: ${listaCronologica.length}`);
     }
 }
 </script>

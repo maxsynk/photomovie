@@ -26,6 +26,14 @@ CHANGELOG v2.0.0:
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Photo Movie">
+<!-- ▼▼▼ [INÍCIO] TRAVA DE ACESSO ▼▼▼ -->
+<script>
+if (sessionStorage.getItem('logado') !== 'true') {
+    document.documentElement.style.display = 'none';
+    location.replace('index.html');
+}
+</script>
+<!-- ▲▲▲ [FIM] TRAVA DE ACESSO ▲▲▲ -->
 <link rel="stylesheet" href="app.css">
 <script src="pwa.js" defer></script>
 </head>
@@ -91,13 +99,13 @@ CHANGELOG v2.0.0:
 
         <div class="section">
             <h3>4. Estética</h3>
-            <div class="action-box" onclick="toggleModal('music-modal', true)" style="margin-bottom: 10px; border-style: solid; border-color: #333;">
-                <span id="music-status-text" style="color: var(--dourado);">🎵 CONFIGURAR MÚSICA</span>
-                <small id="music-filename-display" style="color: #666; font-size: 10px; margin-top: 5px; display: block;"></small>
+            <div class="action-box solid" onclick="toggleModal('music-modal', true)">
+                <span class="ab-title" id="music-status-text">🎵 CONFIGURAR MÚSICA</span>
+                <small class="ab-sub" id="music-filename-display"></small>
             </div>
             
             <div class="action-box" id="btn-moldura-box" onclick="document.getElementById('file-moldura').click()">
-                <span id="upload-label">📸 UPAR MOLDURA (PNG)</span>
+                <span class="ab-title" id="upload-label">📸 UPAR MOLDURA (PNG)</span>
                 <input type="file" id="file-moldura" accept="image/png" style="display:none" onchange="subirArquivo(this, 'MOLDURA')">
             </div>
             <input type="hidden" id="conf-moldura-url">
@@ -107,27 +115,27 @@ CHANGELOG v2.0.0:
         </div>
 
         <button class="btn-save-main" onclick="salvarConfig()">SALVAR EVENTO</button>
-        <p onclick="window.location.href='index.html'" style="text-align:center; color:#555; font-size:12px; margin-top:20px; cursor:pointer; font-weight:bold;">VOLTAR</p>
+        <a class="back-link" href="index.html">Voltar</a>
     </div>
 
     <div id="music-modal" class="modal">
         <div class="modal-content">
-            <h4 style="color:var(--dourado); text-align:center; margin-bottom: 5px;">STUDIO MUSICAL</h4>
-            <div class="action-box" onclick="document.getElementById('file-musica').click()" style="padding: 15px;">
-                <span id="music-file-label">📤 UPAR MP3</span>
+            <h4>Studio musical</h4>
+            <div class="action-box" onclick="document.getElementById('file-musica').click()">
+                <span class="ab-title" id="music-file-label">📤 UPAR MP3</span>
                 <input type="file" id="file-musica" accept="audio/mpeg, audio/mp3" style="display:none" onchange="subirArquivo(this, 'MUSICA')">
             </div>
-            <div id="music-controls" style="margin-top: 10px;">
+            <div id="music-controls">
                 <audio id="audio-player" controls style="display: none;"></audio>
                 <label>INICIAR MÚSICA EM (MM:SS):</label>
                 <div class="trim-container">
                     <input type="number" id="trim-min" class="trim-input" placeholder="00" min="0" value="0" oninput="sincronizarPlayer()">
-                    <span style="font-weight:bold;">:</span>
+                    <span>:</span>
                     <input type="number" id="trim-sec" class="trim-input" placeholder="00" min="0" max="59" value="0" oninput="sincronizarPlayer()">
-                    <button type="button" onclick="marcarTempoAtual()" style="background: var(--turquesa-dark); border: 1px solid var(--turquesa); color: var(--turquesa); border-radius: 10px; padding: 12px; cursor: pointer; font-weight: bold; flex-shrink: 0;">MARCAR</button>
+                    <button type="button" class="pbtn" onclick="marcarTempoAtual()">MARCAR</button>
                 </div>
-                <div style="background: rgba(255, 208, 0, 0.1); padding: 12px; border-radius: 12px; margin-top: 15px; border: 1px solid rgba(255, 208, 0, 0.2);">
-                    <label style="margin: 0; color: var(--dourado);"><input type="checkbox" id="conf-musica-loop-vol" checked> VOLUME DINÂMICO (Fade)</label>
+                <div class="vol-box">
+                    <label><input type="checkbox" id="conf-musica-loop-vol" checked> Volume dinâmico (fade)</label>
                 </div>
             </div>
             <button class="btn-save-main" onclick="fecharModalMusica()">CONCLUIR</button>

@@ -16,21 +16,44 @@
 <script src="pwa.js" defer></script>
 </head>
 <body class="pg-home">
+
+<!-- ▼▼▼ [INÍCIO] CABEÇALHO ▼▼▼ -->
 <header class="header"><h1>PHOTO MOVIE</h1><p>colecionando momentos</p><button id="btn-lock" class="link" hidden>Sair</button></header>
+<!-- ▲▲▲ [FIM] CABEÇALHO ▲▲▲ -->
+
 <main class="wrap">
+
+  <!-- ▼▼▼ [INÍCIO] TELA DE LOGIN ▼▼▼ -->
   <section id="view-login">
+    <div class="lock-badge" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg>
+    </div>
     <h2>Central do operador</h2>
     <p>Entre com a senha mestra para gerenciar eventos.</p>
     <input type="password" id="input-senha" autocomplete="current-password" placeholder="Senha">
     <button class="pbtn y" id="btn-entrar">Entrar</button>
   </section>
+  <!-- ▲▲▲ [FIM] TELA DE LOGIN ▲▲▲ -->
+
+  <!-- ▼▼▼ [INÍCIO] TELA PRINCIPAL (EVENTOS) ▼▼▼ -->
   <section id="view-home" hidden>
     <div id="hero"></div>
+    <div class="divider-line"><span>Eventos gravados</span></div>
     <div class="sec-title"><span>Eventos</span><small id="cont"></small></div>
     <ul id="lista-eventos"></ul>
   </section>
+  <!-- ▲▲▲ [FIM] TELA PRINCIPAL (EVENTOS) ▲▲▲ -->
+
 </main>
-<nav id="tabbar"><a href="index.html" class="on">Eventos</a><a href="config_evento.html" class="new" id="tab-new">+ Novo evento</a><a href="galeria_admin.html">Galeria</a></nav>
+
+<!-- ▼▼▼ [INÍCIO] BARRA INFERIOR (começa oculta; só aparece após o login) ▼▼▼ -->
+<nav id="tabbar" hidden>
+  <a href="index.html" class="on"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Eventos</a>
+  <a href="config_evento.html" class="new" id="tab-new"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Novo evento</a>
+  <a href="galeria_admin.html"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="m21 16-5-5-8 9"/></svg>Galeria</a>
+</nav>
+<!-- ▲▲▲ [FIM] BARRA INFERIOR ▲▲▲ -->
+
 <script>
 const WORKER_URL = "https://photomovie.maxprimefotovideo.workers.dev";
 const CLIENTE_URL = "https://maxsynk.github.io/photomovie/galeria.html";
@@ -44,6 +67,7 @@ const nomeEv = ev => esc((ev.nome || 'Evento sem nome').replace(/_/g, ' '));
 window.onload = () => {
   $('btn-entrar').onclick = entrar;
   $('input-senha').addEventListener('keydown', e => { if (e.key === 'Enter') entrar(); });
+  $('input-senha').addEventListener('input', () => $('input-senha').classList.remove('erro'));
   $('btn-lock').onclick = sair;
   $('hero').onclick = acaoHero;
   $('lista-eventos').onclick = acaoLista;
@@ -53,16 +77,20 @@ window.onload = () => {
 
 async function entrar() {
   const senha = $('input-senha').value;
+  const btn = $('btn-entrar');
+  if (btn.disabled) return;
+  btn.disabled = true;
   try {
     const r = await fetch(WORKER_URL + '/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ senha }) });
     const d = await r.json();
     if (d.ok) { sessionStorage.setItem('logado', 'true'); if (d.token) sessionStorage.setItem('pm_token', d.token); liberar(); }
-    else alert('Senha incorreta');
+    else { const i = $('input-senha'); i.classList.remove('erro'); void i.offsetWidth; i.classList.add('erro'); i.select(); }
   } catch (e) { alert('Sem conexão com o servidor'); }
+  finally { btn.disabled = false; }
 }
 function liberar() {
   $('view-login').hidden = true; $('view-home').hidden = false; $('btn-lock').hidden = false;
-  $('tabbar').style.display = 'grid'; carregar();
+  $('tabbar').hidden = false; carregar();
 }
 function sair() { sessionStorage.removeItem('logado'); sessionStorage.removeItem('pm_token'); location.reload(); }
 
