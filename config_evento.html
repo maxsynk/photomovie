@@ -15,14 +15,14 @@ CHANGELOG v2.0.0:
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>CONFIGURAR EVENTO - Photo Movie v2.0.0</title>
     <style>
         :root { 
-            --turquesa: #00d1d1; 
-            --turquesa-dark: #003333;
-            --dourado: #c5a059; 
-            --dourado-fosco: #8e6d2d;
+            --turquesa: #FFD000; 
+            --turquesa-dark: #0a0a0a;
+            --dourado: #FFD000; 
+            --dourado-fosco: #E0A800;
             --preto: #050505;
         }
         
@@ -66,7 +66,7 @@ CHANGELOG v2.0.0:
             background: #1a1a1a; border: 2px solid #333; color: #666;
             width: 55px; height: 55px; border-radius: 50%; cursor: pointer; font-weight: bold;
         }
-        .time-btn.active { border-color: var(--turquesa); color: var(--turquesa); background: rgba(0, 209, 209, 0.1); }
+        .time-btn.active { border-color: var(--turquesa); color: var(--turquesa); background: rgba(255, 208, 0, 0.1); }
 
         .speed-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 15px; }
         .speed-box { background: #000; border: 1px solid #222; padding: 10px; border-radius: 12px; text-align: center; }
@@ -100,9 +100,9 @@ CHANGELOG v2.0.0:
             gap: 12px;
             margin-top: 20px;
             padding: 15px;
-            background: rgba(0, 209, 209, 0.05);
+            background: rgba(255, 208, 0, 0.05);
             border-radius: 14px;
-            border: 1px solid rgba(0, 209, 209, 0.15);
+            border: 1px solid rgba(255, 208, 0, 0.15);
         }
         .reverso-container input[type="checkbox"] {
             width: 24px;
@@ -119,8 +119,8 @@ CHANGELOG v2.0.0:
         }
 
         .info-efeito {
-            background: rgba(197, 160, 89, 0.08);
-            border: 1px solid rgba(197, 160, 89, 0.15);
+            background: rgba(255, 208, 0, 0.08);
+            border: 1px solid rgba(255, 208, 0, 0.15);
             border-radius: 12px;
             padding: 12px;
             margin-top: 10px;
@@ -159,6 +159,16 @@ CHANGELOG v2.0.0:
             z-index: 100;
         }
     </style>
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Photo Movie">
+<link rel="stylesheet" href="app.css">
+<script src="pwa.js" defer></script>
 </head>
 <body>
 
@@ -255,7 +265,7 @@ CHANGELOG v2.0.0:
                     <input type="number" id="trim-sec" class="trim-input" placeholder="00" min="0" max="59" value="0" oninput="sincronizarPlayer()">
                     <button type="button" onclick="marcarTempoAtual()" style="background: var(--turquesa-dark); border: 1px solid var(--turquesa); color: var(--turquesa); border-radius: 10px; padding: 12px; cursor: pointer; font-weight: bold; flex-shrink: 0;">MARCAR</button>
                 </div>
-                <div style="background: rgba(197, 160, 89, 0.1); padding: 12px; border-radius: 12px; margin-top: 15px; border: 1px solid rgba(197, 160, 89, 0.2);">
+                <div style="background: rgba(255, 208, 0, 0.1); padding: 12px; border-radius: 12px; margin-top: 15px; border: 1px solid rgba(255, 208, 0, 0.2);">
                     <label style="margin: 0; color: var(--dourado);"><input type="checkbox" id="conf-musica-loop-vol" checked> VOLUME DINÂMICO (Fade)</label>
                 </div>
             </div>

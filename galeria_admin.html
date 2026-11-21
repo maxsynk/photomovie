@@ -12,12 +12,12 @@ CHANGELOG v2.0.3:
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>PHOTO MOVIE - ADMIN v2.0.3</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
-        :root { --turquesa: #00d1d1; --dourado: #c5a059; --bg: #001a1a; --danger: #ff4d4d; }
+        :root { --turquesa: #FFD000; --dourado: #FFD000; --bg: #050505; --danger: #ff4d4d; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; min-height: 100vh; }
         
         .sticky-top { position: sticky; top: 0; z-index: 100; background: var(--bg); }
@@ -30,7 +30,7 @@ CHANGELOG v2.0.3:
         .v-line { width: 2px; height: 30px; background: var(--dourado); border-radius: 2px; margin-right: 10px; }
         #nome-evento-titulo { color: var(--dourado); font-size: 13px; margin: 0; letter-spacing: 1px; text-transform: uppercase; font-weight: bold; text-align: left; }
 
-        .search-area { padding: 15px; background: rgba(0,0,0,0.9); display: flex; justify-content: center; gap: 10px; border-bottom: 1px solid rgba(197, 160, 89, 0.2); backdrop-filter: blur(10px); }
+        .search-area { padding: 15px; background: rgba(0,0,0,0.9); display: flex; justify-content: center; gap: 10px; border-bottom: 1px solid rgba(255, 208, 0, 0.2); backdrop-filter: blur(10px); }
         .search-area input { width: 180px; padding: 12px; border-radius: 8px; border: 1px solid var(--dourado); background: #000; color: var(--dourado); text-align: center; font-weight: bold; outline: none; font-size: 18px; }
         .btn-busca { background: var(--dourado); color: black; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; }
 
@@ -39,7 +39,7 @@ CHANGELOG v2.0.3:
 
         .video-card { 
             background: #000; 
-            border: 1px solid rgba(197, 160, 89, 0.3); 
+            border: 1px solid rgba(255, 208, 0, 0.3); 
             border-radius: 12px; 
             overflow: hidden; 
             aspect-ratio: 9/16; 
@@ -122,6 +122,16 @@ CHANGELOG v2.0.3:
         .empty-gallery { text-align: center; padding: 50px; color: #666; grid-column: 1/-1; }
         .loading { text-align: center; padding: 50px; color: var(--dourado); grid-column: 1/-1; }
     </style>
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Photo Movie">
+<link rel="stylesheet" href="app.css">
+<script src="pwa.js" defer></script>
 </head>
 <body>
 
@@ -154,7 +164,7 @@ CHANGELOG v2.0.3:
     </div>
 
     <div class="nav-footer">
-        <a href="#" id="btn-voltar" class="btn-action btn-close" style="display: block; text-align: center; background: rgba(197, 160, 89, 0.1); color: var(--dourado); border: 1px solid var(--dourado);">← VOLTAR</a>
+        <a href="#" id="btn-voltar" class="btn-action btn-close" style="display: block; text-align: center; background: rgba(255, 208, 0, 0.1); color: var(--dourado); border: 1px solid var(--dourado);">← VOLTAR</a>
     </div>
 
     <div id="modal-zoom">
