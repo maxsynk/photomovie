@@ -242,6 +242,7 @@ CHANGELOG v2.0.2:
     <video id="modal-video" controls playsinline webkit-playsinline crossorigin="anonymous" preload="metadata"></video>
     <div class="modal-buttons">
         <button class="btn-fechar" onclick="fecharModal()">FECHAR</button>
+        <button class="btn-baixar" id="btn-share" style="display:none">📤 COMPARTILHAR</button>
         <button class="btn-baixar" id="btn-baixar">📥 BAIXAR MP4</button>
     </div>
 </div>
@@ -441,21 +442,14 @@ function abrirVideo(url, path) {
     video.src = "";
     modal.style.display = 'flex';
     
-    fetch(url)
-        .then(response => response.blob())
-        .then(blob => {
-            const blobUrl = URL.createObjectURL(blob);
-            video.src = blobUrl;
-            video.load();
-            const playPromise = video.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(error => { video.controls = true; });
-            }
-        })
-        .catch(err => {
-            alert("Erro ao carregar vídeo para exibição.");
-        });
+    video.src = url;
+    video.load();
+    const pp = video.play();
+    if (pp !== undefined) pp.catch(() => { video.controls = true; });
     
+    const sb = document.getElementById('btn-share');
+    if (navigator.canShare) sb.style.display = 'inline-block';
+    sb.onclick = () => compartilharVideo(url, path);
     document.getElementById('btn-baixar').onclick = () => {
         fetch(url)
             .then(res => res.blob())
@@ -464,6 +458,15 @@ function abrirVideo(url, path) {
             })
             .catch(e => alert("Erro no download."));
     };
+}
+
+async function compartilharVideo(url, path) {
+    try {
+        const blob = await (await fetch(url)).blob();
+        const file = new File([blob], path.split('/').pop(), { type: 'video/mp4' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], title: 'Meu Photo Movie' });
+        else saveAs(blob, file.name);
+    } catch (e) {}
 }
 
 function fecharModal() {

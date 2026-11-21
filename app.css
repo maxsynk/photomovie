@@ -10,3 +10,12 @@ button:active,.btn-central:active{transform:scale(.97)}
 #pm-install{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:9998;background:var(--pm-yellow);color:#000;border:0;border-radius:40px;padding:14px 26px;font:800 13px 'Segoe UI',sans-serif;letter-spacing:1px;box-shadow:0 8px 24px rgba(0,0,0,.6);display:none}
 #pm-offline{position:fixed;top:0;left:0;right:0;z-index:9999;background:var(--pm-yellow);color:#000;text-align:center;font:700 12px 'Segoe UI',sans-serif;padding:calc(6px + env(safe-area-inset-top)) 8px 6px;display:none}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+#pm-toast{position:fixed;left:50%;top:calc(16px + env(safe-area-inset-top));transform:translate(-50%,-140%);z-index:10000;max-width:88vw;background:#000;color:var(--pm-yellow);border:1px solid var(--pm-yellow);border-radius:14px;padding:13px 20px;font:700 14px 'Segoe UI',sans-serif;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.7);transition:transform .25s ease}
+#pm-toast.on{transform:translate(-50%,0)}
+.modal-buttons{flex-wrap:wrap;justify-content:center}
+.video-card,.event-card{transition:transform .15s ease,border-color .2s,box-shadow .2s}
+.video-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(255,208,0,.18)}
+.event-card.active-border{box-shadow:0 0 0 1px var(--pm-yellow),0 8px 28px rgba(255,208,0,.12)}
+.header,.sticky-top{backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.btn-central:hover{box-shadow:0 0 18px rgba(255,208,0,.25)}

@@ -145,20 +145,26 @@
     </div>
 
 <script>
-    const SENHA_MESTRA = "1234"; 
     const WORKER_URL = "https://photomovie.maxprimefotovideo.workers.dev";
 
     window.onload = () => { if(sessionStorage.getItem('logado') === 'true') liberarSistema(); }
 
+    const q = v => JSON.stringify(v == null ? '' : v).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     function abrirModal() { document.getElementById('modal-senha').style.display = 'flex'; document.getElementById('input-senha').focus(); }
     function fecharModal() { document.getElementById('modal-senha').style.display = 'none'; document.getElementById('input-senha').value = ''; }
 
-    function validarSenha() {
-        if (document.getElementById('input-senha').value === SENHA_MESTRA) {
-            sessionStorage.setItem('logado', 'true');
-            fecharModal();
-            liberarSistema();
-        } else { alert("Senha Incorreta"); }
+    async function validarSenha() {
+        const senha = document.getElementById('input-senha').value;
+        try {
+            const r = await fetch(WORKER_URL + '/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ senha }) });
+            const d = await r.json();
+            if (d.ok) {
+                sessionStorage.setItem('logado', 'true');
+                if (d.token) sessionStorage.setItem('pm_token', d.token);
+                fecharModal(); liberarSistema();
+            } else { alert("Senha incorreta"); }
+        } catch (e) { alert("Sem conexão com o servidor"); }
     }
 
     function liberarSistema() {
@@ -215,7 +221,7 @@
                 card.innerHTML = `
                     <div class="event-info-col">
                         <div class="event-info">
-                            <h4>${ev.nome ? ev.nome.replace(/_/g, ' ') : 'EVENTO SEM NOME'}</h4>
+                            <h4>${ev.nome ? esc(ev.nome.replace(/_/g, ' ')) : 'EVENTO SEM NOME'}</h4>
                             <span>DATA: ${ev.data || '--/--/--'} | DURAÇÃO: ${tempoExibicao}s</span>
                         </div>
                         <div class="group-actions-row">
@@ -223,7 +229,7 @@
                                 ${estaAtivo ? '● ATIVO' : 'ATIVAR'}
                             </button>
                             <button class="btn-edit-big" onclick='irParaEditar(${evData})'>EDITAR</button>
-                            <button class="btn-del-big" onclick="excluirEvento('${ev.id}', '${ev.nome}')">×</button>
+                            <button class="btn-del-big" onclick="excluirEvento(${q(ev.id)}, ${q(ev.nome)})">×</button>
                         </div>
                     </div>
                     <button class="btn-camera-main" onclick="irParaCamera(${evData})">📸</button>
@@ -278,7 +284,7 @@
         }
     }
 
-    function bloquear() { sessionStorage.removeItem('logado'); location.reload(); }
+    function bloquear() { sessionStorage.removeItem('logado'); sessionStorage.removeItem('pm_token'); location.reload(); }
 </script>
 </body>
 </html>
