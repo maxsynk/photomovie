@@ -1661,3 +1661,91 @@ body.pg-cam * { -webkit-touch-callout: none; -webkit-user-select: none; user-sel
 .empty-gallery p { margin: 0 0 4px; font-size: 14px; }
 .empty-gallery small { display: block; color: var(--mut-2); font-size: 12px; }
 /* ▲▲▲ [FIM] 19 · GALERIA ADMIN ▲▲▲ */
+
+
+/* ▼▼▼ [INÍCIO] 20 · PÁGINA DE DOWNLOAD DO CLIENTE (download.html) ▼▼▼ */
+.pg-dl {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-bottom: calc(28px + env(safe-area-inset-bottom));
+}
+.pg-dl .header { padding: 34px 20px 12px; }
+.pg-dl .header h1 { font-size: 40px; }
+
+/* Etiqueta com o número do vídeo */
+.pg-dl #video-number {
+  margin-top: 14px;
+  padding: 7px 20px;
+  color: var(--p3);
+  font: 800 12px var(--ui);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  background: var(--p-glass);
+  border: 1px solid var(--p-glass-2);
+  border-radius: var(--r-pill);
+  text-shadow: 0 0 14px var(--p-glow-strong);
+}
+
+/* Vídeo: tamanho 9:16 que sempre cabe na tela, com moldura roxa */
+.pg-dl .video-preview {
+  width: min(80vw, 360px, calc(56dvh * 9 / 16));
+  margin: 8px auto 0;
+  padding: 6px;
+  background: linear-gradient(160deg, rgba(176, 38, 255, 0.55), rgba(122, 0, 204, 0.15) 60%, rgba(176, 38, 255, 0.35));
+  border-radius: calc(var(--r) + 6px);
+  box-shadow: 0 0 44px var(--p-glow), var(--shadow-lg);
+  animation: pop 0.5s var(--ease) both;
+}
+.pg-dl .video-preview video {
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  object-fit: contain;
+  background: #000;
+  border-radius: var(--r);
+}
+
+/* Botão principal */
+.pg-dl .btn-download {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: min(88vw, 360px);
+  min-height: 60px;
+  margin-top: 24px;
+  border: none;
+  border-radius: var(--r-pill);
+  color: #fff;
+  font: 800 21px var(--cond);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, var(--p) 0%, var(--p2) 100%);
+  box-shadow: 0 8px 28px rgba(176, 38, 255, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: transform var(--t-fast) var(--ease), box-shadow var(--t) var(--ease);
+}
+.pg-dl .btn-download::before {
+  content: "";
+  width: 20px;
+  height: 20px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 20h14'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 20h14'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.pg-dl .btn-download:active { transform: scale(0.97); }
+
+/* Link de voltar */
+.pg-dl .btn-back {
+  margin-top: 18px;
+  padding: 10px 16px;
+  color: var(--mut);
+  font: 700 12px var(--ui);
+  letter-spacing: 0.16em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color var(--t);
+}
+.pg-dl .btn-back:hover { color: #fff; }
+/* ▲▲▲ [FIM] 20 · PÁGINA DE DOWNLOAD DO CLIENTE ▲▲▲ */
