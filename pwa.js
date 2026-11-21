@@ -4,7 +4,7 @@
   function net(){bar.style.display=navigator.onLine?'none':'block'}
   window.addEventListener('online',net);window.addEventListener('offline',net);
   document.addEventListener('DOMContentLoaded',function(){document.body.appendChild(bar);net();
-    if(!document.getElementById('btn-login'))return; // botão de instalar só na Central
+    if(!document.body.classList.contains('pg-home'))return; // botão de instalar só na Central
     var standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;if(standalone)return;
     var b=document.createElement('button');b.id='pm-install';b.textContent='INSTALAR APP';document.body.appendChild(b);
     var ev=null;window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();ev=e;b.style.display='block'});

@@ -16,112 +16,7 @@ CHANGELOG v2.0.3:
     <title>PHOTO MOVIE - ADMIN v2.0.3</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <style>
-        :root { --turquesa: #FFD000; --dourado: #FFD000; --bg: #050505; --danger: #ff4d4d; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; min-height: 100vh; }
-        
-        .sticky-top { position: sticky; top: 0; z-index: 100; background: var(--bg); }
-        .header { padding: 20px; border-bottom: 2px solid var(--dourado); background: rgba(0,0,0,0.8); backdrop-filter: blur(15px); }
-        .header h1 { color: var(--dourado); letter-spacing: 5px; margin: 0; text-transform: uppercase; font-size: 1.8rem; font-weight: 900; }
-        .subtitle { font-size: 11px; letter-spacing: 4px; opacity: 0.9; margin-top: 2px; text-transform: uppercase; color: var(--dourado); }
-        .admin-label { font-size: 14px; color: var(--dourado); letter-spacing: 2px; margin-top: 5px; font-weight: bold; }
-
-        .event-info-container { display: flex; align-items: center; justify-content: flex-start; width: 100%; margin-top: 15px; padding-left: 10px; cursor: pointer; }
-        .v-line { width: 2px; height: 30px; background: var(--dourado); border-radius: 2px; margin-right: 10px; }
-        #nome-evento-titulo { color: var(--dourado); font-size: 13px; margin: 0; letter-spacing: 1px; text-transform: uppercase; font-weight: bold; text-align: left; }
-
-        .search-area { padding: 15px; background: rgba(0,0,0,0.9); display: flex; justify-content: center; gap: 10px; border-bottom: 1px solid rgba(255, 208, 0, 0.2); backdrop-filter: blur(10px); }
-        .search-area input { width: 180px; padding: 12px; border-radius: 8px; border: 1px solid var(--dourado); background: #000; color: var(--dourado); text-align: center; font-weight: bold; outline: none; font-size: 18px; }
-        .btn-busca { background: var(--dourado); color: black; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; }
-
-        .admin-tools { display: flex; gap: 10px; justify-content: center; padding: 15px; flex-wrap: wrap; }
-        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; padding: 15px; padding-bottom: 120px; }
-
-        .video-card { 
-            background: #000; 
-            border: 1px solid rgba(255, 208, 0, 0.3); 
-            border-radius: 12px; 
-            overflow: hidden; 
-            aspect-ratio: 9/16; 
-            position: relative; 
-            cursor: pointer; 
-        }
-        .video-card:hover { border-color: var(--dourado); }
-        
-        .video-card .thumb-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-        
-        .video-card .play-icon {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 40px;
-            height: 40px;
-            background: rgba(0,0,0,0.6);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            pointer-events: none;
-            z-index: 5;
-        }
-        .video-card .play-icon::after {
-            content: '';
-            width: 0;
-            height: 0;
-            border-left: 14px solid white;
-            border-top: 9px solid transparent;
-            border-bottom: 9px solid transparent;
-            margin-left: 3px;
-        }
-        
-        .video-id-badge { 
-            position: absolute; 
-            top: 8px; 
-            left: 8px; 
-            background: var(--dourado); 
-            color: black; 
-            padding: 2px 8px; 
-            border-radius: 4px; 
-            font-weight: 900; 
-            font-size: 12px; 
-            z-index: 10; 
-        }
-        .btn-del-mini { 
-            position: absolute; 
-            top: 8px; 
-            right: 8px; 
-            background: var(--danger); 
-            border: none; 
-            color: white; 
-            border-radius: 50%; 
-            width: 30px; 
-            height: 30px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            z-index: 20; 
-            font-size: 16px; 
-        }
-        .btn-del-mini:hover { background: #ff0000; transform: scale(1.05); }
-
-        #modal-zoom { position: fixed; inset: 0; background: rgba(0,0,0,0.98); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; }
-        #media-full { width: 90%; max-height: 70vh; border: 2px solid var(--dourado); border-radius: 15px; background: #000; }
-        .modal-controls { margin-top: 25px; display: flex; gap: 15px; width: 90%; justify-content: center; flex-wrap: wrap; }
-        .btn-action { padding: 12px 25px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 14px; text-transform: uppercase; }
-        .btn-close { background: #333; color: white; }
-        .btn-download { background: var(--dourado); color: black; }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-zip { background: #28a745; color: white; }
-        .nav-footer { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 500; width: 90%; }
-        
-        .empty-gallery { text-align: center; padding: 50px; color: #666; grid-column: 1/-1; }
-        .loading { text-align: center; padding: 50px; color: var(--dourado); grid-column: 1/-1; }
-    </style>
+    
 <meta name="theme-color" content="#000000">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon-192.png">
@@ -133,7 +28,7 @@ CHANGELOG v2.0.3:
 <link rel="stylesheet" href="app.css">
 <script src="pwa.js" defer></script>
 </head>
-<body>
+<body class="pg-admin">
 
     <div class="sticky-top">
         <div class="header">
@@ -167,7 +62,7 @@ CHANGELOG v2.0.3:
     </div>
 
     <div class="nav-footer">
-        <a href="#" id="btn-voltar" class="btn-action btn-close" style="display: block; text-align: center; background: rgba(255, 208, 0, 0.1); color: var(--dourado); border: 1px solid var(--dourado);">← VOLTAR</a>
+        <a href="#" id="btn-voltar" class="btn-action btn-close">← VOLTAR</a>
     </div>
 
     <div id="modal-zoom">

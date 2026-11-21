@@ -17,148 +17,7 @@ CHANGELOG v2.0.0:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>CONFIGURAR EVENTO - Photo Movie v2.0.0</title>
-    <style>
-        :root { 
-            --turquesa: #FFD000; 
-            --turquesa-dark: #0a0a0a;
-            --dourado: #FFD000; 
-            --dourado-fosco: #E0A800;
-            --preto: #050505;
-        }
-        
-        body { 
-            margin: 0; background: var(--preto); color: white; 
-            font-family: 'Segoe UI', Roboto, sans-serif; padding-bottom: 40px;
-            background-image: radial-gradient(circle at top right, #111, #050505);
-        }
-
-        .header {
-            background: linear-gradient(to bottom, var(--turquesa-dark), var(--preto)); 
-            padding: 35px 25px; text-align: center;
-            border-bottom: 2px solid var(--dourado);
-        }
-
-        .header h1 { color: var(--dourado); margin: 0; font-size: 36px; letter-spacing: 5px; font-weight: 900; text-transform: uppercase; }
-
-        .container { padding: 20px; max-width: 500px; margin: 0 auto; }
-
-        .section {
-            background: rgba(20, 20, 20, 0.9); border: 1px solid #333; padding: 25px 20px;
-            border-radius: 24px; margin-bottom: 20px;
-        }
-
-        .section h3 { 
-            color: var(--dourado); margin-top: 0; font-size: 12px; 
-            text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #222;
-            padding-bottom: 12px; margin-bottom: 20px;
-        }
-
-        label { display: block; font-size: 11px; margin: 15px 0 8px 0; color: #888; font-weight: bold; text-transform: uppercase; }
-
-        input, select {
-            width: 100%; padding: 16px; background: #000; border: 1px solid #444;
-            color: white; border-radius: 14px; box-sizing: border-box; font-size: 16px; outline: none;
-        }
-        input:focus, select:focus { border-color: var(--dourado); }
-
-        .time-selector { display: flex; justify-content: center; gap: 15px; }
-        .time-btn {
-            background: #1a1a1a; border: 2px solid #333; color: #666;
-            width: 55px; height: 55px; border-radius: 50%; cursor: pointer; font-weight: bold;
-        }
-        .time-btn.active { border-color: var(--turquesa); color: var(--turquesa); background: rgba(255, 208, 0, 0.1); }
-
-        .speed-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .speed-box { background: #000; border: 1px solid #222; padding: 10px; border-radius: 12px; text-align: center; }
-        .speed-box select { padding: 8px; font-size: 14px; text-align: center; border: none; background: transparent; color: var(--turquesa); font-weight: bold; cursor: pointer; }
-
-        .action-box {
-            width: 100%; padding: 20px; background: #111; border: 2px dashed #444; 
-            color: #888; border-radius: 18px; text-align: center; cursor: pointer;
-            font-weight: bold; display: flex; flex-direction: column; justify-content: center; align-items: center; box-sizing: border-box;
-        }
-        
-        #frame-preview { width: 100%; aspect-ratio: 9/16; max-height: 250px; margin-top: 15px; display: none; border-radius: 12px; border: 1px solid #333; object-fit: contain; background: #000; }
-
-        .btn-save-main {
-            width: 100%; padding: 22px; background: linear-gradient(135deg, var(--dourado), var(--dourado-fosco));
-            border: none; border-radius: 50px; color: #000; font-weight: 900;
-            text-transform: uppercase; cursor: pointer; font-size: 17px; margin-top: 20px;
-        }
-
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 9999; display: none; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
-        .modal-content { width: 85%; max-width: 400px; background: #0a0a0a; border-radius: 35px; border: 1px solid var(--dourado); padding: 30px; display: flex; flex-direction: column; gap: 10px; }
-
-        #audio-player { width: 100%; margin: 15px 0; filter: invert(100%) hue-rotate(180deg) brightness(1.5); height: 35px; }
-        
-        .trim-container { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
-        .trim-input { text-align: center; color: var(--turquesa); font-family: monospace; font-size: 18px; width: 60px; }
-
-        .reverso-container {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(255, 208, 0, 0.05);
-            border-radius: 14px;
-            border: 1px solid rgba(255, 208, 0, 0.15);
-        }
-        .reverso-container input[type="checkbox"] {
-            width: 24px;
-            height: 24px;
-            accent-color: var(--turquesa);
-            cursor: pointer;
-            flex-shrink: 0;
-        }
-        .reverso-container label {
-            margin: 0;
-            cursor: pointer;
-            color: var(--turquesa);
-            font-size: 13px;
-        }
-
-        .info-efeito {
-            background: rgba(255, 208, 0, 0.08);
-            border: 1px solid rgba(255, 208, 0, 0.15);
-            border-radius: 12px;
-            padding: 12px;
-            margin-top: 10px;
-            font-size: 12px;
-            color: #999;
-            text-align: center;
-        }
-        .info-efeito strong {
-            color: var(--dourado);
-        }
-
-        .preset-indicator {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 10px;
-            font-weight: bold;
-            text-transform: uppercase;
-            margin-top: 8px;
-        }
-        .preset-indicator.custom { background: #333; color: #888; }
-        .preset-indicator.normal { background: #1a3a1a; color: #4caf50; }
-        .preset-indicator.vizz { background: #3a1a1a; color: #ff6b6b; }
-        .preset-indicator.boomerang { background: #1a1a3a; color: #6b6bff; }
-        .preset-indicator.slow { background: #1a2a3a; color: #4fc3f7; }
-        
-        .version-badge {
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            background: rgba(0,0,0,0.7);
-            color: #666;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 10px;
-            z-index: 100;
-        }
-    </style>
+    
 <meta name="theme-color" content="#000000">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon-192.png">
@@ -170,7 +29,7 @@ CHANGELOG v2.0.0:
 <link rel="stylesheet" href="app.css">
 <script src="pwa.js" defer></script>
 </head>
-<body>
+<body class="pg-config">
 
     <div class="header">
         <h1 id="titulo-pagina">PHOTO MOVIE</h1>

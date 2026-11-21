@@ -4,75 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>DOWNLOAD - Photo Movie</title>
-    <style>
-        :root { 
-            --turquesa-dark: #0a0a0a; 
-            --dourado: #FFD000;      
-            --dourado-fosco: #E0A800;
-        }
-        
-        body { 
-            margin: 0; 
-            background: var(--turquesa-dark); 
-            color: white; 
-            font-family: 'Segoe UI', Roboto, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-
-        .header { text-align: center; margin-bottom: 25px; margin-top: 10px; }
-        .header h1 { color: var(--dourado); font-size: 32px; margin: 0; text-transform: uppercase; letter-spacing: 3px; font-weight: 900; }
-        #video-number { color: var(--dourado); letter-spacing: 2px; font-weight: bold; display: block; margin-top: 5px; }
-
-        .video-preview {
-            width: 100%;
-            max-width: 400px;
-            border-radius: 20px;
-            overflow: hidden;
-            border: 2px solid var(--dourado);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
-            background: #000;
-            line-height: 0;
-        }
-
-        video { width: 100%; display: block; }
-
-        .btn-download {
-            margin-top: 35px;
-            width: 100%;
-            max-width: 320px;
-            padding: 20px;
-            border-radius: 50px;
-            background: linear-gradient(135deg, var(--dourado), var(--dourado-fosco));
-            color: #000;
-            text-align: center;
-            text-decoration: none;
-            font-weight: 800;
-            text-transform: uppercase;
-            font-size: 16px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-            border: none;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .btn-download:active { transform: scale(0.96); }
-
-        .btn-back { 
-            color: white; 
-            margin-top: 40px; 
-            font-size: 14px; 
-            opacity: 0.7; 
-            text-decoration: none; 
-            padding: 10px;
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 10px;
-        }
-    </style>
+    
 <meta name="theme-color" content="#000000">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon-192.png">
@@ -84,7 +16,7 @@
 <link rel="stylesheet" href="app.css">
 <script src="pwa.js" defer></script>
 </head>
-<body>
+<body class="pg-dl">
 
     <div class="header">
         <h1>PHOTO MOVIE</h1>

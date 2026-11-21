@@ -1,102 +1,9 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CENTRAL - Photo Movie</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <style>
-        :root { 
-            --turquesa-dark: #0a0a0a; 
-            --dourado: #FFD000;      
-            --dourado-dark: #E0A800;
-            --bg-modal: rgba(0, 20, 20, 0.98);
-            --cinza-minimal: #666666; 
-            --ativo-ouro: linear-gradient(135deg, #FFD000, #E0A800);
-        }
-        
-        body { 
-            margin: 0; background: var(--turquesa-dark); color: white; 
-            font-family: 'Segoe UI', Roboto, sans-serif;
-            display: flex; flex-direction: column; align-items: center;
-            min-height: 100vh; overflow-x: hidden;
-        }
-
-        .header { margin-top: 1.8cm; text-align: center; margin-bottom: 40px; }
-        .header h1 { color: var(--dourado); font-size: 52px; font-weight: 900; letter-spacing: 3px; margin: 0; text-transform: uppercase; animation: pulse-gold 3s infinite ease-in-out; }
-        .header p { color: var(--dourado); font-size: 20px; margin: -5px 0 0 0; letter-spacing: 4px; font-weight: 300; text-transform: lowercase; opacity: 0.9; }
-        .version-tag { font-size: 10px; color: rgba(255, 208, 0, 0.4); font-family: monospace; margin-top: 5px; display: block; letter-spacing: 1px; }
-
-        @keyframes pulse-gold {
-            0%, 100% { text-shadow: 0 0 5px rgba(255, 208, 0, 0.2); transform: scale(1); }
-            50% { text-shadow: 0 0 25px rgba(255, 208, 0, 0.7); transform: scale(1.02); }
-        }
-
-        .main-container { flex: 1; display: flex; flex-direction: column; align-items: center; width: 92%; max-width: 500px; }
-
-        .btn-central {
-            width: 100%; padding: 22px; margin: 10px 0; border-radius: 12px;
-            text-transform: uppercase; font-weight: 800; font-size: 16px;
-            cursor: pointer; text-decoration: none; text-align: center;
-            display: none; box-sizing: border-box; transition: all 0.3s ease;
-        }
-
-        .btn-create { background: var(--ativo-ouro); color: #1a1a1a; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        #btn-galeria { background: rgba(255, 208, 0, 0.1); color: var(--dourado); border: 1px solid var(--dourado); }
-        #btn-copy-link { background: rgba(255, 208, 0, 0.1); color: var(--dourado); border: 1px solid var(--dourado); }
-        
-        /* Botão TELÃO - mesmo estilo dos outros */
-        #btn-telao { 
-            background: rgba(255, 208, 0, 0.1); 
-            color: var(--dourado); 
-            border: 1px solid var(--dourado); 
-        }
-        
-        #btn-admin { background: rgba(255, 208, 0, 0.1); color: #FFD000; border: 1px solid #FFD000; }
-        #btn-login { display: block; background: transparent; color: var(--dourado); border: 2px solid var(--dourado); margin-top: 50px; }
-
-        .event-list-container { width: 100%; margin-top: 30px; display: none; }
-
-        .event-card {
-            background: rgba(0,0,0,0.5); border: 2px solid rgba(255, 208, 0, 0.2);
-            padding: 15px; border-radius: 20px; margin-bottom: 18px;
-            display: grid;
-            grid-template-columns: 1fr 100px; 
-            gap: 10px;
-            transition: 0.3s;
-        }
-        
-        .event-card.active-border { border-color: var(--dourado); background: rgba(255, 208, 0, 0.08); }
-        .event-info-col { display: flex; flex-direction: column; gap: 12px; justify-content: center; }
-        .event-info h4 { margin: 0; color: var(--dourado); text-transform: uppercase; font-size: 18px; line-height: 1.2; }
-        .event-info span { font-size: 11px; color: #aaa; display: block; margin-top: 4px; }
-
-        .btn-camera-main {
-            background: var(--ativo-ouro); color: #000;
-            border: none; border-radius: 15px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 40px; cursor: pointer; transition: 0.2s;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            grid-row: span 2;
-        }
-        .btn-camera-main:active { transform: scale(0.95); }
-
-        .group-actions-row { display: flex; gap: 8px; width: 100%; }
-        .status-btn {
-            flex: 2; padding: 12px; border-radius: 10px; font-size: 10px; font-weight: 900;
-            cursor: pointer; text-transform: uppercase; border: none;
-        }
-        .btn-is-on { background: var(--ativo-ouro); color: #000; }
-        .btn-is-off { background: #222; color: #666; border: 1px solid #333; }
-
-        .btn-edit-big { flex: 1.5; background: #333; color: #fff; border: 1px solid #555; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 10px; }
-        .btn-del-big { flex: 0.8; background: rgba(255,59,48,0.1); color: #ff3b30; border: 1px solid #ff3b30; border-radius: 10px; cursor: pointer; font-size: 16px; }
-
-        #modal-senha { position: fixed; inset: 0; background: var(--bg-modal); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(15px); }
-        .modal-content { background: #0f0f0f; padding: 35px; border-radius: 25px; border: 1px solid var(--dourado); text-align: center; width: 85%; max-width: 320px; }
-        .modal-content input { width: 100%; padding: 18px; background: #000; border: 1px solid var(--dourado); color: var(--dourado); border-radius: 12px; text-align: center; font-size: 28px; letter-spacing: 12px; margin-bottom: 25px; box-sizing: border-box; outline: none; }
-        .btn-confirm { background: var(--dourado); color: #000; border: none; padding: 15px; border-radius: 10px; font-weight: 900; width: 100%; cursor: pointer; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Photo Movie</title>
 <meta name="theme-color" content="#000000">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon-192.png">
@@ -108,183 +15,100 @@
 <link rel="stylesheet" href="app.css">
 <script src="pwa.js" defer></script>
 </head>
-<body>
-
-    <div class="header">
-        <h1>PHOTO MOVIE</h1>
-        <p>colecionando momentos</p>
-        <span class="version-tag">v2.0.0</span>
-    </div>
-
-    <div class="main-container">
-        <button id="btn-login" class="btn-central" onclick="abrirModal()">🔓 ACESSAR SISTEMA</button>
-        <a href="config_evento.html" id="btn-create" class="btn-protected btn-central btn-create" onclick="localStorage.removeItem('evento_para_editar')">➕ CRIAR NOVO EVENTO</a>
-        <a href="galeria_admin.html" id="btn-admin" class="btn-protected btn-central">👑 GALERIA ADMIN</a>
-        <a href="galeria.html" id="btn-galeria" class="btn-protected btn-central">🎞️ ABRIR GALERIA</a>
-        
-        <button id="btn-copy-link" class="btn-protected btn-central" onclick="copiarLinkCliente()">🔗 COPIAR LINK CLIENTE</button>
-        
-        <!-- BOTÃO TELÃO -->
-        <button id="btn-telao" class="btn-protected btn-central" onclick="abrirTelao()">🎬 MODO TELÃO</button>
-        
-        <div id="container-eventos" class="event-list-container">
-            <h3 style="font-size: 12px; color: var(--dourado); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; text-align: center;">Painel de Eventos</h3>
-            <div id="lista-eventos"></div>
-        </div>
-
-        <button id="btn-lock" class="btn-protected btn-central" onclick="bloquear()" style="background: transparent; color: #ff5555; border: 1px solid rgba(255,85,85,0.3); margin-top: 40px; font-size: 12px;">SAIR DO SISTEMA</button>
-    </div>
-
-    <div id="modal-senha">
-        <div class="modal-content">
-            <h3 style="color:var(--dourado); letter-spacing: 2px;">SENHA MESTRA</h3>
-            <input type="password" id="input-senha" inputmode="numeric" placeholder="••••">
-            <button class="btn-confirm" onclick="validarSenha()">ENTRAR</button>
-            <p onclick="fecharModal()" style="margin-top:20px; font-size:13px; color:#999; cursor:pointer">Voltar</p>
-        </div>
-    </div>
-
+<body class="pg-home">
+<header class="header"><h1>PHOTO MOVIE</h1><p>colecionando momentos</p><button id="btn-lock" class="link" hidden>Sair</button></header>
+<main class="wrap">
+  <section id="view-login">
+    <h2>Central do operador</h2>
+    <p>Entre com a senha mestra para gerenciar eventos.</p>
+    <input type="password" id="input-senha" autocomplete="current-password" placeholder="Senha">
+    <button class="pbtn y" id="btn-entrar">Entrar</button>
+  </section>
+  <section id="view-home" hidden>
+    <div id="hero"></div>
+    <div class="sec-title"><span>Eventos</span><small id="cont"></small></div>
+    <ul id="lista-eventos"></ul>
+  </section>
+</main>
+<nav id="tabbar"><a href="index.html" class="on">Eventos</a><a href="config_evento.html" class="new" id="tab-new">+ Novo evento</a><a href="galeria_admin.html">Galeria</a></nav>
 <script>
-    const WORKER_URL = "https://photomovie.maxprimefotovideo.workers.dev";
+const WORKER_URL = "https://photomovie.maxprimefotovideo.workers.dev";
+const CLIENTE_URL = "https://maxsynk.github.io/photomovie/galeria.html";
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let EVENTOS = [];
+const ativo = () => { try { return JSON.parse(localStorage.getItem('config_atual')); } catch (e) { return null; } };
+const fmtData = d => /^\d{4}-\d{2}-\d{2}$/.test(d || '') ? d.split('-').reverse().join('/') : (d || 'sem data');
+const nomeEv = ev => esc((ev.nome || 'Evento sem nome').replace(/_/g, ' '));
 
-    window.onload = () => { if(sessionStorage.getItem('logado') === 'true') liberarSistema(); }
+window.onload = () => {
+  $('btn-entrar').onclick = entrar;
+  $('input-senha').addEventListener('keydown', e => { if (e.key === 'Enter') entrar(); });
+  $('btn-lock').onclick = sair;
+  $('hero').onclick = acaoHero;
+  $('lista-eventos').onclick = acaoLista;
+  $('tab-new').onclick = () => localStorage.removeItem('evento_para_editar');
+  if (sessionStorage.getItem('logado') === 'true') liberar();
+};
 
-    const q = v => JSON.stringify(v == null ? '' : v).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    function abrirModal() { document.getElementById('modal-senha').style.display = 'flex'; document.getElementById('input-senha').focus(); }
-    function fecharModal() { document.getElementById('modal-senha').style.display = 'none'; document.getElementById('input-senha').value = ''; }
+async function entrar() {
+  const senha = $('input-senha').value;
+  try {
+    const r = await fetch(WORKER_URL + '/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ senha }) });
+    const d = await r.json();
+    if (d.ok) { sessionStorage.setItem('logado', 'true'); if (d.token) sessionStorage.setItem('pm_token', d.token); liberar(); }
+    else alert('Senha incorreta');
+  } catch (e) { alert('Sem conexão com o servidor'); }
+}
+function liberar() {
+  $('view-login').hidden = true; $('view-home').hidden = false; $('btn-lock').hidden = false;
+  $('tabbar').style.display = 'grid'; carregar();
+}
+function sair() { sessionStorage.removeItem('logado'); sessionStorage.removeItem('pm_token'); location.reload(); }
 
-    async function validarSenha() {
-        const senha = document.getElementById('input-senha').value;
-        try {
-            const r = await fetch(WORKER_URL + '/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ senha }) });
-            const d = await r.json();
-            if (d.ok) {
-                sessionStorage.setItem('logado', 'true');
-                if (d.token) sessionStorage.setItem('pm_token', d.token);
-                fecharModal(); liberarSistema();
-            } else { alert("Senha incorreta"); }
-        } catch (e) { alert("Sem conexão com o servidor"); }
-    }
-
-    function liberarSistema() {
-        document.getElementById('btn-login').style.display = 'none';
-        document.querySelectorAll('.btn-protected').forEach(b => b.style.display = 'block');
-        document.getElementById('container-eventos').style.display = 'block';
-        renderEventos();
-    }
-
-    // NOVA FUNÇÃO: Abrir Telão
-    function abrirTelao() {
-        const config = JSON.parse(localStorage.getItem('config_atual'));
-        
-        if (!config || !config.id) {
-            alert("⚠️ Ative um evento primeiro!");
-            return;
-        }
-        
-        // Abrir telão em nova aba com o ID do evento
-        const urlTelao = `${WORKER_URL}/telao?evento=${encodeURIComponent(config.id)}`;
-        window.open(urlTelao, '_blank');
-    }
-
-    function copiarLinkCliente() {
-        const config = JSON.parse(localStorage.getItem('config_atual'));
-        if (!config) { alert("Ative um evento primeiro!"); return; }
-        const idEvento = config.id || config.id_fixo || config.nome;
-        const link = `https://maxsynk.github.io/photomovie/galeria.html?evento=${encodeURIComponent(idEvento)}`;
-        navigator.clipboard.writeText(link).then(() => { alert("Link copiado!"); });
-    }
-
-    async function renderEventos() {
-        const container = document.getElementById('lista-eventos');
-        const eventoAtivoConfig = JSON.parse(localStorage.getItem('config_atual'));
-
-        try {
-            const res = await fetch(`${WORKER_URL}/listar-eventos?t=${Date.now()}`);
-            const eventos = await res.json();
-            
-            if(!eventos || eventos.length === 0) { 
-                container.innerHTML = '<p style="text-align:center; opacity:0.5;">Sem eventos no momento.</p>'; 
-                return; 
-            }
-
-            container.innerHTML = '';
-            eventos.forEach((ev) => {
-                const estaAtivo = eventoAtivoConfig && eventoAtivoConfig.id === ev.id;
-                
-                const tempoExibicao = ev.tempo ? ev.tempo : "10";
-
-                const evData = JSON.stringify(ev).replace(/"/g, '&quot;');
-                const card = document.createElement('div');
-                card.className = `event-card ${estaAtivo ? 'active-border' : ''}`;
-                card.innerHTML = `
-                    <div class="event-info-col">
-                        <div class="event-info">
-                            <h4>${ev.nome ? esc(ev.nome.replace(/_/g, ' ')) : 'EVENTO SEM NOME'}</h4>
-                            <span>DATA: ${ev.data || '--/--/--'} | DURAÇÃO: ${tempoExibicao}s</span>
-                        </div>
-                        <div class="group-actions-row">
-                            <button class="status-btn ${estaAtivo ? 'btn-is-on' : 'btn-is-off'}" onclick='alternarAtivacao(${evData})'>
-                                ${estaAtivo ? '● ATIVO' : 'ATIVAR'}
-                            </button>
-                            <button class="btn-edit-big" onclick='irParaEditar(${evData})'>EDITAR</button>
-                            <button class="btn-del-big" onclick="excluirEvento(${q(ev.id)}, ${q(ev.nome)})">×</button>
-                        </div>
-                    </div>
-                    <button class="btn-camera-main" onclick="irParaCamera(${evData})">📸</button>
-                `;
-                container.appendChild(card);
-            });
-        } catch (err) { 
-            container.innerHTML = `<p style="color: #ff5555; text-align:center;">Erro de conexão ao carregar lista.</p>`; 
-        }
-    }
-
-    function irParaEditar(evento) {
-        localStorage.setItem('evento_para_editar', JSON.stringify(evento));
-        window.location.href = `config_evento.html?id=${evento.id}`;
-    }
-
-    function alternarAtivacao(evento) {
-        const atual = localStorage.getItem('config_atual');
-        if (atual && JSON.parse(atual).id === evento.id) {
-            localStorage.removeItem('config_atual');
-            alert(`Evento "${evento.nome}" DESATIVADO`);
-        } else {
-            const eventoCompleto = {
-                id: evento.id,
-                nome: evento.nome,
-                tempo: evento.tempo || "10",
-                molduraUrl: evento.molduraUrl || "",
-                musicaUrl: evento.musicaUrl || ""
-            };
-            localStorage.setItem('config_atual', JSON.stringify(eventoCompleto));
-            alert(`✅ Evento "${evento.nome}" ATIVADO!`);
-        }
-        renderEventos();
-    }
-
-    function irParaCamera(evento) {
-        if (!evento.tempo) evento.tempo = "10";
-        localStorage.setItem('config_atual', JSON.stringify(evento));
-        window.location.href = 'camera.html';
-    }
-
-    async function excluirEvento(id, nome) {
-        if(confirm(`ATENÇÃO: Apagar evento ${nome} e arquivos?`)) {
-            try { 
-                await fetch(`${WORKER_URL}/deletar-evento-completo`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: id, evento: nome })
-                });
-                renderEventos(); 
-            } catch (e) { alert("Erro de conexão."); }
-        }
-    }
-
-    function bloquear() { sessionStorage.removeItem('logado'); sessionStorage.removeItem('pm_token'); location.reload(); }
+async function carregar() {
+  try {
+    const r = await fetch(WORKER_URL + '/listar-eventos?t=' + Date.now());
+    EVENTOS = await r.json(); if (!Array.isArray(EVENTOS)) EVENTOS = [];
+  } catch (e) { $('lista-eventos').innerHTML = '<li class="empty">Sem conexão com o servidor. Verifique a internet e abra de novo.</li>'; return; }
+  desenhar();
+}
+function desenhar() {
+  const a = ativo(), atual = a && EVENTOS.find(e => e.id === a.id);
+  $('hero').innerHTML = atual
+    ? '<span class="live">Evento ativo</span><h2>' + nomeEv(atual) + '</h2><p class="meta">' + fmtData(atual.data) + ' · ' + esc(atual.tempo || 10) + 's por vídeo</p>'
+      + '<button class="go" data-a="gravar">Gravar</button><div class="quick"><button class="pbtn" data-a="telao">Telão</button><button class="pbtn" data-a="galeria">Galeria</button><button class="pbtn" data-a="link">Link do cliente</button></div>'
+    : '<p class="hero-empty">Nenhum evento ativo. Toque em Ativar em um evento da lista para começar a gravar.</p>';
+  $('cont').textContent = EVENTOS.length + (EVENTOS.length === 1 ? ' evento' : ' eventos');
+  $('lista-eventos').innerHTML = EVENTOS.length ? EVENTOS.map((ev, i) => {
+    const on = atual && atual.id === ev.id;
+    return '<li class="ev' + (on ? ' on' : '') + '" data-i="' + i + '"><strong>' + nomeEv(ev) + '</strong><span>' + fmtData(ev.data) + ' · ' + esc(ev.tempo || 10) + 's por vídeo</span>'
+      + '<div class="acts"><button class="pbtn' + (on ? ' y' : '') + '" data-a="ativar">' + (on ? 'Ativo' : 'Ativar') + '</button><button class="pbtn" data-a="editar">Editar</button><button class="pbtn red" data-a="excluir">Excluir</button></div></li>';
+  }).join('') : '<li class="empty">Nenhum evento ainda. Toque em + Novo evento.</li>';
+}
+function acaoHero(e) {
+  const b = e.target.closest('button'); if (!b) return; const a = ativo(); if (!a) return;
+  if (b.dataset.a === 'gravar') location.href = 'camera.html';
+  if (b.dataset.a === 'galeria') location.href = 'galeria_admin.html';
+  if (b.dataset.a === 'telao') window.open(WORKER_URL + '/telao?evento=' + encodeURIComponent(a.id), '_blank');
+  if (b.dataset.a === 'link') navigator.clipboard.writeText(CLIENTE_URL + '?evento=' + encodeURIComponent(a.id)).then(() => alert('Link do cliente copiado!'));
+}
+async function acaoLista(e) {
+  const b = e.target.closest('button'), li = e.target.closest('li[data-i]'); if (!b || !li) return;
+  const ev = EVENTOS[+li.dataset.i], a = ativo();
+  if (b.dataset.a === 'ativar') {
+    if (a && a.id === ev.id) { localStorage.removeItem('config_atual'); alert('Evento desativado'); }
+    else { localStorage.setItem('config_atual', JSON.stringify({ id: ev.id, nome: ev.nome, tempo: ev.tempo || '10', molduraUrl: ev.molduraUrl || '', musicaUrl: ev.musicaUrl || '' })); alert('Evento ativado'); }
+    desenhar();
+  }
+  if (b.dataset.a === 'editar') { localStorage.setItem('evento_para_editar', JSON.stringify(ev)); location.href = 'config_evento.html?id=' + encodeURIComponent(ev.id); }
+  if (b.dataset.a === 'excluir' && confirm('Apagar o evento "' + (ev.nome || ev.id) + '" e todos os arquivos dele?')) {
+    try {
+      const r = await fetch(WORKER_URL + '/deletar-evento-completo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: ev.id, evento: ev.id }) });
+      if (!r.ok) throw new Error(); if (a && a.id === ev.id) localStorage.removeItem('config_atual'); carregar();
+    } catch (err) { alert('Não foi possível excluir. Entre de novo e tente outra vez.'); }
+  }
+}
 </script>
 </body>
 </html>

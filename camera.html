@@ -211,7 +211,7 @@
 <link rel="stylesheet" href="app.css">
 <script src="pwa.js" defer></script>
 </head>
-<body>
+<body class="pg-cam">
     <div id="app">
         <!-- Timer centralizado -->
         <div id="timer-display">3</div>
@@ -220,6 +220,7 @@
         <img id="moldura-overlay" alt="Moldura do Evento">
         
         <div id="warning-flash"></div>
+        <div id="evento-chip"></div>
         <div id="fila-badge"></div>
 
         <!-- Controles superiores -->
@@ -466,6 +467,7 @@
             }
         }
         if (!config) { semEvento = true; alert("Nenhum evento ativo. Volte à Central e ative um evento."); recBtn.style.opacity = "0.3"; }
+        { const ch = document.getElementById('evento-chip'); if (config && config.nome) ch.textContent = config.nome.replace(/_/g, ' '); else ch.style.display = 'none'; }
         manterTelaLigada();
         document.addEventListener('visibilitychange', () => { if (!document.hidden) manterTelaLigada(); });
         window.addEventListener('online', processarFila);
