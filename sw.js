@@ -2,7 +2,7 @@
    Para forçar todo mundo a baixar uma versão nova, troque o número em VERSAO. */
 
 // ▼▼▼ [INÍCIO] CONFIGURAÇÃO ▼▼▼
-const VERSAO = 'pm-v11.0.0';
+const VERSAO = 'pm-v11.1.0';
 const ARQUIVOS = [
   './', 'index.html', 'config_evento.html', 'galeria_admin.html', 'camera.html', 'galeria.html', 'download.html',
   'app.css', 'pwa.js', 'manifest.json',
