@@ -217,6 +217,8 @@ CHANGELOG v2.0.0:
                 <div class="speed-box"><label>Fim</label><select id="conf-v3" onchange="atualizarPresetManual()"><option value="0.2">0.2x</option><option value="0.5">0.5x</option><option value="1.0" selected>1.0x</option><option value="2.0">2.0x</option><option value="4.0">4.0x</option></select></div>
             </div>
 
+            <div id="speed-preview" class="speed-preview" title="Gravação dividida em 3 partes"></div>
+
             <div class="reverso-container">
                 <input type="checkbox" id="conf-reverso" onchange="atualizarPresetManual()">
                 <label for="conf-reverso">🔄 Ativar Efeito Reverso (vídeo toca ao contrário)</label>
@@ -303,7 +305,8 @@ CHANGELOG v2.0.0:
     }
 
     window.onload = () => {
-        console.log("🚀 CONFIG_EVENTO v2.0.0 - Inicializando...");
+        console.log("CONFIG_EVENTO v2.1.0");
+        if (!localStorage.getItem('evento_para_editar')) document.getElementById('conf-data').value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
         
         const editData = localStorage.getItem('evento_para_editar');
         if (editData) {
@@ -484,6 +487,12 @@ CHANGELOG v2.0.0:
         if(!input.files[0]) return;
         
         const file = input.files[0];
+        const MAX = tipo === 'MOLDURA' ? 8 * 1048576 : 25 * 1048576;
+        if (file.size > MAX) { alert('Arquivo muito grande (máx. ' + (MAX / 1048576) + ' MB).'); input.value = ''; return; }
+        if (tipo === 'MOLDURA') {
+            const dim = await new Promise(r => { const i = new Image(); i.onload = () => r([i.naturalWidth, i.naturalHeight]); i.onerror = () => r(null); i.src = URL.createObjectURL(file); });
+            if (dim && Math.abs(dim[0] / dim[1] - 9 / 16) > 0.03) alert('Atenção: a moldura não está em 9:16 (' + dim[0] + '×' + dim[1] + '). Ela pode ficar cortada.');
+        }
         const label = tipo === 'MOLDURA' ? document.getElementById('upload-label') : document.getElementById('music-file-label');
         label.innerText = "⏳ ENVIANDO...";
 
@@ -494,7 +503,8 @@ CHANGELOG v2.0.0:
         formData.append("evento", idPasta);
 
         try {
-            await fetch(`${WORKER_URL}/upload`, { method: 'POST', body: formData });
+            const up = await fetch(`${WORKER_URL}/upload`, { method: 'POST', body: formData });
+            if (!up.ok) throw new Error('HTTP ' + up.status);
             const pathRelativo = `${idPasta}/${fileName}`;
             if(tipo === 'MOLDURA') {
                 document.getElementById('conf-moldura-url').value = pathRelativo;
@@ -514,14 +524,20 @@ CHANGELOG v2.0.0:
         }
     }
 
-    async function salvarConfig() {
+    async function _salvarConfigReal() {
         console.log("💾 INICIANDO SALVAMENTO v2.0.0...");
         
         const nomeVisual = document.getElementById('conf-nome').value.trim();
         if(!nomeVisual) return alert("Digite o nome do evento.");
         
         let idEventoValido = document.getElementById('conf-id').value.trim();
-        if(!idEventoValido) { idEventoValido = sanitizarPasta(nomeVisual); }
+        if(!idEventoValido) {
+            idEventoValido = sanitizarPasta(nomeVisual);
+            try {
+                const lst = await (await fetch(WORKER_URL + '/listar-eventos?t=' + Date.now())).json();
+                if (Array.isArray(lst) && lst.some(x => x.id === idEventoValido)) idEventoValido += '_' + Date.now().toString(36).slice(-4);
+            } catch (err) {}
+        }
 
         // 🔥 SEPARAÇÃO: musicaTrim = SÓ trim da música
         const trimMusica = (parseInt(document.getElementById('trim-min').value)||0)*60 + (parseInt(document.getElementById('trim-sec').value)||0);
@@ -606,6 +622,21 @@ CHANGELOG v2.0.0:
             alert("Erro de conexão ao tentar salvar."); 
         }
     }
+
+    async function salvarConfig() {
+        const b = document.querySelector('.btn-save-main');
+        if (b.disabled) return;
+        const t = b.textContent; b.disabled = true; b.textContent = 'SALVANDO...';
+        try { await _salvarConfigReal(); } finally { b.disabled = false; b.textContent = t; }
+    }
+    function atualizarPreviewVelocidade() {
+        const el = document.getElementById('speed-preview'); if (!el) return;
+        const v = ['conf-v1', 'conf-v2', 'conf-v3'].map(i => parseFloat(document.getElementById(i).value) || 1);
+        const rev = document.getElementById('conf-reverso').checked;
+        el.innerHTML = v.map(s => '<div class="sp-seg" style="--s:' + Math.min(s / 2, 1) + '"><b>' + s + 'x</b></div>').join('') + (rev ? '<div class="sp-seg sp-rev"><b>↺ reverso</b></div>' : '');
+    }
+    document.addEventListener('change', atualizarPreviewVelocidade);
+    window.addEventListener('load', atualizarPreviewVelocidade);
 </script>
 </body>
 </html>

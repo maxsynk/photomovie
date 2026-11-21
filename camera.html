@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PHOTO MOVIE - Câmera v1.2</title>
+    <title>PHOTO MOVIE - Câmera v1.3</title>
     <style>
         :root { --bg: #050505; --dourado: #FFD000; --vermelho-neon: #ff0033; }
         
@@ -220,6 +220,7 @@
         <img id="moldura-overlay" alt="Moldura do Evento">
         
         <div id="warning-flash"></div>
+        <div id="fila-badge"></div>
 
         <!-- Controles superiores -->
         <div class="top-controls">
@@ -236,18 +237,18 @@
         </div>
         
         <!-- Versão da câmera -->
-        <div id="version-info">v1.2</div>
+        <div id="version-info">v1.3</div>
     </div>
     
     <canvas id="canvas" style="position: absolute; left: -9999px; visibility: hidden;"></canvas>
 
     <div id="loader">
         <div class="spin"></div>
-        <p style="margin-top:20px; letter-spacing: 2px;">ENVIANDO VÍDEO...</p>
+        <p id="loader-text" style="margin-top:20px; letter-spacing: 2px;">ENVIANDO VÍDEO...</p>
     </div>
 
 <script>
-    const CAMERA_VERSION = "v1.2";
+    const CAMERA_VERSION = "v1.3";
     const WORKER_URL = "https://photomovie.maxprimefotovideo.workers.dev"; 
     
     const video = document.getElementById('preview');
@@ -261,11 +262,19 @@
     let isFrontCamera = false, isRecording = false;
     let isMicActive = false;
     let animationId = null;
+    let countdownTimer = null, semEvento = false, audioCtx = null;
 
     // Função para iniciar gravação
     function startRecordingProcess() {
-        if (isRecording) return;
-        isRecording = true;
+        if (semEvento) { alert("Nenhum evento ativo. Ative um evento na Central."); return; }
+        if (isRecording) {
+            if (countdownTimer) {
+                clearInterval(countdownTimer); countdownTimer = null; isRecording = false;
+                recBtn.style.opacity = "1"; document.getElementById('timer-display').style.display = 'none';
+            }
+            return;
+        }
+        isRecording = true; bip(660); if (navigator.vibrate) navigator.vibrate(40);
         recBtn.style.opacity = "0.2";
         let count = 3;
         const timer = document.getElementById('timer-display');
@@ -273,13 +282,13 @@
         timer.innerText = count;
         timer.style.color = '#ff0033';
         
-        let countdown = setInterval(() => {
+        let countdown = countdownTimer = setInterval(() => {
             count--;
-            if (count > 0) {
+            if (count > 0) { bip(660);
                 timer.innerText = count;
                 timer.style.color = '#ff0033';
             } else { 
-                clearInterval(countdown); 
+                clearInterval(countdown); countdownTimer = null; bip(990, 350); if (navigator.vibrate) navigator.vibrate([80, 40, 80]); 
                 timer.style.display = 'none';
                 startRecording(); 
             }
@@ -310,7 +319,8 @@
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
             };
-        } catch (err) { 
+        } catch (err) {
+            if (!(err.name === 'NotAllowedError' && isMicActive)) mostrarErroCamera(err);
             if(err.name === 'NotAllowedError' && isMicActive) {
                 alert("Permissão de microfone negada.");
                 isMicActive = false;
@@ -343,6 +353,8 @@
     }
     
     function closeCamera() {
+        if (isRecording && !confirm('Gravação em andamento. Sair e perder este vídeo?')) return;
+        if (stream) stream.getTracks().forEach(t => t.stop());
         window.location.href = 'index.html';
     }
 
@@ -453,13 +465,66 @@
                 };
             }
         }
+        if (!config) { semEvento = true; alert("Nenhum evento ativo. Volte à Central e ative um evento."); recBtn.style.opacity = "0.3"; }
+        manterTelaLigada();
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) manterTelaLigada(); });
+        window.addEventListener('online', processarFila);
+        window.addEventListener('pagehide', () => { if (stream) stream.getTracks().forEach(t => t.stop()); });
+        atualizarFila(); processarFila();
         initCamera();
     };
+
+    function bip(freq, ms) {
+        try {
+            audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+            const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+            o.frequency.value = freq; g.gain.value = 0.08; o.connect(g); g.connect(audioCtx.destination);
+            o.start(); o.stop(audioCtx.currentTime + (ms || 120) / 1000);
+        } catch (e) {}
+    }
+    async function manterTelaLigada() { try { if (navigator.wakeLock) await navigator.wakeLock.request('screen'); } catch (e) {} }
+    function mostrarErroCamera(err) {
+        const msgs = { NotAllowedError: 'Permita o acesso à câmera nas configurações do navegador.', NotFoundError: 'Nenhuma câmera encontrada neste aparelho.', NotReadableError: 'A câmera está em uso por outro app. Feche-o e tente de novo.', OverconstrainedError: 'Esta câmera não suporta a resolução pedida.' };
+        let el = document.getElementById('cam-erro');
+        if (!el) { el = document.createElement('div'); el.id = 'cam-erro'; document.getElementById('app').appendChild(el); }
+        el.innerHTML = '<div><div style="font-size:42px">📷</div><p>' + (msgs[err.name] || 'Não foi possível abrir a câmera.') + '</p><button id="cam-retry">TENTAR DE NOVO</button></div>';
+        document.getElementById('cam-retry').onclick = () => { el.remove(); initCamera(); };
+    }
+
+    function idb() { return new Promise((res, rej) => { const r = indexedDB.open('pm_fila', 1); r.onupgradeneeded = () => r.result.createObjectStore('videos', { keyPath: 'name' }); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+    async function filaOp(modo, fn) { const db = await idb(); return new Promise((res, rej) => { const tx = db.transaction('videos', modo); const rq = fn(tx.objectStore('videos')); tx.oncomplete = () => res(rq && rq.result); tx.onerror = () => rej(tx.error); }); }
+    const filaSalvar = item => filaOp('readwrite', s => s.put(item));
+    const filaListar = () => filaOp('readonly', s => s.getAll());
+    const filaRemover = name => filaOp('readwrite', s => s.delete(name));
+    async function atualizarFila() {
+        let n = 0; try { n = (await filaListar()).length; } catch (e) {}
+        const el = document.getElementById('fila-badge'); if (!el) return;
+        el.style.display = n ? 'block' : 'none'; el.textContent = '⏳ ' + n + ' vídeo(s) na fila de envio';
+    }
+    function enviarXHR(item, onP) {
+        return new Promise((res, rej) => {
+            const fd = new FormData(); fd.append('file', item.blob, item.name); fd.append('uuid', item.name); fd.append('evento', item.evento);
+            const x = new XMLHttpRequest(); x.open('POST', WORKER_URL + '/upload'); x.timeout = 180000;
+            x.upload.onprogress = e => { if (e.lengthComputable && onP) onP(Math.round(e.loaded / e.total * 100)); };
+            x.onload = () => (x.status >= 200 && x.status < 300) ? res() : rej(new Error('HTTP ' + x.status));
+            x.onerror = () => rej(new Error('rede')); x.ontimeout = () => rej(new Error('tempo esgotado')); x.send(fd);
+        });
+    }
+    async function enviarComRetry(item, onP) {
+        let err; for (let i = 0; i < 3; i++) { try { await enviarXHR(item, onP); return; } catch (e) { err = e; await new Promise(r => setTimeout(r, 1500 * (i + 1))); } }
+        throw err;
+    }
+    let enviandoFila = false;
+    async function processarFila() {
+        if (enviandoFila || !navigator.onLine) return; enviandoFila = true;
+        try { for (const it of await filaListar()) { try { await enviarXHR(it); await filaRemover(it.name); } catch (e) { break; } } } catch (e) {}
+        enviandoFila = false; atualizarFila();
+    }
 
     function startRecording() {
         chunks = [];
         const config = JSON.parse(localStorage.getItem('config_atual'));
-        const duration = (config ? parseInt(config.tempo) : 10);
+        const duration = ((config && parseInt(config.tempo)) || 10);
 
         function renderLoop() {
             if (!isRecording) return; 
@@ -531,37 +596,21 @@
     }
 
     async function uploadVideo() {
-        document.getElementById('loader').style.display = 'flex';
+        const loader = document.getElementById('loader'), txt = document.getElementById('loader-text');
+        loader.style.display = 'flex'; txt.textContent = 'ENVIANDO VÍDEO...';
         if (animationId) cancelAnimationFrame(animationId);
-
-        const config = JSON.parse(localStorage.getItem('config_atual'));
-        const eventFolder = config.id || "Geral"; 
-        
+        const config = JSON.parse(localStorage.getItem('config_atual') || 'null');
         const isWebm = recorder.mimeType.includes('webm');
-        const fileExt = isWebm ? '.webm' : '.mp4';
-        const blobType = isWebm ? 'video/webm' : 'video/mp4';
-
-        const blob = new Blob(chunks, { type: blobType });
-        const formData = new FormData();
-        const fileName = `vid_${Date.now()}${fileExt}`; 
-        
-        formData.append("file", blob, fileName); 
-        formData.append("uuid", fileName);
-        formData.append("evento", String(eventFolder));
-
+        const fileName = 'vid_' + Date.now() + (isWebm ? '.webm' : '.mp4');
+        const item = { name: fileName, evento: String((config && config.id) || 'Geral'), blob: new Blob(chunks, { type: isWebm ? 'video/webm' : 'video/mp4' }) };
         try {
-            const res = await fetch(`${WORKER_URL}/upload`, { method: "POST", body: formData });
-            if (res.ok) {
-                // Salvar flag para voltar direto para câmera
-                localStorage.setItem('voltar_para_camera', 'true');
-                window.location.href = 'galeria_admin.html';
-            } else {
-                alert("Erro no envio do vídeo.");
-                document.getElementById('loader').style.display = 'none';
-            }
-        } catch (err) { 
-            alert("Erro de conexão ao enviar."); 
-            document.getElementById('loader').style.display = 'none';
+            await enviarComRetry(item, p => { txt.textContent = 'ENVIANDO VÍDEO... ' + p + '%'; });
+            localStorage.setItem('voltar_para_camera', 'true');
+            window.location.href = 'galeria_admin.html';
+        } catch (err) {
+            try { await filaSalvar(item); alert('Sem conexão. O vídeo foi guardado e será enviado automaticamente.'); }
+            catch (e2) { alert('Falha no envio e no armazenamento local.'); }
+            loader.style.display = 'none'; atualizarFila();
         }
     }
 </script>

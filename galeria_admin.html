@@ -154,8 +154,11 @@ CHANGELOG v2.0.3:
 
     <div class="admin-tools">
         <button class="btn-action btn-zip" onclick="baixarTudoZip()">📦 BAIXAR TODOS (ZIP)</button>
+        <button class="btn-action btn-zip" onclick="copiarLinkCliente()">🔗 LINK DO CLIENTE</button>
         <button class="btn-action btn-danger" onclick="excluirTudo()">⚠️ APAGAR GALERIA</button>
     </div>
+
+    <div class="stats-bar" id="stats-bar"></div>
 
     <div id="gallery-container" class="gallery-grid">
         <div class="loading">
@@ -243,7 +246,7 @@ CHANGELOG v2.0.3:
         }
         
         idPastaFixo = String(eventoEncontrado);
-        document.getElementById('nome-evento-titulo').innerHTML = "ID: " + idPastaFixo;
+        { const tt = document.getElementById('nome-evento-titulo'); if (!tt.textContent || tt.textContent === 'CARREGANDO...') tt.textContent = 'EVENTO: ' + idPastaFixo.replace(/_/g, ' '); }
         
         videosMap.clear();
         listaCronologica = [];
@@ -282,6 +285,7 @@ CHANGELOG v2.0.3:
                 }
             });
             
+            atualizarStats(dados, finais);
             const novosPaths = finais.map(f => f.path);
             
             if (JSON.stringify(novosPaths) === JSON.stringify(listaCronologica)) {
@@ -402,73 +406,53 @@ CHANGELOG v2.0.3:
         
         modal.style.display = 'flex';
         
-        fetch(url)
-        .then(response => response.blob())
-        .then(blob => {
-            const blobUrl = URL.createObjectURL(blob);
-            video.src = blobUrl;
-            video.load();
-            const playPromise = video.play();
-            if (playPromise !== undefined) { 
-                playPromise.catch(error => { video.controls = true; }); 
-            }
-        })
-        .catch(err => {
-            alert("Erro ao carregar o vídeo para visualização.");
-        });
+        video.src = url;
+        video.load();
+        const pp = video.play();
+        if (pp !== undefined) pp.catch(() => { video.controls = true; });
         
         document.getElementById('btn-download-force').onclick = () => forcarDownload(url, path.split('/').pop());
         document.getElementById('btn-delete-modal').onclick = () => { excluirArquivo(path); fecharZoom(); };
     }
 
-    async function excluirArquivo(path) {
-        if(!confirm("🗑️ Tem certeza que deseja excluir este vídeo permanentemente?")) return;
-        try {
-            // Deleta o vídeo
-            await fetch(`${WORKER_URL}/deletar`, { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: path }) 
-            });
-            
-            // Deleta a thumbnail também
-            const thumbPath = getThumbPath(path);
-            try {
-                await fetch(`${WORKER_URL}/deletar`, { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ path: thumbPath }) 
-                });
-            } catch(e) {}
-            
-            alert("✅ Vídeo excluído!"); 
-            const card = videosMap.get(path);
-            if (card) {
-                card.remove();
-                videosMap.delete(path);
-                listaCronologica = listaCronologica.filter(p => p !== path);
-                reordenarCards();
-                renumerarCards();
-            }
-        } catch(e) { alert("❌ Erro de conexão ao excluir"); }
+    function caminhosRelacionados(path) {
+        const partes = path.split('/'); const f = partes.pop(); const dir = partes.join('/');
+        const base = f.replace(/^final_/, '').replace(/\.mp4$/, '');
+        return [path, dir + '/thumb_' + base + '.jpg', dir + '/' + base + '.mp4', dir + '/' + base + '.webm'];
     }
-
+    async function deletarLote(paths) {
+        const r = await fetch(WORKER_URL + '/deletar-lote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paths }) });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+    }
+    async function excluirArquivo(path) {
+        if (!confirm("🗑️ Excluir este vídeo permanentemente (inclui capa e arquivo original)?")) return;
+        try {
+            await deletarLote(caminhosRelacionados(path));
+            alert("✅ Vídeo excluído!");
+            const card = videosMap.get(path);
+            if (card) { card.remove(); videosMap.delete(path); listaCronologica = listaCronologica.filter(p => p !== path); reordenarCards(); renumerarCards(); }
+        } catch (e) { alert("❌ Não foi possível excluir. Entre de novo na Central e tente outra vez."); }
+    }
     async function excluirTudo() {
-        if(prompt("⚠️ Digite 'APAGAR TUDO' para confirmar a exclusão de TODOS os vídeos:") !== 'APAGAR TUDO') { return; }
-        let excluidos = 0;
-        for(let path of listaCronologica) {
-            try {
-                await fetch(`${WORKER_URL}/deletar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: path }) });
-                // Tenta deletar thumbnail também
-                const thumbPath = getThumbPath(path);
-                try { await fetch(`${WORKER_URL}/deletar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: thumbPath }) }); } catch(e) {}
-                excluidos++;
-            } catch(e) { console.error("Erro ao excluir:", path); }
-        }
-        alert(`✅ ${excluidos} vídeo(s) excluído(s)!`);
-        videosMap.clear();
-        listaCronologica = [];
-        document.getElementById('gallery-container').innerHTML = '<div class="empty-gallery"><p>📹 Nenhum vídeo encontrado</p></div>';
+        if (prompt("⚠️ Digite 'APAGAR TUDO' para apagar TODOS os vídeos desta galeria:") !== 'APAGAR TUDO') return;
+        try {
+            const todos = listaCronologica.flatMap(caminhosRelacionados);
+            for (let i = 0; i < todos.length; i += 500) await deletarLote(todos.slice(i, i + 500));
+            alert(`✅ ${listaCronologica.length} vídeo(s) excluído(s)!`);
+            videosMap.clear(); listaCronologica = [];
+            document.getElementById('gallery-container').innerHTML = '<div class="empty-gallery"><p>📹 Nenhum vídeo encontrado</p></div>';
+        } catch (e) { alert("❌ Falha ao apagar. Entre de novo na Central e tente outra vez."); }
+    }
+    function copiarLinkCliente() {
+        if (!idPastaFixo) { alert("Aguarde o carregamento do evento."); return; }
+        const link = 'https://maxsynk.github.io/photomovie/galeria.html?evento=' + encodeURIComponent(idPastaFixo);
+        navigator.clipboard.writeText(link).then(() => alert("Link do cliente copiado!")).catch(() => alert(link));
+    }
+    function atualizarStats(dados, finais) {
+        const nomes = new Set(dados.map(f => f.path.split('/').pop()));
+        const proc = dados.map(f => f.path.split('/').pop()).filter(n => /^vid_.*\.(mp4|webm)$/.test(n) && !nomes.has('final_' + n.replace(/\.(mp4|webm)$/, '') + '.mp4')).length;
+        const mb = finais.reduce((s, f) => s + (f.size || 0), 0) / 1048576;
+        document.getElementById('stats-bar').innerHTML = '<span><b>' + finais.length + '</b> prontos</span><span class="' + (proc ? 'proc' : '') + '"><b>' + proc + '</b> processando</span><span><b>' + mb.toFixed(0) + '</b> MB</span>';
     }
 
     async function baixarTudoZip() {
@@ -482,10 +466,10 @@ CHANGELOG v2.0.3:
             for(let i = 0; i < listaCronologica.length; i++) {
                 const res = await fetch(`${WORKER_URL}/stream?id=${encodeURIComponent(listaCronologica[i])}`);
                 const blob = await res.blob();
-                zip.file(`video_${i+1}.mp4`, blob);
+                zip.file(`video_${String(i+1).padStart(3,'0')}.mp4`, blob);
                 btn.innerText = `📦 ${i+1}/${listaCronologica.length}`;
             }
-            const content = await zip.generateAsync({type:"blob"});
+            const content = await zip.generateAsync({type:"blob", compression:"STORE", streamFiles:true});
             saveAs(content, `Galeria_Admin_${idPastaFixo}.zip`);
             alert(`✅ ZIP criado com ${listaCronologica.length} vídeo(s)!`);
         } catch(e) { alert("❌ Erro ao criar ZIP: " + e.message); } 
